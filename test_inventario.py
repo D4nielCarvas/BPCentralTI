@@ -40,6 +40,12 @@ class TestGeradorId(unittest.TestCase):
         resultado = gerar_id_ativo("NT", "CEN", "ADM", 1)
         self.assertEqual(resultado, "NT-CEN-ADM-01")
 
+    def test_gerar_id_converte_para_maiusculas(self) -> None:
+        """Verifica se o gerador converte entradas minúsculas para MAIÚSCULAS."""
+        from id_generator import gerar_id_ativo
+        resultado = gerar_id_ativo("nt", "cen", "adm", 1)
+        self.assertEqual(resultado, "NT-CEN-ADM-01")
+
     def test_gerar_id_sequencial_dois_digitos(self) -> None:
         """Sequencial 9 deve ser formatado como '09'."""
         from id_generator import gerar_id_ativo

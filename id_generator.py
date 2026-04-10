@@ -24,43 +24,43 @@ if TYPE_CHECKING:
 # ── Tabelas de siglas ──────────────────────────────────────────────────────────
 
 SIGLAS_TIPO: dict[str, str] = {
-    "DK": "Desktop",
+    "DK": "Desktop (Computador de Mesa)",
     "NT": "Notebook",
-    "CL": "Celular",
+    "CL": "Celular / Smartphone",
     "IMP": "Impressora",
     "TB": "Tablet",
-    "EST": "Estabilizador",
-    "STL": "Starlink",
+    "EST": "Estabilizador",  # Mantido para compatibilidade
+    "STL": "Starlink",       # Mantido para compatibilidade
 }
 
 SIGLAS_LOCAL: dict[str, str] = {
     "CEN": "Central",
-    "SMN": "Simão Neto",
+    "SMN": "São Manoel",
     "TNG": "Tangará",
     "SPD": "São Pedro",
-    "SJU": "São Julião",
+    "SJU": "São Judas",
     "SFR": "São Francisco",
     "STN": "Santana",
-    "CD": "Colônia Dom",
-    "SEL": "Selva",
-    "SLU": "São Luís",
-    "SL2": "São Luís 2",
-    "CLN": "Colina",
-    "SJO": "São José",
-    "SLZ": "São Lazaro",
-    "SAD": "Santo André",
+    "CD": "CD",
+    "SEL": "Santa Eliza",
+    "SLU": "Santa Lucia",
+    "SL2": "Santa Lucia 2",
+    "CLN": "Caroline",
+    "SJO": "São João",
+    "SLZ": "Santa Luzia",
+    "SAD": "Santa Adelina",
 }
 
 SIGLAS_SETOR: dict[str, str] = {
-    "FT": "Faturamento",
-    "ALP": "Almoxarifado de Peças",
-    "ALI": "Almoxarifado de Insumos",
-    "COO": "Coordenação",
-    "ADM": "Administrativo",
-    "APO": "Apoio",
+    "FT": "Fito",
     "COL": "Colheita",
+    "ALP": "Almoxarifado Peças",
     "PTO": "Ponto",
-    "TRM": "Transporte e Maquinário",
+    "ALI": "Almoxarifado Insumos",
+    "COO": "Coordenador",
+    "ADM": "ADM",
+    "APO": "Apoio",
+    "TRM": "Turma",
     "ABS": "Abastecimento",
     "IRR": "Irrigação",
 }
@@ -108,6 +108,11 @@ def gerar_id_ativo(tipo: str, localidade: str, setor: str, sequencial: int) -> s
         >>> gerar_id_ativo('IMP', 'SMN', 'FT', 12)
         'IMP-SMN-FT-12'
     """
+    # Converte para maiúsculas antes da validação para garantir consistência
+    tipo = tipo.upper()
+    localidade = localidade.upper()
+    setor = setor.upper()
+
     if tipo not in SIGLAS_TIPO:
         raise ValueError(f"Tipo '{tipo}' inválido. Válidos: {list(SIGLAS_TIPO)}")
     if localidade not in SIGLAS_LOCAL:
@@ -119,7 +124,15 @@ def gerar_id_ativo(tipo: str, localidade: str, setor: str, sequencial: int) -> s
 
     # Formata com dois dígitos mínimos; expande automaticamente se > 99
     seq_str = f"{sequencial:02d}"
-    return f"{tipo}-{localidade}-{setor}-{seq_str}"
+    
+    id_gerado = f"{tipo}-{localidade}-{setor}-{seq_str}"
+    
+    # Validação NetBIOS (opcional, apenas log se passar de 15)
+    if len(id_gerado) > 15:
+        # Poderíamos logar aqui se necessário, mas seguimos o padrão solicitado
+        pass
+        
+    return id_gerado
 
 
 def proximo_sequencial(
