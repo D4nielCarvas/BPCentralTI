@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventário TI v2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+:root{--bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e29;--border:#252b3b;--border2:#2e364d;--accent:#3b82f6;--accent2:#6366f1;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--orange:#f97316;--purple:#8b5cf6;--cyan:#06b6d4;--text:#e2e8f0;--text2:#94a3b8;--text3:#475569;--sidebar-w:248px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow:hidden}
+#sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:100;overflow-y:auto}
+.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+.sidebar-logo h1{font-size:12px;font-weight:700;color:var(--text);letter-spacing:.5px;text-transform:uppercase}
+.sidebar-logo p{font-size:10px;color:var(--text3);margin-top:2px;font-family:'IBM Plex Mono',monospace}
+nav{flex:1;padding:8px 0}
+.nav-label{font-size:9.5px;font-weight:700;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;padding:12px 18px 4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 18px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:400;border-left:3px solid transparent;transition:all .15s}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:rgba(59,130,246,.1);border-left-color:var(--accent);color:var(--accent)}
+.nav-item .icon{font-size:14px;width:16px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+.sidebar-footer{padding:12px 18px;border-top:1px solid var(--border)}
+.version{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#topbar{height:54px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px;gap:14px;flex-shrink:0}
+#topbar h2{font-size:15px;font-weight:600;flex:1}
+.search-wrap{position:relative}
+.search-wrap input{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 12px 7px 30px;font-size:13px;width:220px;outline:none;font-family:inherit;transition:border .15s}
+.search-wrap input:focus{border-color:var(--accent)}
+.search-wrap .s-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:12px}
+#search-results{position:absolute;top:calc(100% + 6px);right:0;width:320px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;z-index:999;overflow:hidden;display:none;box-shadow:0 20px 40px rgba(0,0,0,.5)}
+.sr-item{padding:9px 13px;cursor:pointer;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--border)}
+.sr-item:last-child{border-bottom:none}
+.sr-item:hover{background:var(--bg3)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#2563eb}
+.btn-success{background:var(--green);color:#fff}.btn-success:hover{background:#059669}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{background:#dc2626}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2)}.btn-ghost:hover{background:var(--bg3);color:var(--text)}
+.btn-warn{background:var(--yellow);color:#000}.btn-warn:hover{background:#d97706}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px;border-radius:5px}
+#content{flex:1;overflow-y:auto;padding:22px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.blue::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.stat-card.green::before{background:var(--green)}
+.stat-card.yellow::before{background:var(--yellow)}
+.stat-card.red::before{background:var(--red)}
+.stat-card.orange::before{background:var(--orange)}
+.stat-card.purple::before{background:var(--purple)}
+.stat-card.cyan::before{background:var(--cyan)}
+.stat-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.stat-val{font-size:28px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:4px}
+.table-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.table-header h3{font-size:13px;font-weight:600;flex:1}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap}
+.filter-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:20px;cursor:pointer;font-size:11px;font-family:inherit;transition:all .15s}
+.filter-btn.active{background:rgba(59,130,246,.2);border-color:var(--accent);color:var(--accent)}
+table{width:100%;border-collapse:collapse}
+thead th{padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;background:var(--bg3);border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:10px 14px;font-size:13px;border-bottom:1px solid var(--border);color:var(--text2)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
+.td-id{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--accent);font-weight:600}
+.td-bold{color:var(--text);font-weight:500}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600}
+.badge::before{content:'●';font-size:7px}
+.badge-ativo{background:rgba(16,185,129,.12);color:var(--green)}
+.badge-inativo{background:rgba(148,163,184,.12);color:var(--text2)}
+.badge-manut{background:rgba(245,158,11,.12);color:var(--yellow)}
+.badge-desc{background:rgba(239,68,68,.12);color:var(--red)}
+.badge-aberta{background:rgba(245,158,11,.12);color:var(--yellow)}
+.badge-concluida{background:rgba(16,185,129,.12);color:var(--green)}
+.badge-analise{background:rgba(99,102,241,.12);color:#818cf8}
+.badge-aguardando{background:rgba(249,115,22,.12);color:var(--orange)}
+.badge-entrada{background:rgba(16,185,129,.12);color:var(--green)}
+.badge-saida{background:rgba(239,68,68,.12);color:var(--red)}
+.badge-baixo{background:rgba(239,68,68,.2);color:var(--red);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-backdrop.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:760px;max-height:90vh;display:flex;flex-direction:column;transform:translateY(20px);transition:transform .2s}
+.modal-backdrop.open .modal{transform:translateY(0)}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.modal-head h3{font-size:15px;font-weight:600;flex:1}
+.modal-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:20px;padding:2px 8px;border-radius:6px}
+.modal-close:hover{background:var(--bg3);color:var(--text)}
+.modal-body{padding:22px;overflow-y:auto}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid .full{grid-column:1/-1}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select,.form-group textarea{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 11px;font-size:13px;font-family:inherit;outline:none;transition:border .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group select option{background:var(--bg2)}
+.form-group textarea{resize:vertical;min-height:72px}
+.form-section{margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.form-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.form-section h4{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+#toast-container{position:fixed;bottom:22px;right:22px;z-index:9999;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:11px 16px;font-size:13px;display:flex;align-items:center;gap:9px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:slideIn .25s ease;min-width:240px;max-width:360px}
+.toast.success{border-left:3px solid var(--green)}.toast.error{border-left:3px solid var(--red)}.toast.info{border-left:3px solid var(--accent)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.page{display:none}.page.active{display:block}
+.empty{padding:50px 20px;text-align:center;color:var(--text3)}
+.empty .empty-icon{font-size:44px;margin-bottom:12px;opacity:.4}
+.empty p{font-size:13px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px}
+.activity-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.activity-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.activity-text{font-size:12.5px;color:var(--text2);flex:1}
+.activity-text strong{color:var(--text)}
+.activity-time{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace}
+.tbl-actions{display:flex;gap:4px}
+.pdf-link{color:var(--accent);font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:3px}
+.pdf-link:hover{text-decoration:underline}
+.upload-zone{border:2px dashed var(--border2);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:border .15s;color:var(--text3);font-size:12px}
+.upload-zone:hover{border-color:var(--accent);color:var(--accent)}
+.upload-zone input{display:none}
+.estoque-qtd{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px}
+.qtd-ok{color:var(--green)}.qtd-baixo{color:var(--red)}.qtd-zero{color:var(--red)}
+.toner-cor-preto::before{background:#1f2937!important}
+.toner-cor-ciano::before{background:var(--cyan)!important}
+.toner-cor-magenta::before{background:#ec4899!important}
+.toner-cor-amarelo::before{background:var(--yellow)!important}
+.sec-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🖥️</div>
+    <h1>Inventário TI</h1>
+    <p class="version">v2.0 · SQLite</p>
+  </div>
+  <nav>
+    <div class="nav-label">Geral</div>
+    <div class="nav-item active" data-page="dashboard"><span class="icon">📊</span> Dashboard</div>
+    <div class="nav-label">Celulares</div>
+    <div class="nav-item" data-page="celulares"><span class="icon">📱</span> Celulares</div>
+    <div class="nav-item" data-page="celulares_ponto"><span class="icon">🕐</span> Cel. Ponto/Turma</div>
+    <div class="nav-label">Equipamentos</div>
+    <div class="nav-item" data-page="computadores"><span class="icon">💻</span> Notebooks / PCs</div>
+    <div class="nav-item" data-page="impressoras"><span class="icon">🖨️</span> Impressoras</div>
+    <div class="nav-item" data-page="estabilizadores"><span class="icon">🔌</span> Estabilizadores</div>
+    <div class="nav-item" data-page="starlink"><span class="icon">🛰️</span> Antenas Starlink</div>
+    <div class="nav-label">Estoque</div>
+    <div class="nav-item" data-page="estoque"><span class="icon">📦</span> Estoque Geral</div>
+    <div class="nav-item" data-page="toners"><span class="icon">🖨️</span> Toner / Impressoras</div>
+    <div class="nav-label">Operações</div>
+    <div class="nav-item" data-page="manutencoes"><span class="icon">🔧</span> Manutenções <span class="nav-badge" id="badge-man" style="display:none">0</span></div>
+    <div class="nav-item" data-page="descartes"><span class="icon">🗑️</span> Descartes</div>
+    <div class="nav-item" data-page="transferencias"><span class="icon">🔄</span> Transferências</div>
+    <div class="nav-item" data-page="historico"><span class="icon">📜</span> Histórico</div>
+  </nav>
+  <div class="sidebar-footer"><div class="version">localhost:5000</div></div>
+</div>
+
+<div id="main">
+  <div id="topbar">
+    <h2 id="page-title">Dashboard</h2>
+    <div class="search-wrap">
+      <span class="s-icon">🔍</span>
+      <input type="text" id="global-search" placeholder="Buscar ativo..." autocomplete="off">
+      <div id="search-results"></div>
+    </div>
+    <button class="btn btn-primary" id="btn-new" style="display:none" onclick="openNew()">+ Novo</button>
+  </div>
+
+  <div id="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stat-grid" id="dash-stats"></div>
+      <div class="grid-2">
+        <div class="table-card"><div class="table-header"><h3>⚡ Atividade Recente</h3></div><div style="padding:6px 18px 14px" id="dash-activity"></div></div>
+        <div class="table-card"><div class="table-header"><h3>🔧 Manutenções Abertas</h3></div><div style="padding:6px 18px 14px" id="dash-manut"></div></div>
+      </div>
+    </div>
+
+    <!-- CELULARES -->
+    <div class="page" id="page-celulares">
+      <div class="table-card">
+        <div class="table-header"><h3>📱 Celulares</h3>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterTable('celulares','',this)">Todos</button>
+            <button class="filter-btn" onclick="filterTable('celulares','Ativo',this)">Ativos</button>
+            <button class="filter-btn" onclick="filterTable('celulares','Manutenção',this)">Manutenção</button>
+            <button class="filter-btn" onclick="filterTable('celulares','Inativo',this)">Inativos</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('celulares')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>ID Ativo</th><th>Fazenda</th><th>Setor</th><th>Responsável</th><th>Modelo</th><th>Número</th><th>Status</th><th>Termo</th><th>Ações</th></tr></thead>
+          <tbody id="tb-celulares"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- CELULARES PONTO -->
+    <div class="page" id="page-celulares_ponto">
+      <div class="table-card">
+        <div class="table-header"><h3>🕐 Celulares Ponto / Turma</h3>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterTable('celulares_ponto','',this)">Todos</button>
+            <button class="filter-btn" onclick="filterTable('celulares_ponto','Ativo',this)">Ativos</button>
+            <button class="filter-btn" onclick="filterTable('celulares_ponto','Manutenção',this)">Manutenção</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('celulares_ponto')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>ID Ativo</th><th>Fazenda</th><th>Função</th><th>Responsável</th><th>Nº Turma</th><th>Modelo</th><th>Status</th><th>Gmail ClockIn</th><th>Termo</th><th>Ações</th></tr></thead>
+          <tbody id="tb-celulares_ponto"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- COMPUTADORES -->
+    <div class="page" id="page-computadores">
+      <div class="table-card">
+        <div class="table-header"><h3>💻 Notebooks / Computadores</h3>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterTable('computadores','',this)">Todos</button>
+            <button class="filter-btn" onclick="filterTable('computadores','Ativo',this)">Ativos</button>
+            <button class="filter-btn" onclick="filterTable('computadores','Manutenção',this)">Manutenção</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('computadores')">⬇ CSV</button>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('input-import-coleta').click()">📥 Importar Coleta</button>
+          <input type="file" id="input-import-coleta" style="display:none" accept=".txt" onchange="handleColetaImport(this)">
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>ID Ativo</th><th>Fazenda</th><th>Responsável</th><th>Tipo</th><th>Marca</th><th>Modelo</th><th>Status</th><th>Termo</th><th>Ações</th></tr></thead>
+          <tbody id="tb-computadores"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- IMPRESSORAS -->
+    <div class="page" id="page-impressoras">
+      <div class="table-card">
+        <div class="table-header"><h3>🖨️ Impressoras</h3>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterTable('impressoras','',this)">Todos</button>
+            <button class="filter-btn" onclick="filterTable('impressoras','Ativo',this)">Ativos</button>
+            <button class="filter-btn" onclick="filterTable('impressoras','Manutenção',this)">Manutenção</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('impressoras')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>ID Ativo</th><th>Fazenda</th><th>Setor</th><th>Marca</th><th>Modelo</th><th>IP Rede</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="tb-impressoras"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ESTABILIZADORES -->
+    <div class="page" id="page-estabilizadores">
+      <div class="table-card">
+        <div class="table-header"><h3>🔌 Estabilizadores / Nobreakes</h3>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterTable('estabilizadores','',this)">Todos</button>
+            <button class="filter-btn" onclick="filterTable('estabilizadores','Ativo',this)">Ativos</button>
+            <button class="filter-btn" onclick="filterTable('estabilizadores','Inativo',this)">Inativos</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('estabilizadores')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>ID Ativo</th><th>Fazenda</th><th>Setor</th><th>Modelo</th><th>Uso</th><th>Nº Série</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="tb-estabilizadores"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- STARLINK -->
+    <div class="page" id="page-starlink">
+      <div class="table-card">
+        <div class="table-header"><h3>🛰️ Antenas Starlink</h3>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterTable('starlink','',this)">Todos</button>
+            <button class="filter-btn" onclick="filterTable('starlink','Ativo',this)">Ativos</button>
+            <button class="filter-btn" onclick="filterTable('starlink','Inativo',this)">Inativos</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('starlink')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>ID Ativo</th><th>Fazenda</th><th>Setor</th><th>Responsável</th><th>Modelo</th><th>Nº Série</th><th>IP Rede</th><th>Plano</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="tb-starlink"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ESTOQUE -->
+    <div class="page" id="page-estoque">
+      <div class="table-card">
+        <div class="table-header"><h3>📦 Estoque Geral</h3>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('estoque')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Item</th><th>Cód. Pedido</th><th>Qtd</th><th>Unidade</th><th>Localização</th><th>Ações</th></tr></thead>
+          <tbody id="tb-estoque"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- TONERS -->
+    <div class="page" id="page-toners">
+      <div class="table-card">
+        <div class="table-header"><h3>🖨️ Controle de Toner</h3>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('toners')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Impressora</th><th>Modelo Toner</th><th>Cor</th><th>Estoque</th><th>Qtd Mín.</th><th>Última Troca</th><th>Ações</th></tr></thead>
+          <tbody id="tb-toners"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- MANUTENÇÕES -->
+    <div class="page" id="page-manutencoes">
+      <div class="table-card">
+        <div class="table-header"><h3>🔧 Manutenções</h3>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterManut('',this)">Todas</button>
+            <button class="filter-btn" onclick="filterManut('Aberta',this)">Abertas</button>
+            <button class="filter-btn" onclick="filterManut('Em Análise',this)">Em Análise</button>
+            <button class="filter-btn" onclick="filterManut('Aguardando Peça',this)">Aguardando</button>
+            <button class="filter-btn" onclick="filterManut('Concluída',this)">Concluídas</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('manutencoes')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>ID</th><th>Ativo</th><th>Tipo</th><th>Modelo</th><th>Problema</th><th>Recebimento</th><th>OS</th><th>Orçamento</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="tb-manutencoes"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- DESCARTES -->
+    <div class="page" id="page-descartes">
+      <div class="table-card">
+        <div class="table-header"><h3>🗑️ Descartes</h3>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('descartes')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>ID Ativo</th><th>Tipo</th><th>Modelo</th><th>Motivo</th><th>Data</th><th>Responsável</th><th>Forma</th></tr></thead>
+          <tbody id="tb-descartes"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- TRANSFERÊNCIAS -->
+    <div class="page" id="page-transferencias">
+      <div class="table-card">
+        <div class="table-header"><h3>🔄 Histórico de Transferências</h3>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('transferencias')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Ativo</th><th>Tipo</th><th>Origem</th><th>Destino</th><th>Motivo</th><th>Data</th><th>Registrado Por</th></tr></thead>
+          <tbody id="tb-transferencias"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- HISTORICO -->
+    <div class="page" id="page-historico">
+      <div class="table-card">
+        <div class="table-header"><h3>📜 Histórico Geral</h3>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('historico')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>ID</th><th>Ativo</th><th>Equipamento</th><th>Ação</th><th>Campo</th><th>Alteração</th><th>DataHora</th><th>Usuário</th></tr></thead>
+          <tbody id="tb-historico"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modal-title">Modal</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="modal-save" onclick="saveModal()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let currentPage = 'dashboard';
+let modalCtx = {};
+let filterState = {};
+let siglas = { tipo:{}, local:{}, setor:{} };
+
+async function loadSiglas() {
+  const data = await api('/api/utils/siglas');
+  if (data && !data.msg) {
+    siglas = data;
+  }
+}
+loadSiglas();
+
+// ─── NAV ───────────────────────────────────────────────────────────────────
+document.querySelectorAll('.nav-item[data-page]').forEach(el => {
+  el.addEventListener('click', () => showPage(el.dataset.page));
+});
+
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+  currentPage = page;
+  const titles = {dashboard:'Dashboard',celulares:'Celulares',celulares_ponto:'Celulares Ponto / Turma',
+    computadores:'Notebooks / Computadores',impressoras:'Impressoras',estabilizadores:'Estabilizadores / Nobreakes',
+    starlink:'Antenas Starlink',estoque:'Estoque Geral',toners:'Controle de Toner',
+    manutencoes:'Manutenções',descartes:'Descartes',transferencias:'Transferências',historico:'Histórico de Transações'};
+  document.getElementById('page-title').textContent = titles[page] || page;
+  const noNew = ['dashboard','descartes','historico'];
+  const btn = document.getElementById('btn-new');
+  btn.style.display = noNew.includes(page) ? 'none' : '';
+  const lbls = {celulares:'+ Celular',celulares_ponto:'+ Cel. Ponto',computadores:'+ Computador',
+    impressoras:'+ Impressora',estabilizadores:'+ Estabilizador',starlink:'+ Starlink',
+    estoque:'+ Item',toners:'+ Toner',manutencoes:'+ Manutenção',transferencias:'+ Transferência'};
+  btn.textContent = lbls[page] || '+ Novo';
+  loadPage(page);
+}
+
+function loadPage(page) {
+  const loaders = {dashboard:loadDashboard,celulares:loadCelulares,celulares_ponto:loadCelularesPonto,
+    computadores:loadComputadores,impressoras:loadImpressoras,estabilizadores:loadEstabilizadores,
+    starlink:loadStarlink,estoque:loadEstoque,toners:loadToners,manutencoes:loadManutencoes,
+    descartes:loadDescartes,transferencias:loadTransferencias,historico:loadHistorico};
+  loaders[page]?.();
+}
+
+function filterTable(type, status, btn) {
+  filterState[type] = status;
+  document.querySelectorAll(`#page-${type} .filter-btn`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active'); loadPage(type);
+}
+function filterManut(status, btn) {
+  filterState.manutencoes = status;
+  document.querySelectorAll('#page-manutencoes .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active'); loadManutencoes();
+}
+
+// ─── API ───────────────────────────────────────────────────────────────────
+async function api(path, method='GET', body=null) {
+  try {
+    const opts = {method, headers:{'Content-Type':'application/json'}};
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(path, opts);
+    return await r.json();
+  } catch (err) {
+    console.error("Erro na API:", err);
+    return { ok: false, msg: "Erro de processamento (500). Verifique os campos ou logs." };
+  }
+}
+
+async function triggerIdSuggestion() {
+  const { mode, type } = modalCtx;
+  if (mode !== 'new') return;
+
+  const form = document.getElementById('modal-form');
+  if (!form) return;
+
+  // Mapeamento de tipo de página para sigla de tipo do id_generator
+  const typeMap = {
+    celulares: 'CL',
+    celulares_ponto: 'CL',
+    computadores: form.querySelector('[name="tipo"]')?.value === 'Desktop' ? 'DK' : 'NT',
+    impressoras: 'IMP',
+    estabilizadores: 'EST',
+    starlink: 'STL'
+  };
+
+  const tipo = typeMap[type];
+  const localVal = form.querySelector('[name="fazenda"]')?.value || '';
+  const setorVal = form.querySelector('[name="setor"]')?.value || '';
+
+  // Procura a sigla correspondente ao texto digitado (ex: "Tangará" -> "TNG")
+  const findSigla = (val, dict) => {
+    if (!val) return null;
+    const entry = Object.entries(dict).find(([s, n]) => 
+      s.toLowerCase() === val.toLowerCase() || n.toLowerCase() === val.toLowerCase()
+    );
+    return entry ? entry[0] : null;
+  };
+
+  const local = findSigla(localVal, siglas.local);
+  const setor = findSigla(setorVal, siglas.setor) || (type === 'celulares_ponto' ? 'PTO' : null);
+
+  if (tipo && local && setor) {
+    const res = await api(`/api/utils/gerar-id?tipo=${tipo}&local=${local}&setor=${setor}`);
+    if (res.ok && res.id_sugerido) {
+      const idInput = form.querySelector('[name="id_ativo"]');
+      if (idInput) idInput.value = res.id_sugerido;
+    }
+  }
+}
+
+async function handleColetaImport(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('/api/utils/parse-coleta', { method: 'POST', body: formData });
+    const result = await res.json();
+    if (result.ok) {
+      console.log('Dados processados pelo backend:', result.data);
+      toast('Dados importados com sucesso! Verifique o formulário.', 'success');
+      openComputadorModal(result.data);
+    } else {
+      toast(result.msg || 'Erro ao importar arquivo', 'error');
+    }
+  } catch (err) {
+    toast('Erro de conexão ao importar', 'error');
+  }
+  input.value = ''; // Reset input
+}
+
+// ─── DASHBOARD ─────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const d = await api('/api/dashboard'); const eq = d.equipamentos;
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card blue"><div class="stat-label">📱 Celulares</div><div class="stat-val">${eq.celulares.total}</div><div class="stat-sub">${eq.celulares.ativos} ativos</div></div>
+    <div class="stat-card cyan"><div class="stat-label">🕐 Cel. Ponto</div><div class="stat-val">${eq.celulares_ponto.total}</div><div class="stat-sub">${eq.celulares_ponto.ativos} ativos</div></div>
+    <div class="stat-card green"><div class="stat-label">💻 Notebooks/PCs</div><div class="stat-val">${eq.computadores.total}</div><div class="stat-sub">${eq.computadores.ativos} ativos</div></div>
+    <div class="stat-card yellow"><div class="stat-label">🖨️ Impressoras</div><div class="stat-val">${eq.impressoras.total}</div><div class="stat-sub">${eq.impressoras.ativos} ativas</div></div>
+    <div class="stat-card purple"><div class="stat-label">🔌 Estabilizadores</div><div class="stat-val">${eq.estabilizadores.total}</div><div class="stat-sub">${eq.estabilizadores.ativos} ativos</div></div>
+    <div class="stat-card cyan"><div class="stat-label">🛰️ Starlink</div><div class="stat-val">${eq.starlink.total}</div><div class="stat-sub">${eq.starlink.ativos} ativas</div></div>
+    <div class="stat-card orange"><div class="stat-label">🔧 Manutenções</div><div class="stat-val">${d.manutencoes_abertas}</div><div class="stat-sub">em aberto</div></div>
+    <div class="stat-card ${d.toner_alerta>0?'red':'green'}"><div class="stat-label">🖨️ Toners</div><div class="stat-val">${d.toner_alerta}</div><div class="stat-sub">${d.toner_alerta>0?'⚠️ Estoque baixo':'Estoque OK'}</div></div>
+    <div class="stat-card blue"><div class="stat-label">📦 Itens Estoque</div><div class="stat-val">${d.estoque_itens}</div><div class="stat-sub">itens cadastrados</div></div>`;
+  const b = document.getElementById('badge-man');
+  if (d.manutencoes_abertas > 0) { b.style.display=''; b.textContent=d.manutencoes_abertas; } else b.style.display='none';
+  document.getElementById('dash-activity').innerHTML = d.atividade_recente.length
+    ? d.atividade_recente.map(a=>`<div class="activity-item"><div class="activity-dot"></div><div class="activity-text"><strong>${a.id_ativo||'—'}</strong> · ${a.acao} · ${a.tipo_equipamento||''}</div><div class="activity-time">${(a.data_hora||'').substring(0,16).replace('T',' ')}</div></div>`).join('')
+    : '<div class="empty"><div class="empty-icon">📋</div><p>Sem atividade</p></div>';
+  const mn = await api('/api/manutencoes?status=Aberta');
+  document.getElementById('dash-manut').innerHTML = mn.length
+    ? mn.slice(0,5).map(m=>`<div class="activity-item"><div class="activity-dot" style="background:var(--yellow)"></div><div class="activity-text"><strong>${m.id_ativo}</strong> · ${m.modelo||'—'}</div><div class="activity-time">${statusBadge(m.status)}</div></div>`).join('')
+    : '<div class="empty"><div class="empty-icon">✅</div><p>Nenhuma aberta</p></div>';
+}
+
+// ─── STATUS / HELPERS ──────────────────────────────────────────────────────
+function statusBadge(s) {
+  const map={Ativo:'badge-ativo',Inativo:'badge-inativo','Manutenção':'badge-manut',Descartado:'badge-desc',
+    Aberta:'badge-aberta','Concluída':'badge-concluida','Em Análise':'badge-analise','Aguardando Peça':'badge-aguardando',Cancelada:'badge-inativo'};
+  return `<span class="badge ${map[s]||'badge-inativo'}">${s||'—'}</span>`;
+}
+function pdfLink(filename) {
+  if (!filename) return '<span style="color:var(--text3);font-size:11px">—</span>';
+  return `<a class="pdf-link" href="/termos/${filename}" target="_blank">📄 Ver PDF</a>`;
+}
+function uploadBtn(tipo, id_ativo) {
+  return `<button class="btn btn-ghost btn-xs" onclick="uploadPDF('${tipo}','${encodeURIComponent(id_ativo)}')">📎</button>`;
+}
+
+// ─── CELULARES ─────────────────────────────────────────────────────────────
+async function loadCelulares() {
+  const rows = await api(`/api/celulares?status=${filterState.celulares||''}`);
+  const tb = document.getElementById('tb-celulares');
+  if (!rows.length) { tb.innerHTML=emptyRow(9,'Nenhum celular cadastrado','📱'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">${r.id_ativo}</td><td>${r.fazenda||'—'}</td><td>${r.setor||'—'}</td>
+    <td class="td-bold">${r.responsavel||'—'}</td><td>${r.modelo||'—'}</td><td>${r.numero||'—'}</td>
+    <td>${statusBadge(r.status)}</td><td>${pdfLink(r.termo_pdf)}</td>
+    <td><div class="tbl-actions">
+      <button class="btn btn-ghost btn-xs" onclick="editItem('celulares','${r.id_ativo}')">✏️</button>
+      ${uploadBtn('celular', r.id_ativo)}
+      <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Celular','${r.modelo||''}')">🔧</button>
+      <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Celular','${r.modelo||''}')">🗑️</button>
+    </div></td></tr>`).join('');
+}
+
+async function loadCelularesPonto() {
+  const rows = await api(`/api/celulares_ponto?status=${filterState.celulares_ponto||''}`);
+  const tb = document.getElementById('tb-celulares_ponto');
+  if (!rows.length) { tb.innerHTML=emptyRow(10,'Nenhum celular de ponto cadastrado','🕐'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">${r.id_ativo}</td><td>${r.fazenda||'—'}</td><td>${r.funcao||'—'}</td>
+    <td class="td-bold">${r.responsavel||'—'}</td><td>${r.num_turma||'—'}</td>
+    <td>${r.modelo||'—'}</td><td>${statusBadge(r.status)}</td><td>${r.gmail_clockin||'—'}</td>
+    <td>${pdfLink(r.termo_pdf)}</td>
+    <td><div class="tbl-actions">
+      <button class="btn btn-ghost btn-xs" onclick="editItem('celulares_ponto','${r.id_ativo}')">✏️</button>
+      ${uploadBtn('celular_ponto', r.id_ativo)}
+      <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Celular Ponto','${r.modelo||''}')">🔧</button>
+      <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Celular Ponto','${r.modelo||''}')">🗑️</button>
+    </div></td></tr>`).join('');
+}
+
+async function loadComputadores() {
+  const rows = await api(`/api/computadores?status=${filterState.computadores||''}`);
+  const tb = document.getElementById('tb-computadores');
+  if (!rows.length) { tb.innerHTML=emptyRow(9,'Nenhum computador cadastrado','💻'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">${r.id_ativo}</td><td>${r.fazenda||'—'}</td>
+    <td class="td-bold">${r.responsavel||'—'}</td><td>${r.tipo||'—'}</td>
+    <td>${r.marca||'—'}</td><td>${r.modelo||'—'}</td>
+    <td>${statusBadge(r.status)}</td><td>${pdfLink(r.termo_pdf)}</td>
+    <td><div class="tbl-actions">
+      <button class="btn btn-ghost btn-xs" onclick="editItem('computadores','${r.id_ativo}')">✏️</button>
+      ${uploadBtn('computador', r.id_ativo)}
+      <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Computador','${r.modelo||''}')">🔧</button>
+      <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Computador','${r.modelo||''}')">🗑️</button>
+    </div></td></tr>`).join('');
+}
+
+async function loadImpressoras() {
+  const rows = await api(`/api/impressoras?status=${filterState.impressoras||''}`);
+  const tb = document.getElementById('tb-impressoras');
+  if (!rows.length) { tb.innerHTML=emptyRow(8,'Nenhuma impressora cadastrada','🖨️'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">${r.id_ativo}</td><td>${r.fazenda||'—'}</td><td>${r.setor||'—'}</td>
+    <td>${r.marca||'—'}</td><td>${r.modelo||'—'}</td><td>${r.ip_rede||'—'}</td>
+    <td>${statusBadge(r.status)}</td>
+    <td><div class="tbl-actions">
+      <button class="btn btn-ghost btn-xs" onclick="editItem('impressoras','${r.id_ativo}')">✏️</button>
+      <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Impressora','${r.modelo||''}')">🔧</button>
+      <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Impressora','${r.modelo||''}')">🗑️</button>
+    </div></td></tr>`).join('');
+}
+
+async function loadEstabilizadores() {
+  const rows = await api(`/api/estabilizadores?status=${filterState.estabilizadores||''}`);
+  const tb = document.getElementById('tb-estabilizadores');
+  if (!rows.length) { tb.innerHTML=emptyRow(8,'Nenhum estabilizador cadastrado','🔌'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">${r.id_ativo}</td><td>${r.fazenda||'—'}</td><td>${r.setor||'—'}</td>
+    <td>${r.modelo||'—'}</td><td>${r.uso||'—'}</td><td>${r.num_serie||'—'}</td>
+    <td>${statusBadge(r.status)}</td>
+    <td><div class="tbl-actions">
+      <button class="btn btn-ghost btn-xs" onclick="editItem('estabilizadores','${r.id_ativo}')">✏️</button>
+      <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Estabilizador','${r.modelo||''}')">🗑️</button>
+    </div></td></tr>`).join('');
+}
+
+async function loadStarlink() {
+  const rows = await api(`/api/starlink?status=${filterState.starlink||''}`);
+  const tb = document.getElementById('tb-starlink');
+  if (!rows.length) { tb.innerHTML=emptyRow(10,'Nenhuma antena cadastrada','🛰️'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">${r.id_ativo}</td><td>${r.fazenda||'—'}</td><td>${r.setor||'—'}</td>
+    <td class="td-bold">${r.responsavel||'—'}</td><td>${r.modelo||'—'}</td><td>${r.num_serie||'—'}</td>
+    <td>${r.ip_rede||'—'}</td><td>${r.plano||'—'}</td><td>${statusBadge(r.status)}</td>
+    <td><div class="tbl-actions">
+      <button class="btn btn-ghost btn-xs" onclick="editItem('starlink','${r.id_ativo}')">✏️</button>
+      <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Starlink','${r.modelo||''}')">🔧</button>
+    </div></td></tr>`).join('');
+}
+
+async function loadEstoque() {
+  const rows = await api('/api/estoque');
+  const tb = document.getElementById('tb-estoque');
+  if (!rows.length) { tb.innerHTML=emptyRow(6,'Nenhum item no estoque','📦'); return; }
+  tb.innerHTML = rows.map(r=>{
+    const cls = r.quantidade === 0 ? 'qtd-zero' : r.quantidade <= 2 ? 'qtd-baixo' : 'qtd-ok';
+    return `<tr>
+      <td class="td-bold">${r.item}</td><td class="td-id">${r.cod_pedido||'—'}</td>
+      <td><span class="estoque-qtd ${cls}">${r.quantidade}</span> ${r.unidade}</td>
+      <td>${r.unidade}</td><td>${r.localizacao||'—'}</td>
+      <td><div class="tbl-actions">
+        <button class="btn btn-success btn-xs" onclick="movimentarEstoque(${r.id},'entrada','${r.item}')">+ Entrada</button>
+        <button class="btn btn-danger btn-xs" onclick="movimentarEstoque(${r.id},'saida','${r.item}')">− Saída</button>
+        <button class="btn btn-ghost btn-xs" onclick="editEstoque(${r.id})">✏️</button>
+        <button class="btn btn-ghost btn-xs" onclick="verHistoricoEstoque(${r.id},'${r.item}')">📋</button>
+      </div></td></tr>`;
+  }).join('');
+}
+
+async function loadToners() {
+  const rows = await api('/api/toners');
+  const tb = document.getElementById('tb-toners');
+  if (!rows.length) { tb.innerHTML=emptyRow(7,'Nenhum toner cadastrado','🖨️'); return; }
+  tb.innerHTML = rows.map(r=>{
+    const baixo = r.quantidade_estoque <= r.quantidade_minima;
+    const cls = r.quantidade_estoque === 0 ? 'qtd-zero' : baixo ? 'qtd-baixo' : 'qtd-ok';
+    return `<tr>
+      <td class="td-bold">${r.modelo_impressora}</td>
+      <td class="td-id">${r.modelo_toner}</td>
+      <td><span class="badge badge-ativo" style="background:transparent">${r.cor}</span></td>
+      <td><span class="estoque-qtd ${cls}">${r.quantidade_estoque}</span> ${baixo?'<span class="badge badge-baixo">⚠️ Baixo</span>':''}</td>
+      <td>${r.quantidade_minima}</td>
+      <td>${r.data_ultima_troca||'—'}</td>
+      <td><div class="tbl-actions">
+        <button class="btn btn-warn btn-xs" onclick="registrarTroca(${r.id},'${r.modelo_impressora}','${r.modelo_toner}',${r.quantidade_estoque})">🔄 Troca</button>
+        <button class="btn btn-ghost btn-xs" onclick="editToner(${r.id})">✏️</button>
+        <button class="btn btn-ghost btn-xs" onclick="verHistoricoToner(${r.id},'${r.modelo_toner}')">📋</button>
+      </div></td></tr>`;
+  }).join('');
+}
+
+async function loadManutencoes() {
+  const rows = await api(`/api/manutencoes?status=${filterState.manutencoes||''}`);
+  const tb = document.getElementById('tb-manutencoes');
+  if (!rows.length) { tb.innerHTML=emptyRow(10,'Nenhuma manutenção','🔧'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">#${r.id}</td><td class="td-bold">${r.id_ativo}</td>
+    <td><span class="badge badge-analise">${r.tipo_equipamento}</span></td>
+    <td>${r.modelo||'—'}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.problema_relatado||''}">${r.problema_relatado||'—'}</td>
+    <td>${r.data_recebimento||'—'}</td><td>${r.os_manutencao||'—'}</td>
+    <td>${r.orcamento?'R$ '+Number(r.orcamento).toFixed(2):'—'}</td>
+    <td>${statusBadge(r.status)}</td>
+    <td><button class="btn btn-ghost btn-xs" onclick="editManut(${r.id})">✏️</button></td></tr>`).join('');
+}
+
+async function loadDescartes() {
+  const rows = await api('/api/descartes');
+  const tb = document.getElementById('tb-descartes');
+  if (!rows.length) { tb.innerHTML=emptyRow(7,'Nenhum descarte registrado','🗑️'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">${r.id_ativo}</td><td>${r.tipo_equipamento}</td><td>${r.modelo||'—'}</td>
+    <td>${r.motivo||'—'}</td><td>${r.data_descarte||'—'}</td>
+    <td>${r.responsavel_descarte||'—'}</td><td>${r.forma_descarte||'—'}</td></tr>`).join('');
+}
+
+async function loadTransferencias() {
+  const rows = await api('/api/transferencias');
+  const tb = document.getElementById('tb-transferencias');
+  if (!rows.length) { tb.innerHTML=emptyRow(7,'Nenhuma transferência registrada','🔄'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">${r.id_ativo}</td><td>${r.tipo_equipamento}</td>
+    <td>${r.responsavel_origem||'Estoque'}</td><td class="td-bold">${r.responsavel_destino||'Estoque'}</td>
+    <td>${r.motivo||'—'}</td><td>${(r.data_transferencia||'').substring(0,10)}</td>
+    <td>${r.registrado_por||'—'}</td></tr>`).join('');
+}
+
+async function loadHistorico() {
+  const rows = await api('/api/historico');
+  const tb = document.getElementById('tb-historico');
+  if (!rows.length) { tb.innerHTML=emptyRow(8,'Nenhum evento registrado','📜'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">#${r.id}</td><td class="td-bold">${r.id_ativo||'—'}</td>
+    <td>${r.tipo_equipamento||'—'}</td><td><span class="badge ${r.acao.includes('Cadastro')?'badge-entrada':r.acao.includes('Edição')?'badge-manut':'badge-inativo'}">${r.acao}</span></td>
+    <td>${r.campo_alterado||'—'}</td>
+    <td style="font-size:11px"><span style="color:var(--text3)">${r.valor_anterior||''}</span> <span style="color:var(--accent)">${r.valor_anterior&&r.valor_novo?'→':''}</span> <span>${r.valor_novo||''}</span></td>
+    <td style="font-size:11.5px;color:var(--text2)">${(r.data_hora||'').replace('T',' ').substring(0,19)}</td>
+    <td>${r.usuario||'Sistema'}</td>
+  </tr>`).join('');
+}
+
+function emptyRow(cols, msg, icon) {
+  return `<tr><td colspan="${cols}"><div class="empty"><div class="empty-icon">${icon}</div><p>${msg}</p></div></td></tr>`;
+}
+
+// ─── MODAL ─────────────────────────────────────────────────────────────────
+function openModal(title, bodyHtml, ctx, showSave=true) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHtml;
+  document.getElementById('modal-save').style.display = showSave ? '' : 'none';
+  modalCtx = ctx;
+  document.getElementById('modal-backdrop').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-backdrop').classList.remove('open'); }
+document.getElementById('modal-backdrop').addEventListener('click', e => { if (e.target===e.currentTarget) closeModal(); });
+
+async function saveModal() {
+  const {type, mode, id} = modalCtx;
+  const form = document.getElementById('modal-form');
+  if (!form) return;
+  if (!form.reportValidity()) return;
+  const data = {};
+  form.querySelectorAll('[name]').forEach(el => { 
+    data[el.name] = el.value === "" ? null : el.value; 
+  });
+  let res;
+  if (type === 'manutencao') res = mode==='new' ? await api('/api/manutencoes','POST',data) : await api(`/api/manutencoes/${id}`,'PUT',data);
+  else if (type === 'descarte') res = await api('/api/descartes','POST',data);
+  else if (type === 'estoque') {
+    if (mode === 'new') res = await api('/api/estoque','POST',data);
+    else res = await api(`/api/estoque/${id}`,'PUT',data);
+  } else if (type === 'toner') {
+    if (mode === 'new') res = await api('/api/toners','POST',data);
+    else res = await api(`/api/toners/${id}`,'PUT',data);
+  } else {
+    res = mode==='new' ? await api(`/api/${type}`,'POST',data) : await api(`/api/${type}/${id}`,'PUT',data);
+  }
+  if (res.ok) { toast(res.msg,'success'); closeModal(); loadPage(currentPage); }
+  else toast(res.msg||'Erro ao salvar','error');
+}
+
+function openNew() {
+  const page = currentPage;
+  const map = {celulares:()=>openCelularModal(null),celulares_ponto:()=>openCelularPontoModal(null),
+    computadores:()=>openComputadorModal(null),impressoras:()=>openImpressoraModal(null),
+    estabilizadores:()=>openEstabilizadorModal(null),starlink:()=>openStarlinkModal(null),
+    estoque:()=>openEstoqueModal(null),toners:()=>openTonerModal(null),
+    manutencoes:()=>openManutModal(null),descartes:()=>openDescarteModal(null),
+    transferencias:()=>openTransferenciaModal(null)};
+  map[page]?.();
+}
+
+async function editItem(type, id) {
+  const data = await api(`/api/${type}/${id}`);
+  const map = {celulares:openCelularModal,celulares_ponto:openCelularPontoModal,
+    computadores:openComputadorModal,impressoras:openImpressoraModal,
+    estabilizadores:openEstabilizadorModal,starlink:openStarlinkModal};
+  map[type]?.(data);
+}
+async function editManut(id) { openManutModal(await api(`/api/manutencoes/${id}`)); }
+async function editEstoque(id) { openEstoqueModal(await api(`/api/estoque/${id}`)); }
+async function editToner(id) { openTonerModal(await api(`/api/toners/${id}`)); }
+
+// ─── FORMS ─────────────────────────────────────────────────────────────────
+const st = (f,d,opts,onchange='') => {
+  const options = Array.isArray(opts) ? opts : Object.entries(opts).map(([k,v])=>({v:k, l:v}));
+  return `<select name="${f}" ${onchange?`onchange="${onchange}"`:''}>
+    <option value="">Selecione...</option>
+    ${options.map(o => {
+      const val = typeof o === 'string' ? o : o.v;
+      const lbl = typeof o === 'string' ? o : o.l;
+      return `<option value="${val}" ${(d?.[f]||'')==val?'selected':''}>${lbl}</option>`;
+    }).join('')}
+  </select>`;
+};
+const inp = (f,d,ph='',type='text',ro=false) => `<input type="${type}" name="${f}" value="${d?.[f]||''}" placeholder="${ph}" ${ro?'readonly':''}>`; 
+const fld = (label, html) => `<div class="form-group"><label>${label}</label>${html}</div>`;
+
+function commonCelFields(d) {
+  return `
+    ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="CL-XXX-XXX-01">`)}
+    ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado']))}
+    ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
+    ${fld('Setor', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
+    ${fld('Tipo', `<input name="tipo" value="${d?.tipo||''}" placeholder="Smartphone, Tablet...">`)}
+    ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}" placeholder="Samsung Galaxy A54">`)}
+    ${fld('Número', `<input name="numero" value="${d?.numero||''}" placeholder="(16) 99999-1234">`)}
+    ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
+    ${fld('IMEI 1', `<input name="imei_1" value="${d?.imei_1||''}" placeholder="000000000000000">`)}
+    ${fld('IMEI 2', `<input name="imei_2" value="${d?.imei_2||''}" placeholder="000000000000000">`)}
+    ${fld('Nº Série', `<input name="num_serie" value="${d?.num_serie||''}">`)}
+    ${fld('Armazenamento', `<input name="armazenamento" value="${d?.armazenamento||''}" placeholder="128GB">`)}
+    ${fld('Carregador', st('carregador',d,['Sim','Não']))}
+    ${fld('Uso Celular', `<input name="uso_celular" value="${d?.uso_celular||''}" placeholder="Corporativo...">`)}
+    ${fld('Termo Assinado', st('termo_assinado',d,['Sim','Não']))}
+    ${fld('Data Entrega', `<input type="date" name="data_entrega" value="${d?.data_entrega||''}">`)}
+    ${fld('Data Devolução', `<input type="date" name="data_devolucao" value="${d?.data_devolucao||''}">`)}
+    ${fld('Usuário Anterior', `<input name="usuario_anterior" value="${d?.usuario_anterior||''}">`)}`;
+}
+
+function openCelularModal(d) {
+  const html = `<form id="modal-form">
+    <div class="form-section"><h4>📋 Celular</h4><div class="form-grid">
+      ${commonCelFields(d)}
+      ${fld('Gmail', `<input name="gmail" value="${d?.gmail||''}" placeholder="usuario@gmail.com">`)}
+      ${fld('Senha Gmail', `<input name="senha" value="${d?.senha||''}">`)}
+    </div></div></form>`;
+  openModal(d ? `Editar Celular — ${d.id_ativo}` : 'Cadastrar Celular', html, {type:'celulares',mode:d?'edit':'new',id:d?.id_ativo});
+}
+
+function openCelularPontoModal(d) {
+  const html = `<form id="modal-form">
+    <div class="form-section"><h4>🕐 Celular Ponto / Turma</h4><div class="form-grid">
+      ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="CL-XXX-PTO-01">`)}
+      ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado']))}
+      ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
+      <input type="hidden" name="setor" value="PTO">
+      ${fld('Função', `<input name="funcao" value="${d?.funcao||''}" placeholder="Operador, Supervisor...">`)}
+      ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
+      ${fld('Nº Turma', `<input name="num_turma" value="${d?.num_turma||''}" placeholder="Turma 01">`)}
+      ${fld('Tipo', `<input name="tipo" value="${d?.tipo||''}" placeholder="Smartphone">`)}
+      ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}" placeholder="Samsung A14">`)}
+      ${fld('Gmail ClockIn', `<input name="gmail_clockin" value="${d?.gmail_clockin||''}" placeholder="ponto@empresa.com">`)}
+      ${fld('Senha', `<input name="senha" value="${d?.senha||''}">`)}
+      ${fld('IMEI 1', `<input name="imei_1" value="${d?.imei_1||''}">`)}
+      ${fld('IMEI 2', `<input name="imei_2" value="${d?.imei_2||''}">`)}
+      ${fld('Nº Série', `<input name="num_serie" value="${d?.num_serie||''}">`)}
+      ${fld('Armazenamento', `<input name="armazenamento" value="${d?.armazenamento||''}" placeholder="64GB">`)}
+      ${fld('Carregador', st('carregador',d,['Sim','Não']))}
+      ${fld('Uso Celular', `<input name="uso_celular" value="${d?.uso_celular||''}">`)}
+      ${fld('Termo Assinado', st('termo_assinado',d,['Sim','Não']))}
+      ${fld('Data Entrega', `<input type="date" name="data_entrega" value="${d?.data_entrega||''}">`)}
+      ${fld('Data Devolução', `<input type="date" name="data_devolucao" value="${d?.data_devolucao||''}">`)}
+      ${fld('Usuário Anterior', `<input name="usuario_anterior" value="${d?.usuario_anterior||''}">`)}
+    </div></div></form>`;
+  openModal(d ? `Editar Cel. Ponto — ${d.id_ativo}` : 'Cadastrar Celular Ponto', html, {type:'celulares_ponto',mode:d?'edit':'new',id:d?.id_ativo});
+}
+
+function openComputadorModal(d) {
+  const isEdit = !!(d && d.id_ativo);
+  const html = `<form id="modal-form">
+    <div class="form-section"><h4>💻 Computador</h4><div class="form-grid">
+      ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${isEdit?'readonly':'required'} placeholder="NT-XXX-XXX-01">`)}
+      ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado']))}
+      ${fld('Tipo *', st('tipo',d,['Notebook','Desktop','All-in-One','Servidor','Workstation'],'triggerIdSuggestion()'))}
+      ${fld('Patrimônio', `<input name="patrimonio" value="${d?.patrimonio||''}">`)}
+      ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
+      ${fld('Setor *', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
+      ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
+      ${fld('Marca', `<input name="marca" value="${d?.marca||''}" placeholder="Dell, HP, Lenovo...">`)}
+      ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}">`)}
+      ${fld('Nº Série', `<input name="numero_serie" value="${d?.numero_serie||''}">`)}
+      ${fld('Processador', `<input name="processador" value="${d?.processador||''}" placeholder="Intel i5-1135G7">`)}
+      ${fld('Memória RAM', `<input name="memoria_ram" value="${d?.memoria_ram||''}" placeholder="8GB DDR4">`)}
+      ${fld('Armazenamento', `<input name="armazenamento" value="${d?.armazenamento||''}" placeholder="256GB SSD">`)}
+      ${fld('Sistema Operacional', `<input name="sistema_operacional" value="${d?.sistema_operacional||''}" placeholder="Windows 11">`)}
+      ${fld('Versão SO', `<input name="versao_so" value="${d?.versao_so||''}">`)}
+      ${fld('Usuário Windows', `<input name="usuario_windows" value="${d?.usuario_windows||''}">`)}
+      ${fld('Senha Windows', `<input name="senha_windows" value="${d?.senha_windows||''}">`)}
+      ${fld('Data Entrega', `<input type="date" name="data_entrega" value="${d?.data_entrega||''}">`)}
+      ${fld('Data Aquisição', `<input type="date" name="data_aquisicao" value="${d?.data_aquisicao||''}">`)}
+      ${fld('Termo Assinado', st('termo_assinado',d,['Sim','Não']))}
+      ${fld('Usuário Anterior', `<input name="usuario_anterior" value="${d?.usuario_anterior||''}">`)}
+      <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${d?.observacoes||''}</textarea>`)}</div>
+    </div></div></form>`;
+  openModal(isEdit ? `Editar Computador — ${d.id_ativo}` : 'Cadastrar Computador', html, {type:'computadores',mode:isEdit?'edit':'new',id:d?.id_ativo});
+}
+
+function openImpressoraModal(d) {
+  const html = `<form id="modal-form"><div class="form-section"><h4>🖨️ Impressora</h4><div class="form-grid">
+    ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="IMP-XXX-XXX-01">`)}
+    ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado']))}
+    ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
+    ${fld('Setor *', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
+    ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
+    ${fld('Marca', `<input name="marca" value="${d?.marca||''}" placeholder="HP, Epson...">`)}
+    ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}">`)}
+    ${fld('Tipo', st('tipo',d,['Laser','Jato de Tinta','Multifuncional Laser','Multifuncional Jato','Matricial','Térmica']))}
+    ${fld('Nº Série', `<input name="numero_serie" value="${d?.numero_serie||''}">`)}
+    ${fld('Patrimônio', `<input name="patrimonio" value="${d?.patrimonio||''}">`)}
+    ${fld('IP Rede', `<input name="ip_rede" value="${d?.ip_rede||''}" placeholder="192.168.1.100">`)}
+    ${fld('Hostname', `<input name="hostname" value="${d?.hostname||''}">`)}
+    ${fld('Suprimento Atual', `<input name="suprimento_atual" value="${d?.suprimento_atual||''}">`)}
+    ${fld('Data Aquisição', `<input type="date" name="data_aquisicao" value="${d?.data_aquisicao||''}">`)}
+    ${fld('Data Instalação', `<input type="date" name="data_instalacao" value="${d?.data_instalacao||''}">`)}
+    <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${d?.observacoes||''}</textarea>`)}</div>
+  </div></div></form>`;
+  openModal(d ? `Editar Impressora — ${d.id_ativo}` : 'Cadastrar Impressora', html, {type:'impressoras',mode:d?'edit':'new',id:d?.id_ativo});
+}
+
+function openEstabilizadorModal(d) {
+  const html = `<form id="modal-form"><div class="form-section"><h4>🔌 Estabilizador</h4><div class="form-grid">
+    ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="EST-XXX-XXX-01">`)}
+    ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado']))}
+    ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
+    ${fld('Setor *', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
+    ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}">`)}
+    ${fld('Uso', `<input name="uso" value="${d?.uso||''}">`)}
+    ${fld('Nº Série', `<input name="num_serie" value="${d?.num_serie||''}">`)}
+  </div></div></form>`;
+  openModal(d ? `Editar Estabilizador — ${d.id_ativo}` : 'Cadastrar Estabilizador', html, {type:'estabilizadores',mode:d?'edit':'new',id:d?.id_ativo});
+}
+
+function openStarlinkModal(d) {
+  const html = `<form id="modal-form"><div class="form-section"><h4>🛰️ Starlink</h4><div class="form-grid">
+    ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="STL-XXX-XXX-01">`)}
+    ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado']))}
+    ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
+    ${fld('Setor *', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
+    ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
+    ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}">`)}
+    ${fld('Nº Série', `<input name="num_serie" value="${d?.num_serie||''}">`)}
+    ${fld('MAC Address', `<input name="mac_address" value="${d?.mac_address||''}">`)}
+    ${fld('IP Rede', `<input name="ip_rede" value="${d?.ip_rede||''}" placeholder="192.168.1.100">`)}
+    ${fld('Data Aquisição', `<input type="date" name="data_aquisicao" value="${d?.data_aquisicao||''}">`)}
+    ${fld('Data Instalação', `<input type="date" name="data_instalacao" value="${d?.data_instalacao||''}">`)}
+    ${fld('Plano', `<input name="plano" value="${d?.plano||''}">`)}
+    <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${d?.observacoes||''}</textarea>`)}</div>
+  </div></div></form>`;
+  openModal(d ? `Editar Starlink — ${d.id_ativo}` : 'Cadastrar Starlink', html, {type:'starlink',mode:d?'edit':'new',id:d?.id_ativo});
+}
+
+
+
+function openEstoqueModal(d) {
+  const html = `<form id="modal-form"><div class="form-grid">
+    <div class="form-group full">${fld('Item *', `<input name="item" value="${d?.item||''}" required placeholder="Nome do item">`)}</div>
+    ${fld('Cód. Pedido', `<input name="cod_pedido" value="${d?.cod_pedido||''}" placeholder="PED-001">`)}
+    ${fld('Quantidade inicial', `<input type="number" name="quantidade" value="${d?.quantidade||0}" min="0">`)}
+    ${fld('Unidade', `<input name="unidade" value="${d?.unidade||'un'}" placeholder="un, cx, pç...">`)}
+    ${fld('Localização', `<input name="localizacao" value="${d?.localizacao||''}" placeholder="Armário A1, Prateleira 3...">`)}
+    <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${d?.observacoes||''}</textarea>`)}</div>
+  </div></form>`;
+  openModal(d ? `Editar Item — ${d.item}` : 'Novo Item de Estoque', html, {type:'estoque',mode:d?'edit':'new',id:d?.id});
+}
+
+function openTonerModal(d) {
+  const html = `<form id="modal-form"><div class="form-grid">
+    ${fld('Modelo Impressora *', `<input name="modelo_impressora" value="${d?.modelo_impressora||''}" required placeholder="HP LaserJet M404n">`)}
+    ${fld('Modelo Toner *', `<input name="modelo_toner" value="${d?.modelo_toner||''}" required placeholder="HP CF259A">`)}
+    ${fld('Cor', st('cor',d,['Preto','Ciano','Magenta','Amarelo','Colorido']))}
+    ${fld('Qtd em Estoque', `<input type="number" name="quantidade_estoque" value="${d?.quantidade_estoque||0}" min="0">`)}
+    ${fld('Qtd Mínima (Alerta)', `<input type="number" name="quantidade_minima" value="${d?.quantidade_minima||1}" min="0">`)}
+    ${fld('Data Última Troca', `<input type="date" name="data_ultima_troca" value="${d?.data_ultima_troca||''}">`)}
+    <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${d?.observacoes||''}</textarea>`)}</div>
+  </div></form>`;
+  openModal(d ? `Editar Toner — ${d.modelo_toner}` : 'Cadastrar Toner', html, {type:'toner',mode:d?'edit':'new',id:d?.id});
+}
+
+function openManutModal(d, prefill={}) {
+  const v = f => d?.[f] || prefill[f] || '';
+  const tipos = ['Celular','Celular Ponto','Computador','Impressora','Estabilizador','Starlink'];
+  const html = `<form id="modal-form">
+    <div class="form-section"><h4>📋 Ativo</h4><div class="form-grid">
+      ${fld('ID Ativo *', `<input name="id_ativo" value="${v('id_ativo')}" required placeholder="CEL-001">`)}
+      ${fld('Tipo *', `<select name="tipo_equipamento" required>${tipos.map(t=>`<option value="${t}" ${v('tipo_equipamento')===t?'selected':''}>${t}</option>`).join('')}</select>`)}
+      ${fld('Modelo', `<input name="modelo" value="${v('modelo')}">`)}
+      ${fld('Local Atual', `<input name="local_atual" value="${v('local_atual')}" placeholder="Almoxarifado TI">`)}
+    </div></div>
+    <div class="form-section"><h4>🔧 Detalhes</h4><div class="form-grid">
+      ${fld('Data Recebimento', `<input type="date" name="data_recebimento" value="${v('data_recebimento')}">`)}
+      ${fld('Pessoa Recebimento', `<input name="pessoa_recebimento" value="${v('pessoa_recebimento')}">`)}
+      <div class="form-group full">${fld('Problema Relatado', `<textarea name="problema_relatado">${v('problema_relatado')}</textarea>`)}</div>
+      ${fld('Data Manutenção', `<input type="date" name="data_manutencao" value="${v('data_manutencao')}">`)}
+      ${fld('OS Manutenção', `<input name="os_manutencao" value="${v('os_manutencao')}" placeholder="OS-2025-001">`)}
+      ${fld('Orçamento (R$)', `<input type="number" step="0.01" name="orcamento" value="${v('orcamento')}">`)}
+      ${fld('Técnico', `<input name="tecnico" value="${v('tecnico')}">`)}
+      ${fld('Status', `<select name="status">${['Aberta','Em Análise','Aguardando Peça','Em Reparo','Concluída','Cancelada'].map(s=>`<option value="${s}" ${v('status')===s?'selected':''}>${s}</option>`).join('')}</select>`)}
+      ${fld('Data Envio', `<input type="date" name="data_envio" value="${v('data_envio')}">`)}
+      ${fld('Forma Envio', `<input name="forma_envio" value="${v('forma_envio')}" placeholder="Motoboy, Correios...">`)}
+      ${fld('Data Retorno', `<input type="date" name="data_retorno" value="${v('data_retorno')}">`)}
+      <div class="form-group full">${fld('Solução Aplicada', `<textarea name="solucao_aplicada">${v('solucao_aplicada')}</textarea>`)}</div>
+      <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${v('observacoes')}</textarea>`)}</div>
+    </div></div></form>`;
+  openModal(d ? `Editar Manutenção #${d.id}` : 'Nova Manutenção', html, {type:'manutencao',mode:d?'edit':'new',id:d?.id});
+}
+
+function openDescarteModal(d, prefill={}) {
+  const v = f => d?.[f] || prefill[f] || '';
+  const tipos = ['Celular','Celular Ponto','Computador','Impressora','Estabilizador','Starlink'];
+  const html = `<form id="modal-form"><div class="form-grid">
+    ${fld('ID Ativo *', `<input name="id_ativo" value="${v('id_ativo')}" required placeholder="CEL-001">`)}
+    ${fld('Tipo *', `<select name="tipo_equipamento" required>${tipos.map(t=>`<option value="${t}" ${v('tipo_equipamento')===t?'selected':''}>${t}</option>`).join('')}</select>`)}
+    ${fld('Modelo', `<input name="modelo" value="${v('modelo')}">`)}
+    ${fld('Data Descarte', `<input type="date" name="data_descarte" value="${v('data_descarte')}">`)}
+    ${fld('Responsável', `<input name="responsavel_descarte" value="${v('responsavel_descarte')}">`)}
+    ${fld('Motivo', st('motivo',{motivo:v('motivo')},['Obsolescência','Defeito irreparável','Roubo/Furto','Perda','Doação','Venda']))}
+    ${fld('Forma Descarte', st('forma_descarte',{forma_descarte:v('forma_descarte')},['Descarte eletrônico','Doação','Venda','Lixo comum','Retorno fabricante']))}
+    ${fld('Destinatário', `<input name="destinatario" value="${v('destinatario')}">`)}
+    ${fld('Doc. Referência', `<input name="documento_referencia" value="${v('documento_referencia')}">`)}
+    <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${v('observacoes')}</textarea>`)}</div>
+  </div></form>`;
+  openModal('Registrar Descarte', html, {type:'descarte',mode:'new'});
+}
+
+function openTransferenciaModal(d) {
+  const html = `<form id="modal-form"><div class="form-grid">
+    ${fld('ID Ativo *', `<input name="id_ativo" required placeholder="CEL-001">`)}
+    ${fld('Tipo Equipamento *', st('tipo_equipamento', {}, ['Celular','Celular Ponto','Computador','Impressora','Estabilizador','Starlink']))}
+    <div class="form-group full">${fld('Tipo de Transferência', st('tipo_transferencia', {}, ['Transferência Comum','Estoque para Usuario','Usuario para Estoque']))}</div>
+    ${fld('Resp. Destino', `<input name="responsavel_destino" placeholder="Nome do responsavel">`)}
+    ${fld('Fazenda Destino', `<input name="fazenda_destino" placeholder="Mogiana">`)}
+    ${fld('Setor Destino', `<input name="setor_destino" placeholder="ADM">`)}
+    ${fld('Data Devolução (Se aplicável)', `<input type="date" name="data_devolucao">`)}
+    <div class="form-group full">${fld('Motivo', `<textarea name="motivo" placeholder="Troca de equipamento..."></textarea>`)}</div>
+  </div></form>`;
+  openModal('Nova Transferência', html, {type:'transferencias',mode:'new'});
+}
+
+// ─── UPLOAD PDF ────────────────────────────────────────────────────────────
+function uploadPDF(tipo, id_ativo) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.pdf';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append('file', file);
+    toast('Enviando PDF...', 'info');
+    const r = await fetch(`/api/upload_termo/${tipo}/${decodeURIComponent(id_ativo)}`, {method:'POST',body:form});
+    const res = await r.json();
+    if (res.ok) { toast(res.msg, 'success'); loadPage(currentPage); }
+    else toast(res.msg, 'error');
+  };
+  input.click();
+}
+
+// ─── ESTOQUE: MOVIMENTAR ───────────────────────────────────────────────────
+function movimentarEstoque(eid, tipo, item) {
+  const cor = tipo === 'entrada' ? 'var(--green)' : 'var(--red)';
+  const label = tipo === 'entrada' ? '📥 Registrar Entrada' : '📤 Registrar Saída';
+  const html = `<form id="modal-form">
+    <div class="form-group"><label>Quantidade</label><input type="number" name="quantidade" min="1" value="1" required></div>
+    <div class="form-group"><label>Responsável</label><input name="responsavel" placeholder="Quem realizou?"></div>
+    <div class="form-group"><label>Motivo</label><input name="motivo" placeholder="Compra, Uso, Devolução..."></div>
+  </form>`;
+  openModal(`${label} — ${item}`, html, {type:'__movimentar__', eid, tipo});
+  document.getElementById('modal-save').onclick = async () => {
+    const form = document.getElementById('modal-form');
+    const data = {tipo};
+    form.querySelectorAll('[name]').forEach(el => data[el.name]=el.value);
+    const res = await api(`/api/estoque/${eid}/movimentar`, 'POST', data);
+    if (res.ok) { toast(res.msg,'success'); closeModal(); loadEstoque(); }
+    else toast(res.msg,'error');
+  };
+}
+
+async function verHistoricoEstoque(eid, item) {
+  const rows = await api(`/api/estoque/${eid}/movimentacoes`);
+  const html = rows.length ? `<table style="width:100%"><thead><tr>
+    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Tipo</th>
+    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Qtd</th>
+    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Responsável</th>
+    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Motivo</th>
+    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Data</th>
+    </tr></thead><tbody>${rows.map(r=>`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:8px"><span class="badge badge-${r.tipo==='entrada'?'entrada':'saida'}">${r.tipo}</span></td>
+      <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-weight:700">${r.tipo==='entrada'?'+':'−'}${r.quantidade}</td>
+      <td style="padding:8px">${r.responsavel||'—'}</td>
+      <td style="padding:8px">${r.motivo||'—'}</td>
+      <td style="padding:8px;font-size:11px;color:var(--text3)">${(r.data_hora||'').substring(0,16).replace('T',' ')}</td>
+    </tr>`).join('')}</tbody></table>`
+    : '<div class="empty"><div class="empty-icon">📋</div><p>Sem movimentações</p></div>';
+  openModal(`📋 Histórico — ${item}`, html, {}, false);
+}
+
+async function verHistoricoToner(tid, modelo) {
+  const rows = await api(`/api/toners/${tid}/trocas`);
+  const html = rows.length ? `<table style="width:100%"><thead><tr>
+    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Qtd</th>
+    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Responsável</th>
+    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Impressora</th>
+    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Data</th>
+    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Obs.</th>
+    </tr></thead><tbody>${rows.map(r=>`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-weight:700">${r.quantidade}</td>
+      <td style="padding:8px">${r.responsavel||'—'}</td>
+      <td style="padding:8px">${r.impressora_id_ativo||'—'}</td>
+      <td style="padding:8px">${r.data_troca||'—'}</td>
+      <td style="padding:8px">${r.observacoes||'—'}</td>
+    </tr>`).join('')}</tbody></table>`
+    : '<div class="empty"><div class="empty-icon">📋</div><p>Sem trocas registradas</p></div>';
+  openModal(`📋 Histórico Trocas — ${modelo}`, html, {}, false);
+}
+
+function registrarTroca(tid, impressora, toner, estoque) {
+  const html = `<form id="modal-form">
+    <p style="color:var(--text2);font-size:13px;margin-bottom:16px">Estoque atual: <strong style="color:var(--text)">${estoque} un</strong></p>
+    <div class="form-group"><label>Quantidade</label><input type="number" name="quantidade" min="1" max="${estoque}" value="1" required></div>
+    <div class="form-group"><label>Responsável</label><input name="responsavel" placeholder="Quem realizou a troca?"></div>
+    <div class="form-group"><label>ID da Impressora</label><input name="impressora_id_ativo" placeholder="IMP-001"></div>
+    <div class="form-group"><label>Observações</label><textarea name="observacoes"></textarea></div>
+  </form>`;
+  openModal(`🔄 Registrar Troca — ${toner}`, html, {});
+  document.getElementById('modal-save').onclick = async () => {
+    const form = document.getElementById('modal-form');
+    const data = {};
+    form.querySelectorAll('[name]').forEach(el => data[el.name]=el.value);
+    const res = await api(`/api/toners/${tid}/troca`, 'POST', data);
+    if (res.ok) { toast(res.msg,'success'); closeModal(); loadToners(); }
+    else toast(res.msg,'error');
+  };
+}
+
+// ─── ATALHOS ───────────────────────────────────────────────────────────────
+function newManutFromAtivo(id, tipo, modelo) { showPage('manutencoes'); openManutModal(null, {id_ativo:id,tipo_equipamento:tipo,modelo}); }
+function newDescarteFromAtivo(id, tipo, modelo) { showPage('descartes'); openDescarteModal(null, {id_ativo:id,tipo_equipamento:tipo,modelo}); }
+
+// ─── BUSCA GLOBAL ──────────────────────────────────────────────────────────
+let searchTimeout;
+const searchInput = document.getElementById('global-search');
+const searchResults = document.getElementById('search-results');
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+  const q = searchInput.value.trim();
+  if (!q) { searchResults.style.display='none'; return; }
+  searchTimeout = setTimeout(async () => {
+    const results = await api(`/api/busca?q=${encodeURIComponent(q)}`);
+    if (!results.length) { searchResults.style.display='none'; return; }
+    searchResults.innerHTML = results.map(r=>`
+      <div class="sr-item" onclick="goToAtivo('${r.tipo}')">
+        <span class="badge badge-analise" style="font-size:10px">${r.tipo}</span>
+        <div style="flex:1"><div style="color:var(--text);font-weight:600;font-size:12px">${r.id_ativo}</div>
+        <div style="color:var(--text3);font-size:11px">${r.responsavel||'—'} · ${r.modelo||'—'}</div></div>
+        ${statusBadge(r.status)}
+      </div>`).join('');
+    searchResults.style.display='';
+  }, 300);
+});
+document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) searchResults.style.display='none'; });
+
+function goToAtivo(tipo) {
+  searchResults.style.display='none'; searchInput.value='';
+  const map={'Celular':'celulares','Celular Ponto':'celulares_ponto','Computador':'computadores',
+    'Impressora':'impressoras','Estabilizador':'estabilizadores','Starlink':'starlink'};
+  showPage(map[tipo]||'dashboard');
+}
+
+// ─── EXPORTAR ──────────────────────────────────────────────────────────────
+function exportar(tabela) { window.open(`/api/exportar/${tabela}`, '_blank'); }
+
+// ─── TOAST ─────────────────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const icons = {success:'✅',error:'❌',info:'ℹ️'};
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span> ${msg}`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+loadDashboard();
+</script>
+</body>
+</html>
