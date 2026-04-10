@@ -81,6 +81,7 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 .badge-aguardando{background:rgba(249,115,22,.12);color:var(--orange)}
 .badge-entrada{background:rgba(16,185,129,.12);color:var(--green)}
 .badge-saida{background:rgba(239,68,68,.12);color:var(--red)}
+.badge-estoque{background:rgba(6,182,212,.12);color:var(--cyan)}
 .badge-baixo{background:rgba(239,68,68,.2);color:var(--red);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s}
@@ -155,6 +156,7 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     <div class="nav-item" data-page="starlink"><span class="icon">🛰️</span> Antenas Starlink</div>
     <div class="nav-label">Estoque</div>
     <div class="nav-item" data-page="estoque"><span class="icon">📦</span> Estoque Geral</div>
+    <div class="nav-item" data-page="estoque_equipamentos"><span class="icon">🏢</span> Estoque Equipamentos</div>
     <div class="nav-item" data-page="toners"><span class="icon">🖨️</span> Toner / Impressoras</div>
     <div class="nav-label">Operações</div>
     <div class="nav-item" data-page="manutencoes"><span class="icon">🔧</span> Manutenções <span class="nav-badge" id="badge-man" style="display:none">0</span></div>
@@ -311,6 +313,19 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       </div>
     </div>
 
+    <!-- ESTOQUE EQUIPAMENTOS -->
+    <div class="page" id="page-estoque_equipamentos">
+      <div class="table-card">
+        <div class="table-header"><h3>🏢 Equipamentos em Estoque</h3>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('estoque_equipamentos')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>ID Ativo</th><th>Tipo</th><th>Modelo</th><th>Fazenda/Local</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="tb-estoque_equipamentos"></tbody>
+        </table></div>
+      </div>
+    </div>
+
     <!-- TONERS -->
     <div class="page" id="page-toners">
       <div class="table-card">
@@ -426,7 +441,7 @@ function showPage(page) {
   currentPage = page;
   const titles = {dashboard:'Dashboard',celulares:'Celulares',celulares_ponto:'Celulares Ponto / Turma',
     computadores:'Notebooks / Computadores',impressoras:'Impressoras',estabilizadores:'Estabilizadores / Nobreakes',
-    starlink:'Antenas Starlink',estoque:'Estoque Geral',toners:'Controle de Toner',
+    starlink:'Antenas Starlink',estoque:'Estoque Geral',estoque_equipamentos:'Estoque Equipamentos',toners:'Controle de Toner',
     manutencoes:'Manutenções',descartes:'Descartes',transferencias:'Transferências',historico:'Histórico de Transações'};
   document.getElementById('page-title').textContent = titles[page] || page;
   const noNew = ['dashboard','descartes','historico'];
@@ -442,7 +457,7 @@ function showPage(page) {
 function loadPage(page) {
   const loaders = {dashboard:loadDashboard,celulares:loadCelulares,celulares_ponto:loadCelularesPonto,
     computadores:loadComputadores,impressoras:loadImpressoras,estabilizadores:loadEstabilizadores,
-    starlink:loadStarlink,estoque:loadEstoque,toners:loadToners,manutencoes:loadManutencoes,
+    starlink:loadStarlink,estoque:loadEstoque,estoque_equipamentos:loadEstoqueEquipamentos,toners:loadToners,manutencoes:loadManutencoes,
     descartes:loadDescartes,transferencias:loadTransferencias,historico:loadHistorico};
   loaders[page]?.();
 }
@@ -561,7 +576,7 @@ async function loadDashboard() {
 
 // ─── STATUS / HELPERS ──────────────────────────────────────────────────────
 function statusBadge(s) {
-  const map={Ativo:'badge-ativo',Inativo:'badge-inativo','Manutenção':'badge-manut',Descartado:'badge-desc',
+  const map={Ativo:'badge-ativo',Inativo:'badge-inativo','Manutenção':'badge-manut',Descartado:'badge-desc',Estoque:'badge-estoque',
     Aberta:'badge-aberta','Concluída':'badge-concluida','Em Análise':'badge-analise','Aguardando Peça':'badge-aguardando',Cancelada:'badge-inativo'};
   return `<span class="badge ${map[s]||'badge-inativo'}">${s||'—'}</span>`;
 }
@@ -684,6 +699,27 @@ async function loadEstoque() {
         <button class="btn btn-ghost btn-xs" onclick="verHistoricoEstoque(${r.id},'${r.item}')">📋</button>
       </div></td></tr>`;
   }).join('');
+}
+
+async function loadEstoqueEquipamentos() {
+  const rows = await api('/api/estoque_equipamentos');
+  const tb = document.getElementById('tb-estoque_equipamentos');
+  if (!rows.length) { tb.innerHTML=emptyRow(6,'Nenhum equipamento em estoque','🏢'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">${r.id_ativo}</td>
+    <td><span class="badge badge-analise">${r.tipo_equipamento}</span></td>
+    <td class="td-bold">${r.modelo||'—'}</td>
+    <td>${r.fazenda||'—'}</td>
+    <td>${statusBadge(r.status)}</td>
+    <td><div class="tbl-actions">
+      <button class="btn btn-ghost btn-xs" onclick="editFromEstoque('${r.tipo_equipamento}','${r.id_ativo}')">✏️ Editar</button>
+    </div></td></tr>`).join('');
+}
+
+function editFromEstoque(tipoLabel, id) {
+  const map = {'Celular':'celulares','Celular Ponto':'celulares_ponto','Computador':'computadores',
+    'Impressora':'impressoras','Estabilizador':'estabilizadores','Starlink':'starlink'};
+  editItem(map[tipoLabel], id);
 }
 
 async function loadToners() {
@@ -838,7 +874,7 @@ const fld = (label, html) => `<div class="form-group"><label>${label}</label>${h
 function commonCelFields(d) {
   return `
     ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="CL-XXX-XXX-01">`)}
-    ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado']))}
+    ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
     ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
     ${fld('Setor', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
     ${fld('Tipo', `<input name="tipo" value="${d?.tipo||''}" placeholder="Smartphone, Tablet...">`)}
@@ -871,7 +907,7 @@ function openCelularPontoModal(d) {
   const html = `<form id="modal-form">
     <div class="form-section"><h4>🕐 Celular Ponto / Turma</h4><div class="form-grid">
       ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="CL-XXX-PTO-01">`)}
-      ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado']))}
+      ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
       ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
       <input type="hidden" name="setor" value="PTO">
       ${fld('Função', `<input name="funcao" value="${d?.funcao||''}" placeholder="Operador, Supervisor...">`)}
@@ -900,7 +936,7 @@ function openComputadorModal(d) {
   const html = `<form id="modal-form">
     <div class="form-section"><h4>💻 Computador</h4><div class="form-grid">
       ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${isEdit?'readonly':'required'} placeholder="NT-XXX-XXX-01">`)}
-      ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado']))}
+      ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
       ${fld('Tipo *', st('tipo',d,['Notebook','Desktop','All-in-One','Servidor','Workstation'],'triggerIdSuggestion()'))}
       ${fld('Patrimônio', `<input name="patrimonio" value="${d?.patrimonio||''}">`)}
       ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
@@ -928,7 +964,7 @@ function openComputadorModal(d) {
 function openImpressoraModal(d) {
   const html = `<form id="modal-form"><div class="form-section"><h4>🖨️ Impressora</h4><div class="form-grid">
     ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="IMP-XXX-XXX-01">`)}
-    ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado']))}
+    ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
     ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
     ${fld('Setor *', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
     ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
@@ -950,7 +986,7 @@ function openImpressoraModal(d) {
 function openEstabilizadorModal(d) {
   const html = `<form id="modal-form"><div class="form-section"><h4>🔌 Estabilizador</h4><div class="form-grid">
     ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="EST-XXX-XXX-01">`)}
-    ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado']))}
+    ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
     ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
     ${fld('Setor *', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
     ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}">`)}
@@ -963,7 +999,7 @@ function openEstabilizadorModal(d) {
 function openStarlinkModal(d) {
   const html = `<form id="modal-form"><div class="form-section"><h4>🛰️ Starlink</h4><div class="form-grid">
     ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="STL-XXX-XXX-01">`)}
-    ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado']))}
+    ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
     ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
     ${fld('Setor *', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
     ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}

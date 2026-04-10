@@ -789,6 +789,31 @@ def listar_estoque() -> Response:
     return jsonify(rows)
 
 
+@app.route("/api/estoque_equipamentos", methods=["GET"])
+def listar_estoque_equipamentos() -> Response:
+    """Lista todos os equipamentos com status 'Em Estoque' de todas as tabelas."""
+    tabelas = [
+        ("celulares", "Celular"),
+        ("celulares_ponto", "Celular Ponto"),
+        ("computadores", "Computador"),
+        ("impressoras", "Impressora"),
+        ("estabilizadores", "Estabilizador"),
+        ("starlink", "Starlink"),
+    ]
+    query_parts = []
+    for tbl, label in tabelas:
+        query_parts.append(
+            f"SELECT id_ativo, modelo, fazenda, '{label}' as tipo_equipamento, status FROM {tbl} WHERE status = 'Estoque'"
+        )
+
+    query = " UNION ALL ".join(query_parts) + " ORDER BY id_ativo ASC"
+
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            rows = _fetch_all(cur, query)
+    return jsonify(rows)
+
+
 @app.route("/api/estoque", methods=["POST"])
 def criar_estoque() -> Response:
     """Cadastra um novo item no estoque geral."""
@@ -1205,14 +1230,28 @@ def exportar(tabela: str) -> tuple[Response, int] | Response:
     tabelas_validas = {
         "celulares", "celulares_ponto", "computadores", "impressoras",
         "estabilizadores", "starlink", "manutencoes", "descartes", "estoque", "toners",
-        "transferencias", "historico",
+        "transferencias", "historico", "estoque_equipamentos",
     }
     if tabela not in tabelas_validas:
         return jsonify({"ok": False, "msg": "Tabela inválida"}), 400
 
     with get_db() as conn:
         with conn.cursor() as cur:
-            rows = _fetch_all(cur, f"SELECT * FROM {tabela}")
+            if tabela == "estoque_equipamentos":
+                tabelas = [
+                    ("celulares", "Celular"),
+                    ("celulares_ponto", "Celular Ponto"),
+                    ("computadores", "Computador"),
+                    ("impressoras", "Impressora"),
+                    ("estabilizadores", "Estabilizador"),
+                    ("starlink", "Starlink"),
+                ]
+                query_parts = []
+                for tbl, label in tabelas:
+                    query_parts.append(f"SELECT id_ativo, modelo, fazenda, '{label}' as tipo_equipamento, status FROM {tbl} WHERE status = 'Estoque'")
+                rows = _fetch_all(cur, " UNION ALL ".join(query_parts) + " ORDER BY id_ativo ASC")
+            else:
+                rows = _fetch_all(cur, f"SELECT * FROM {tabela}")
 
     if not rows:
         return jsonify({"ok": False, "msg": "Sem dados para exportar"}), 404
