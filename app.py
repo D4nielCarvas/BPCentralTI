@@ -1190,39 +1190,6 @@ def historico_ativo(id_ativo: str) -> Response:
     return jsonify(rows)
 
 
-@app.route("/api/busca")
-def busca_global() -> Response:
-    """Realiza busca textual em todos os tipos de equipamentos."""
-    q = request.args.get("q", "")
-    if not q:
-        return jsonify([])
-
-    results: list[dict] = []
-    like = f"%{q}%"
-    tabelas = [
-        ("celulares", "Celular"),
-        ("celulares_ponto", "Celular Ponto"),
-        ("computadores", "Computador"),
-        ("impressoras", "Impressora"),
-        ("estabilizadores", "Estabilizador"),
-        ("starlink", "Starlink"),
-    ]
-
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            for tbl, tipo in tabelas:
-                rows = _fetch_all(
-                    cur,
-                    f"SELECT id_ativo, responsavel, modelo, status FROM {tbl} "
-                    f"WHERE id_ativo ILIKE %s OR responsavel ILIKE %s OR modelo ILIKE %s LIMIT 4",
-                    (like, like, like),
-                )
-                for r in rows:
-                    results.append({**r, "tipo": tipo})
-
-    return jsonify(results)
-
-
 @app.route("/api/exportar/<tabela>")
 def exportar(tabela: str) -> tuple[Response, int] | Response:
     """Exporta todos os dados de uma tabela em formato CSV."""
@@ -1681,6 +1648,49 @@ def ativos_em_estoque() -> Response:
                     resultado.append({**r, "tipo_equipamento": tbl})
 
     return jsonify(resultado)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BUSCA GLOBAL
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/api/busca")
+def busca_global() -> Response:
+    """Busca global em todas as tabelas principais de equipamentos."""
+    q = request.args.get("q", "").strip()
+    if not q:
+        return jsonify([])
+
+    resultados: list[dict] = []
+    
+    tabelas_busca = [
+        ("Celular", "celulares", ["id_ativo", "responsavel", "modelo", "fazenda", "numero", "setor", "cargo", "num_serie", "imei_1"]),
+        ("Celular Ponto", "celulares_ponto", ["id_ativo", "responsavel", "modelo", "fazenda", "num_turma", "funcao", "num_serie"]),
+        ("Computador", "computadores", ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "numero_serie", "setor", "cargo"]),
+        ("Impressora", "impressoras", ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "ip_rede", "setor", "numero_serie"]),
+        ("Estabilizador", "estabilizadores", ["id_ativo", "modelo", "fazenda", "setor", "num_serie", "uso"]),
+        ("Starlink", "starlink", ["id_ativo", "responsavel", "modelo", "fazenda", "setor", "num_serie", "ip_rede"]),
+    ]
+
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            for tipo_nome, tabela, colunas in tabelas_busca:
+                condicoes = " OR ".join([f"{col} ILIKE %s" for col in colunas])
+                sel_responsavel = "responsavel" if "responsavel" in colunas else "fazenda as responsavel"
+                query = f"SELECT id_ativo, status, modelo, {sel_responsavel} FROM {tabela} WHERE {condicoes} ORDER BY id_ativo LIMIT 10"
+                params = [f"%{q}%"] * len(colunas)
+                
+                rows = _fetch_all(cur, query, tuple(params))
+                for r in rows:
+                    resultados.append({
+                        "tipo": tipo_nome,
+                        "id_ativo": r["id_ativo"],
+                        "responsavel": r.get("responsavel", ""),
+                        "modelo": r.get("modelo", ""),
+                        "status": r.get("status", "")
+                    })
+
+    return jsonify(resultados[:30])
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

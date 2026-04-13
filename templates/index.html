@@ -423,6 +423,7 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 let currentPage = 'dashboard';
 let modalCtx = {};
 let filterState = {};
+let globalSearchFilter = ''; // Filtro vindo da busca global
 let siglas = { tipo:{}, local:{}, setor:{} };
 
 async function loadSiglas() {
@@ -460,6 +461,8 @@ function showPage(page) {
 }
 
 function loadPage(page) {
+  // Se mudar de página e não for via busca, limpa o filtro global em alguns casos
+  // Mas aqui vamos deixar o loadPage usar o globalSearchFilter se ele existir
   const loaders = {dashboard:loadDashboard,celulares:loadCelulares,celulares_ponto:loadCelularesPonto,
     computadores:loadComputadores,impressoras:loadImpressoras,estabilizadores:loadEstabilizadores,
     starlink:loadStarlink,estoque:loadEstoque,estoque_equipamentos:loadEstoqueEquipamentos,toners:loadToners,manutencoes:loadManutencoes,
@@ -484,10 +487,14 @@ async function api(path, method='GET', body=null) {
     const opts = {method, headers:{'Content-Type':'application/json'}};
     if (body) opts.body = JSON.stringify(body);
     const r = await fetch(path, opts);
-    return await r.json();
+    const contentType = r.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      return await r.json();
+    }
+    return { ok: r.ok, msg: r.ok ? "Sucesso" : `Erro ${r.status}` };
   } catch (err) {
     console.error("Erro na API:", err);
-    return { ok: false, msg: "Erro de processamento (500). Verifique os campos ou logs." };
+    return { ok: false, msg: "Erro de conexão com o servidor." };
   }
 }
 
@@ -637,7 +644,8 @@ function uploadBtn(tipo, id_ativo) {
 
 // ─── CELULARES ─────────────────────────────────────────────────────────────
 async function loadCelulares() {
-  const rows = await api(`/api/celulares?status=${filterState.celulares||''}`);
+  const q = globalSearchFilter || '';
+  const rows = await api(`/api/celulares?status=${filterState.celulares||''}&q=${encodeURIComponent(q)}`);
   const tb = document.getElementById('tb-celulares');
   if (!rows.length) { tb.innerHTML=emptyRow(9,'Nenhum celular cadastrado','📱'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
@@ -653,7 +661,8 @@ async function loadCelulares() {
 }
 
 async function loadCelularesPonto() {
-  const rows = await api(`/api/celulares_ponto?status=${filterState.celulares_ponto||''}`);
+  const q = globalSearchFilter || '';
+  const rows = await api(`/api/celulares_ponto?status=${filterState.celulares_ponto||''}&q=${encodeURIComponent(q)}`);
   const tb = document.getElementById('tb-celulares_ponto');
   if (!rows.length) { tb.innerHTML=emptyRow(10,'Nenhum celular de ponto cadastrado','🕐'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
@@ -670,7 +679,8 @@ async function loadCelularesPonto() {
 }
 
 async function loadComputadores() {
-  const rows = await api(`/api/computadores?status=${filterState.computadores||''}`);
+  const q = globalSearchFilter || '';
+  const rows = await api(`/api/computadores?status=${filterState.computadores||''}&q=${encodeURIComponent(q)}`);
   const tb = document.getElementById('tb-computadores');
   if (!rows.length) { tb.innerHTML=emptyRow(9,'Nenhum computador cadastrado','💻'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
@@ -687,7 +697,8 @@ async function loadComputadores() {
 }
 
 async function loadImpressoras() {
-  const rows = await api(`/api/impressoras?status=${filterState.impressoras||''}`);
+  const q = globalSearchFilter || '';
+  const rows = await api(`/api/impressoras?status=${filterState.impressoras||''}&q=${encodeURIComponent(q)}`);
   const tb = document.getElementById('tb-impressoras');
   if (!rows.length) { tb.innerHTML=emptyRow(8,'Nenhuma impressora cadastrada','🖨️'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
@@ -702,7 +713,8 @@ async function loadImpressoras() {
 }
 
 async function loadEstabilizadores() {
-  const rows = await api(`/api/estabilizadores?status=${filterState.estabilizadores||''}`);
+  const q = globalSearchFilter || '';
+  const rows = await api(`/api/estabilizadores?status=${filterState.estabilizadores||''}&q=${encodeURIComponent(q)}`);
   const tb = document.getElementById('tb-estabilizadores');
   if (!rows.length) { tb.innerHTML=emptyRow(8,'Nenhum estabilizador cadastrado','🔌'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
@@ -716,7 +728,8 @@ async function loadEstabilizadores() {
 }
 
 async function loadStarlink() {
-  const rows = await api(`/api/starlink?status=${filterState.starlink||''}`);
+  const q = globalSearchFilter || '';
+  const rows = await api(`/api/starlink?status=${filterState.starlink||''}&q=${encodeURIComponent(q)}`);
   const tb = document.getElementById('tb-starlink');
   if (!rows.length) { tb.innerHTML=emptyRow(10,'Nenhuma antena cadastrada','🛰️'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
@@ -1254,31 +1267,83 @@ function newDescarteFromAtivo(id, tipo, modelo) { showPage('descartes'); openDes
 let searchTimeout;
 const searchInput = document.getElementById('global-search');
 const searchResults = document.getElementById('search-results');
+
 searchInput.addEventListener('input', () => {
   clearTimeout(searchTimeout);
   const q = searchInput.value.trim();
-  if (!q) { searchResults.style.display='none'; return; }
+  
+  if (!q) { 
+    searchResults.style.display='none'; 
+    globalSearchFilter = ''; 
+    return; 
+  }
+
+  // Feedback visual de carregamento
+  searchResults.innerHTML = '<div style="padding:15px; color:var(--text3); font-size:12px">🔍 Buscando...</div>';
+  searchResults.style.display = 'block';
+
   searchTimeout = setTimeout(async () => {
     const results = await api(`/api/busca?q=${encodeURIComponent(q)}`);
-    if (!results.length) { searchResults.style.display='none'; return; }
+    
+    if (results.ok === false) {
+      toast(results.msg || "Erro na busca", "error");
+      searchResults.style.display = 'none';
+      return;
+    }
+
+    if (!Array.isArray(results) || results.length === 0) {
+      searchResults.innerHTML = '<div style="padding:15px; color:var(--text3); font-size:12px; text-align:center">Nenhum resultado encontrado</div>';
+      return;
+    }
+
     searchResults.innerHTML = results.map(r=>`
-      <div class="sr-item" onclick="goToAtivo('${r.tipo}')">
+      <div class="sr-item" onclick="goToAtivo('${r.tipo}', '${r.id_ativo}')">
         <span class="badge badge-analise" style="font-size:10px">${r.tipo}</span>
-        <div style="flex:1"><div style="color:var(--text);font-weight:600;font-size:12px">${r.id_ativo}</div>
-        <div style="color:var(--text3);font-size:11px">${r.responsavel||'—'} · ${r.modelo||'—'}</div></div>
+        <div style="flex:1">
+          <div style="color:var(--text);font-weight:600;font-size:12px">${r.id_ativo}</div>
+          <div style="color:var(--text3);font-size:11px">${r.responsavel||'—'} · ${r.modelo||'—'}</div>
+        </div>
         ${statusBadge(r.status)}
       </div>`).join('');
-    searchResults.style.display='';
   }, 300);
 });
-document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) searchResults.style.display='none'; });
 
-function goToAtivo(tipo) {
-  searchResults.style.display='none'; searchInput.value='';
-  const map={'Celular':'celulares','Celular Ponto':'celulares_ponto','Computador':'computadores',
-    'Impressora':'impressoras','Estabilizador':'estabilizadores','Starlink':'starlink'};
-  showPage(map[tipo]||'dashboard');
+document.addEventListener('click', e => { 
+  if (!e.target.closest('.search-wrap')) searchResults.style.display='none'; 
+});
+
+function goToAtivo(tipo, idAtivo) {
+  searchResults.style.display='none'; 
+  searchInput.value = idAtivo; // Deixa o ID na barra para referência
+  globalSearchFilter = idAtivo; // Define o filtro para as tabelas
+  
+  const map={
+    'Celular':'celulares',
+    'Celular Ponto':'celulares_ponto',
+    'Computador':'computadores',
+    'Impressora':'impressoras',
+    'Estabilizador':'estabilizadores',
+    'Starlink':'starlink'
+  };
+  
+  const page = map[tipo] || 'dashboard';
+  showPage(page);
+  
+  // Limpar o filtro após alguns segundos ou ao trocar de aba manualmente
+  // Para que o usuário não fique "preso" em um só item
+  toast(`Exibindo detalhes de ${idAtivo}`, 'info');
 }
+
+// Limpar filtro global ao clicar nos itens da sidebar manualmente
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    // Se a navegação não foi via busca (clique direto na barra lateral)
+    if (globalSearchFilter !== '') {
+       globalSearchFilter = '';
+       searchInput.value = '';
+    }
+  });
+});
 
 // ─── EXPORTAR ──────────────────────────────────────────────────────────────
 function exportar(tabela) { window.open(`/api/exportar/${tabela}`, '_blank'); }
