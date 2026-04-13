@@ -497,7 +497,7 @@ async function triggerIdSuggestion() {
   const typeMap = {
     celulares: 'CL',
     celulares_ponto: 'CL',
-    computadores: form.querySelector('[name="tipo"]')?.value === 'Desktop' ? 'DK' : 'NT',
+    computadores: form.querySelector('[name="tipo"]')?.value === 'Desktop' ? 'DK' : form.querySelector('[name="tipo"]')?.value === 'Notebook' ? 'NT' : 'DK',
     impressoras: 'IMP',
     estabilizadores: 'EST',
     starlink: 'STL'
@@ -506,6 +506,21 @@ async function triggerIdSuggestion() {
   const tipo = typeMap[type];
   const localVal = form.querySelector('[name="fazenda"]')?.value || '';
   const setorVal = form.querySelector('[name="setor"]')?.value || '';
+
+  // Dicionario de siglas (sincronizado com id_generator.py)
+  const siglas = {
+    local: {
+      "CEN": "Central", "SMN": "São Manoel", "TNG": "Tangará", "SPD": "São Pedro",
+      "SJU": "São Judas", "SFR": "São Francisco", "STN": "Santana", "CD": "CD",
+      "SEL": "Santa Eliza", "SLU": "Santa Lucia", "SL2": "Santa Lucia 2",
+      "CLN": "Caroline", "SJO": "São João", "SLZ": "Santa Luzia", "SAD": "Santa Adelina"
+    },
+    setor: {
+      "FT": "Fito", "ALP": "Almoxarifado Peças", "ALI": "Almoxarifado Insumos",
+      "COO": "Coordenador", "ADM": "Administrativo", "APO": "Apoio", "COL": "Colheita",
+      "PTO": "Ponto", "TRM": "Turma", "ABS": "Abastecimento", "IRR": "Irrigação", "TI": "TI"
+    }
+  };
 
   // Procura a sigla correspondente ao texto digitado (ex: "Tangará" -> "TNG")
   const findSigla = (val, dict) => {
@@ -533,21 +548,48 @@ async function handleColetaImport(input) {
   const file = input.files[0];
   const formData = new FormData();
   formData.append('file', file);
+  input.value = ''; // Reset imediato para permitir reimportar o mesmo arquivo
+
+  toast('Processando arquivo de coleta...', 'info');
 
   try {
     const res = await fetch('/api/utils/parse-coleta', { method: 'POST', body: formData });
     const result = await res.json();
-    if (result.ok) {
-      console.log('Dados processados pelo backend:', result.data);
-      toast('Dados importados com sucesso! Verifique o formulário.', 'success');
-      openComputadorModal(result.data);
+
+    if (result.ok && result.data) {
+      const d = result.data;
+
+      // Normaliza o campo 'tipo' para os valores aceitos pelo select do formulario
+      const tipoMap = {
+        'desktop': 'Desktop',
+        'notebook': 'Notebook',
+        'laptop': 'Notebook',
+        'all-in-one': 'All-in-One',
+        'allinone': 'All-in-One',
+        'servidor': 'Servidor',
+        'server': 'Servidor',
+      };
+      if (d.tipo) {
+        d.tipo = tipoMap[d.tipo.toLowerCase()] || d.tipo;
+      }
+
+      // Se ip_rede e mac_address foram capturados, adiciona nas observacoes
+      const extras = [];
+      if (d.ip_rede) extras.push('IP Rede: ' + d.ip_rede);
+      if (d.mac_address) extras.push('MAC: ' + d.mac_address);
+      if (extras.length > 0) {
+        d.observacoes = extras.join(' | ');
+      }
+
+      toast('\u2705 Dados importados! Preencha os campos restantes e salve.', 'success');
+      openComputadorModal(d);
     } else {
       toast(result.msg || 'Erro ao importar arquivo', 'error');
     }
   } catch (err) {
-    toast('Erro de conexão ao importar', 'error');
+    console.error('Erro ao importar coleta:', err);
+    toast('Erro de conex\u00e3o ao importar arquivo', 'error');
   }
-  input.value = ''; // Reset input
 }
 
 // ─── DASHBOARD ─────────────────────────────────────────────────────────────

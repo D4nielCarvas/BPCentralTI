@@ -1719,47 +1719,69 @@ def api_sugerir_id() -> Response:
 
 @app.route("/api/utils/parse-coleta", methods=["POST"])
 def parse_coleta() -> Response:
-    """Recebe um arquivo .txt da coleta e retorna os campos mapeados para o banco."""
+    """
+    Recebe um arquivo .txt gerado pelo COLETAR_PC.bat e retorna os campos
+    mapeados corretamente para os campos do formulário de Computadores.
+
+    O arquivo segue o formato INI simplificado (chave=valor, seção [hardware]).
+    Suporta codificações UTF-8 com e sem BOM.
+
+    Returns:
+        JSON com {ok: True, data: {...}} ou {ok: False, msg: ...}.
+    """
     if 'file' not in request.files:
         return jsonify({"ok": False, "msg": "Nenhum arquivo enviado"}), 400
-    
+
     file = request.files['file']
-    if file.filename == '':
+    if not file.filename:
         return jsonify({"ok": False, "msg": "Arquivo vazio"}), 400
 
     try:
         content_bytes = file.read()
+        # Trata UTF-8 com BOM (gerado pelo PowerShell 5.x) e sem BOM
         try:
             content = content_bytes.decode("utf-8-sig")
-        except:
-            content = content_bytes.decode("utf-8", errors="ignore")
-            
-        data: dict[str, Any] = {}
-        # Mapeamento: chave no .txt -> campo no banco/UI
-        mapping = {
-            "tipo": "tipo",
-            "marca": "marca",
-            "modelo": "modelo",
-            "num_serie": "numero_serie",
-            "processador": "processador",
-            "memoria_ram": "memoria_ram",
-            "armazenamento": "armazenamento",
+        except UnicodeDecodeError:
+            content = content_bytes.decode("utf-8", errors="replace")
+
+        # Mapeamento: chave no .txt -> campo no formulário/banco
+        # Alinhado com os campos gerados pelo COLETAR_PC.bat
+        mapping: dict[str, str] = {
+            "tipo":                "tipo",
+            "marca":               "marca",
+            "modelo":              "modelo",
+            "num_serie":           "numero_serie",
+            "processador":         "processador",
+            "memoria_ram":         "memoria_ram",
+            "armazenamento":       "armazenamento",
             "sistema_operacional": "sistema_operacional",
-            "versao_so": "versao_so",
-            "usuario": "usuario_windows"
+            "versao_so":           "versao_so",
+            "ip_rede":             "ip_rede",
+            "mac_address":         "mac_address",
+            "usuario":             "usuario_windows",
         }
 
-        for line in content.splitlines():
-            if "=" in line:
-                key, val = line.split("=", 1)
-                key = key.strip().lower()
-                val = val.strip()
-                if key in mapping:
-                    data[mapping[key]] = val
-        
+        data: dict[str, Any] = {}
+        for raw_line in content.splitlines():
+            line = raw_line.strip()
+            # Ignora linhas vazias e cabeçalhos de seção INI (ex: [hardware])
+            if not line or line.startswith("["):
+                continue
+            if "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            key = key.strip().lower()
+            val = val.strip()
+            if key in mapping and val:
+                data[mapping[key]] = val
+
+        if not data:
+            return jsonify({"ok": False, "msg": "Arquivo inválido ou sem dados reconhecíveis"}), 422
+
         return jsonify({"ok": True, "data": data})
+
     except Exception as e:
-        return jsonify({"ok": False, "msg": f"Erro ao ler arquivo: {str(e)}"}), 500
+        return jsonify({"ok": False, "msg": f"Erro ao processar arquivo: {str(e)}"}), 500
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
