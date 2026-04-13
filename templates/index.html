@@ -8,7 +8,12 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 :root{--bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e29;--border:#252b3b;--border2:#2e364d;--accent:#3b82f6;--accent2:#6366f1;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--orange:#f97316;--purple:#8b5cf6;--cyan:#06b6d4;--text:#e2e8f0;--text2:#94a3b8;--text3:#475569;--sidebar-w:248px}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow:hidden}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+*{scrollbar-width:thin;scrollbar-color:var(--border2) var(--bg)}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;width:100vw;display:flex;overflow:hidden}
 #sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:100;overflow-y:auto}
 .sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
 .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
@@ -637,7 +642,7 @@ async function loadCelulares() {
   if (!rows.length) { tb.innerHTML=emptyRow(9,'Nenhum celular cadastrado','📱'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
     <td class="td-id">${r.id_ativo}</td><td>${r.fazenda||'—'}</td><td>${r.setor||'—'}</td>
-    <td class="td-bold">${r.responsavel||'—'}</td><td>${r.modelo||'—'}</td><td>${r.numero||'—'}</td>
+    <td class="td-bold">${r.responsavel||'—'}<br><span style="font-size:10px;font-weight:normal;color:var(--text3)">${r.cargo||''}</span></td><td>${r.modelo||'—'}</td><td>${r.numero||'—'}</td>
     <td>${statusBadge(r.status)}</td><td>${pdfLink(r.termo_pdf)}</td>
     <td><div class="tbl-actions">
       <button class="btn btn-ghost btn-xs" onclick="editItem('celulares','${r.id_ativo}')">✏️</button>
@@ -670,7 +675,7 @@ async function loadComputadores() {
   if (!rows.length) { tb.innerHTML=emptyRow(9,'Nenhum computador cadastrado','💻'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
     <td class="td-id">${r.id_ativo}</td><td>${r.fazenda||'—'}</td>
-    <td class="td-bold">${r.responsavel||'—'}</td><td>${r.tipo||'—'}</td>
+    <td class="td-bold">${r.responsavel||'—'}<br><span style="font-size:10px;font-weight:normal;color:var(--text3)">${r.cargo||''}</span></td><td>${r.tipo||'—'}</td>
     <td>${r.marca||'—'}</td><td>${r.modelo||'—'}</td>
     <td>${statusBadge(r.status)}</td><td>${pdfLink(r.termo_pdf)}</td>
     <td><div class="tbl-actions">
@@ -923,6 +928,7 @@ function commonCelFields(d) {
     ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}" placeholder="Samsung Galaxy A54">`)}
     ${fld('Número', `<input name="numero" value="${d?.numero||''}" placeholder="(16) 99999-1234">`)}
     ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
+    ${fld('Cargo', `<input name="cargo" value="${d?.cargo||''}" placeholder="Ex: Analista, Gerente">`)}
     ${fld('IMEI 1', `<input name="imei_1" value="${d?.imei_1||''}" placeholder="000000000000000">`)}
     ${fld('IMEI 2', `<input name="imei_2" value="${d?.imei_2||''}" placeholder="000000000000000">`)}
     ${fld('Nº Série', `<input name="num_serie" value="${d?.num_serie||''}">`)}
@@ -984,6 +990,7 @@ function openComputadorModal(d) {
       ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
       ${fld('Setor *', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
       ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
+      ${fld('Cargo', `<input name="cargo" value="${d?.cargo||''}" placeholder="Ex: Analista, Gerente">`)}
       ${fld('Marca', `<input name="marca" value="${d?.marca||''}" placeholder="Dell, HP, Lenovo...">`)}
       ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}">`)}
       ${fld('Nº Série', `<input name="numero_serie" value="${d?.numero_serie||''}">`)}

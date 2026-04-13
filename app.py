@@ -369,15 +369,15 @@ def criar_celular() -> tuple[Response, int] | Response:
                     """INSERT INTO celulares
                        (id_ativo,fazenda,setor,responsavel,tipo,modelo,numero,status,
                         uso_celular,carregador,termo_assinado,data_entrega,data_devolucao,
-                        gmail,senha,usuario_anterior,imei_1,imei_2,num_serie,armazenamento)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                        gmail,senha,usuario_anterior,imei_1,imei_2,num_serie,armazenamento,cargo)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                     (
                         d["id_ativo"], d.get("fazenda"), d.get("setor"), d.get("responsavel"),
                         d.get("tipo"), d.get("modelo"), d.get("numero"), d.get("status", "Ativo"),
                         d.get("uso_celular"), d.get("carregador"), d.get("termo_assinado"),
                         d.get("data_entrega"), d.get("data_devolucao"), d.get("gmail"),
                         d.get("senha"), d.get("usuario_anterior"), d.get("imei_1"),
-                        d.get("imei_2"), d.get("num_serie"), d.get("armazenamento"),
+                        d.get("imei_2"), d.get("num_serie"), d.get("armazenamento"), d.get("cargo"),
                     ),
                 )
                 log_historico(cur, d["id_ativo"], "Celular", "Cadastro")
@@ -406,15 +406,14 @@ def atualizar_celular(id_ativo: str) -> Response:
                    fazenda=%s,setor=%s,responsavel=%s,tipo=%s,modelo=%s,numero=%s,status=%s,
                    uso_celular=%s,carregador=%s,termo_assinado=%s,data_entrega=%s,
                    data_devolucao=%s,gmail=%s,senha=%s,usuario_anterior=%s,imei_1=%s,
-                   imei_2=%s,num_serie=%s,armazenamento=%s,updated_at=NOW()
+                   imei_2=%s,num_serie=%s,armazenamento=%s,cargo=%s,updated_at=NOW()
                    WHERE id_ativo=%s""",
                 (
                     d.get("fazenda"), d.get("setor"), d.get("responsavel"), d.get("tipo"),
                     d.get("modelo"), d.get("numero"), d.get("status"), d.get("uso_celular"),
                     d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
                     d.get("data_devolucao"), d.get("gmail"), d.get("senha"),
-                    d.get("usuario_anterior"), d.get("imei_1"), d.get("imei_2"),
-                    d.get("num_serie"), d.get("armazenamento"), id_ativo,
+                    d.get("num_serie"), d.get("armazenamento"), d.get("cargo"), id_ativo,
                 ),
             )
             log_historico(cur, id_ativo, "Celular", "Edição")
@@ -519,8 +518,8 @@ def criar_computador() -> tuple[Response, int] | Response:
                        (id_ativo,fazenda,setor,responsavel,tipo,modelo,marca,numero_serie,
                         patrimonio,processador,memoria_ram,armazenamento,sistema_operacional,
                         versao_so,status,data_aquisicao,data_entrega,data_devolucao,
-                        usuario_windows,senha_windows,usuario_anterior,observacoes,termo_assinado)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                        usuario_windows,senha_windows,usuario_anterior,observacoes,termo_assinado,cargo)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                     (
                         d["id_ativo"], d.get("fazenda"), d.get("setor"), d.get("responsavel"),
                         d.get("tipo"), d.get("modelo"), d.get("marca"), d.get("numero_serie"),
@@ -528,7 +527,7 @@ def criar_computador() -> tuple[Response, int] | Response:
                         d.get("armazenamento"), d.get("sistema_operacional"), d.get("versao_so"),
                         d.get("status", "Ativo"), d.get("data_aquisicao"), d.get("data_entrega"),
                         d.get("data_devolucao"), d.get("usuario_windows"), d.get("senha_windows"),
-                        d.get("usuario_anterior"), d.get("observacoes"), d.get("termo_assinado"),
+                        d.get("usuario_anterior"), d.get("observacoes"), d.get("termo_assinado"), d.get("cargo"),
                     ),
                 )
                 log_historico(cur, d["id_ativo"], "Computador", "Cadastro")
@@ -559,7 +558,7 @@ def atualizar_computador(id_ativo: str) -> Response:
                    armazenamento=%s,sistema_operacional=%s,versao_so=%s,status=%s,
                    data_aquisicao=%s,data_entrega=%s,data_devolucao=%s,usuario_windows=%s,
                    senha_windows=%s,usuario_anterior=%s,observacoes=%s,termo_assinado=%s,
-                   updated_at=NOW() WHERE id_ativo=%s""",
+                   cargo=%s,updated_at=NOW() WHERE id_ativo=%s""",
                 (
                     d.get("fazenda"), d.get("setor"), d.get("responsavel"), d.get("tipo"),
                     d.get("modelo"), d.get("marca"), d.get("numero_serie"), d.get("patrimonio"),
@@ -567,7 +566,7 @@ def atualizar_computador(id_ativo: str) -> Response:
                     d.get("sistema_operacional"), d.get("versao_so"), d.get("status"),
                     d.get("data_aquisicao"), d.get("data_entrega"), d.get("data_devolucao"),
                     d.get("usuario_windows"), d.get("senha_windows"), d.get("usuario_anterior"),
-                    d.get("observacoes"), d.get("termo_assinado"), id_ativo,
+                    d.get("observacoes"), d.get("termo_assinado"), d.get("cargo"), id_ativo,
                 ),
             )
             log_historico(cur, id_ativo, "Computador", "Edição")

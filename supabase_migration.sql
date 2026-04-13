@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS celulares (
     termo_assinado TEXT, data_entrega DATE, data_devolucao DATE,
     gmail TEXT, senha TEXT, usuario_anterior TEXT,
     imei_1 TEXT, imei_2 TEXT, num_serie TEXT,
-    armazenamento TEXT, termo_pdf TEXT,
+    armazenamento TEXT, termo_pdf TEXT, cargo TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS computadores (
     data_aquisicao DATE, data_entrega DATE, data_devolucao DATE,
     usuario_windows TEXT, senha_windows TEXT,
     usuario_anterior TEXT, observacoes TEXT,
-    termo_assinado TEXT, termo_pdf TEXT,
+    termo_assinado TEXT, termo_pdf TEXT, cargo TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
