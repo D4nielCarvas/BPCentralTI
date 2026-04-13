@@ -57,6 +57,7 @@ def main() -> None:
         "--onedir",
         "--noconsole",
         f"--add-data=templates{sep}templates",
+        "--hidden-import=id_generator",
         "--hidden-import=psycopg2",
         "--hidden-import=psycopg2.extras",
         "--hidden-import=dotenv",

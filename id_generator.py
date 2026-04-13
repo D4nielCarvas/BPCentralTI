@@ -34,21 +34,13 @@ if TYPE_CHECKING:
 
 # A. Tipos de Equipamento
 SIGLAS_TIPO: dict[str, str] = {
-<<<<<<< HEAD
     "DK": "Desktop (Computador de Mesa)",
     "NT": "Notebook",
     "CL": "Celular / Smartphone",
     "IMP": "Impressora",
     "TB": "Tablet",
-    "EST": "Estabilizador",  # Mantido para compatibilidade
-    "STL": "Starlink",       # Mantido para compatibilidade
-=======
-    "DK":  "Desktop",
-    "NT":  "Notebook",
-    "CL":  "Celular",
-    "IMP": "Impressora",
-    "TB":  "Tablet",
->>>>>>> 3fb7f168516f89f26f043169e4684bc53c148fb8
+    "EST": "Estabilizador",
+    "STL": "Starlink",
 }
 
 # B. Localidades (Fazendas e Unidades)
@@ -60,11 +52,7 @@ SIGLAS_LOCAL: dict[str, str] = {
     "SJU": "São Judas",
     "SFR": "São Francisco",
     "STN": "Santana",
-<<<<<<< HEAD
     "CD": "CD",
-=======
-    "CD":  "CD",
->>>>>>> 3fb7f168516f89f26f043169e4684bc53c148fb8
     "SEL": "Santa Eliza",
     "SLU": "Santa Lucia",
     "SL2": "Santa Lucia 2",
@@ -76,26 +64,14 @@ SIGLAS_LOCAL: dict[str, str] = {
 
 # C. Setores
 SIGLAS_SETOR: dict[str, str] = {
-<<<<<<< HEAD
     "FT": "Fito",
-=======
-    "FT":  "Fito",
-    "ALP": "Almoxarifado de Peças",
-    "ALI": "Almoxarifado de Insumos",
+    "ALP": "Almoxarifado Peças",
+    "ALI": "Almoxarifado Insumos",
     "COO": "Coordenador",
     "ADM": "Administrativo",
     "APO": "Apoio",
->>>>>>> 3fb7f168516f89f26f043169e4684bc53c148fb8
     "COL": "Colheita",
-    "ALP": "Almoxarifado Peças",
     "PTO": "Ponto",
-<<<<<<< HEAD
-    "ALI": "Almoxarifado Insumos",
-    "COO": "Coordenador",
-    "ADM": "ADM",
-    "APO": "Apoio",
-=======
->>>>>>> 3fb7f168516f89f26f043169e4684bc53c148fb8
     "TRM": "Turma",
     "ABS": "Abastecimento",
     "IRR": "Irrigação",
@@ -108,6 +84,8 @@ _TABELA_POR_TIPO: dict[str, str] = {
     "CL":  "celulares",
     "IMP": "impressoras",
     "TB":  "celulares",
+    "EST": "estabilizadores",
+    "STL": "starlink",
 }
 
 
@@ -135,16 +113,6 @@ def gerar_id_ativo(tipo: str, localidade: str, setor: str, sequencial: int) -> s
     Raises:
         ValueError: Se tipo, localidade ou setor não forem siglas válidas.
         ValueError: Se sequencial for menor ou igual a zero.
-
-    Exemplos:
-        >>> gerar_id_ativo('NT', 'TNG', 'FT', 1)
-        'NT-TNG-FT-01'
-        >>> gerar_id_ativo('IMP', 'CEN', 'ADM', 2)
-        'IMP-CEN-ADM-02'
-        >>> gerar_id_ativo('CL', 'SL2', 'COO', 4)
-        'CL-SL2-COO-04'
-        >>> gerar_id_ativo('DK', 'SFR', 'ALP', 1)
-        'DK-SFR-ALP-01'
     """
     # Converte para maiúsculas antes da validação para garantir consistência
     tipo = tipo.upper()
@@ -165,11 +133,6 @@ def gerar_id_ativo(tipo: str, localidade: str, setor: str, sequencial: int) -> s
     
     id_gerado = f"{tipo}-{localidade}-{setor}-{seq_str}"
     
-    # Validação NetBIOS (opcional, apenas log se passar de 15)
-    if len(id_gerado) > 15:
-        # Poderíamos logar aqui se necessário, mas seguimos o padrão solicitado
-        pass
-        
     return id_gerado
 
 
@@ -181,25 +144,6 @@ def proximo_sequencial(
 ) -> int:
     """
     Consulta o banco e retorna o próximo número sequencial disponível.
-
-    Busca todos os IDs existentes no padrão 'TIPO-LOCAL-SETOR-NN' na tabela
-    correspondente ao tipo informado, extrai os sequenciais e retorna o maior + 1.
-    Se nenhum registro for encontrado, retorna 1.
-
-    Usa %s como placeholder (compatível com psycopg2 / PostgreSQL).
-
-    Args:
-        cur: Cursor psycopg2 ativo (dentro de uma transação aberta).
-        tipo: Sigla do tipo de equipamento (ex.: 'NT').
-        localidade: Sigla da localidade (ex.: 'CEN').
-        setor: Sigla do setor (ex.: 'ADM').
-
-    Returns:
-        Inteiro representando o próximo sequencial disponível (mínimo 1).
-
-    Exemplos:
-        Se existem NT-CEN-ADM-01 e NT-CEN-ADM-02, retorna 3.
-        Se não há registros com esse prefixo, retorna 1.
     """
     tabela = _TABELA_POR_TIPO.get(tipo, "computadores")
     prefixo = f"{tipo}-{localidade}-{setor}-"
@@ -227,24 +171,7 @@ def sugerir_id(
     setor: str,
 ) -> str:
     """
-    Sugere o próximo ID disponível para um ativo, combinando proximo_sequencial e gerar_id_ativo.
-
-    Função de conveniência que encapsula a consulta ao banco e a formatação do ID
-    em uma única chamada.
-
-    Args:
-        cur: Cursor psycopg2 ativo (dentro de uma transação aberta).
-        tipo: Sigla do tipo de equipamento.
-        localidade: Sigla da localidade.
-        setor: Sigla do setor.
-
-    Returns:
-        String com o próximo ID disponível no padrão 'TIPO-LOCAL-SETOR-NN'.
-
-    Exemplos:
-        >>> # Se NT-CEN-ADM-01 já existe:
-        >>> sugerir_id(cur, 'NT', 'CEN', 'ADM')
-        'NT-CEN-ADM-02'
+    Sugere o próximo ID disponível para um ativo.
     """
     seq = proximo_sequencial(cur, tipo, localidade, setor)
     return gerar_id_ativo(tipo, localidade, setor, seq)
