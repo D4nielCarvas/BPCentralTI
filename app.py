@@ -1146,12 +1146,13 @@ def criar_toner() -> Response:
             cur.execute(
                 """INSERT INTO toners
                    (modelo_impressora,modelo_toner,cor,quantidade_estoque,
-                    data_ultima_troca,quantidade_minima,observacoes)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+                    data_ultima_troca,quantidade_minima,observacoes,tipo_suprimento)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (
                     d["modelo_impressora"], d["modelo_toner"], d.get("cor", "Preto"),
                     d.get("quantidade_estoque", 0), d.get("data_ultima_troca"),
                     d.get("quantidade_minima", 1), d.get("observacoes"),
+                    d.get("tipo_suprimento", "Toner"),
                 ),
             )
     return jsonify({"ok": True, "msg": "Toner cadastrado!"})
@@ -1175,11 +1176,11 @@ def atualizar_toner(tid: int) -> Response:
             cur.execute(
                 """UPDATE toners SET
                    modelo_impressora=%s,modelo_toner=%s,cor=%s,quantidade_estoque=%s,
-                   quantidade_minima=%s,observacoes=%s,updated_at=NOW() WHERE id=%s""",
+                   quantidade_minima=%s,observacoes=%s,tipo_suprimento=%s,updated_at=NOW() WHERE id=%s""",
                 (
                     d.get("modelo_impressora"), d.get("modelo_toner"), d.get("cor"),
                     d.get("quantidade_estoque"), d.get("quantidade_minima"),
-                    d.get("observacoes"), tid,
+                    d.get("observacoes"), d.get("tipo_suprimento", "Toner"), tid,
                 ),
             )
     return jsonify({"ok": True, "msg": "Toner atualizado!"})

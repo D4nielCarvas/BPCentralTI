@@ -152,6 +152,9 @@ def proximo_sequencial(
     Consulta o banco e retorna o próximo número sequencial disponível.
     """
     tabela = _TABELA_POR_TIPO.get(tipo, "computadores")
+    if tipo == "CL" and setor in ("PTO", "TRM"):
+        tabela = "celulares_ponto"
+
     prefixo = f"{tipo}-{localidade}-{setor}-"
 
     cur.execute(

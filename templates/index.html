@@ -613,7 +613,9 @@ async function triggerIdSuggestion() {
 
   let setor = null;
   if (type === 'celulares_ponto') {
-    setor = numTurmaVal.trim() ? 'TRM' : 'PTO';
+    const funcaoVal = form.querySelector('[name="funcao"]')?.value || '';
+    if (!funcaoVal.trim()) return; // Só gera se houver função preenchida
+    setor = funcaoVal.toLowerCase().includes('turma') ? 'TRM' : 'PTO';
   } else {
     setor = findSigla(setorVal, SIGLAS_SETOR_JS) || null;
   }
@@ -1090,9 +1092,9 @@ function openCelularPontoModal(d) {
       ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
       ${fazendaFld(d)}
       <input type="hidden" name="setor" value="PTO">
-      ${fld('Função', `<input name="funcao" value="${d?.funcao||''}" placeholder="Operador, Supervisor...">`)}
+      ${fld('Função', `<input name="funcao" value="${d?.funcao||''}" oninput="triggerIdSuggestion()" placeholder="Operador, Supervisor...">`)}
       ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
-      ${fld('Nº Turma', `<input name="num_turma" value="${d?.num_turma||''}" oninput="triggerIdSuggestion()" placeholder="Turma 01">`)}
+      ${fld('Nº Turma', `<input name="num_turma" value="${d?.num_turma||''}" placeholder="Turma 01">`)}
       ${fld('Tipo', `<input name="tipo" value="${d?.tipo||''}" placeholder="Smartphone">`)}
       ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}" placeholder="Samsung A14">`)}
       ${fld('Gmail ClockIn', `<input name="gmail_clockin" value="${d?.gmail_clockin||''}" placeholder="ponto@empresa.com">`)}
@@ -1237,17 +1239,22 @@ function openEstoqueModal(d) {
   openModal(d ? `Editar Item — ${d.item}` : 'Novo Item de Estoque', html, {type:'estoque',mode:d?'edit':'new',id:d?.id});
 }
 
-function openTonerModal(d) {
+async function openTonerModal(d) {
+  const impressoras = await api('/api/impressoras/por_fazenda?fazenda=Central');
+  const optsImp = `<option value="">Digite manualmente...</option>
+    ${impressoras.map(i=>`<option value="${i.id_ativo}" ${d?.modelo_impressora===i.id_ativo?'selected':''}>${i.id_ativo} — ${i.modelo||''}</option>`).join('')}`;
+
   const html = `<form id="modal-form"><div class="form-grid">
-    ${fld('Modelo Impressora *', `<input name="modelo_impressora" value="${d?.modelo_impressora||''}" required placeholder="HP LaserJet M404n">`)}
-    ${fld('Modelo Toner *', `<input name="modelo_toner" value="${d?.modelo_toner||''}" required placeholder="HP CF259A">`)}
+    <div class="form-group">${fld('Impressora (Central)', `<select onchange="if(this.value){document.getElementById('mod-imp').value=this.value;}">${optsImp}</select>`)}</div>
+    <div class="form-group">${fld('Modelo Impressora (Manual/Editável) *', `<input id="mod-imp" name="modelo_impressora" value="${d?.modelo_impressora||''}" required placeholder="IMP-CEN-XXX-01 ou Modelo">`)}</div>
+    ${fld('Tipo de Suprimento *', st('tipo_suprimento', d, ['Toner', 'Cilindro']))}
+    ${fld('Modelo Suprimento *', `<input name="modelo_toner" value="${d?.modelo_toner||''}" required placeholder="HP CF259A">`)}
     ${fld('Cor', st('cor',d,['Preto','Ciano','Magenta','Amarelo','Colorido']))}
     ${fld('Qtd em Estoque', `<input type="number" name="quantidade_estoque" value="${d?.quantidade_estoque||0}" min="0">`)}
     ${fld('Qtd Mínima (Alerta)', `<input type="number" name="quantidade_minima" value="${d?.quantidade_minima||1}" min="0">`)}
-    ${fld('Data Última Troca', `<input type="date" name="data_ultima_troca" value="${d?.data_ultima_troca||''}">`)}
     <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${d?.observacoes||''}</textarea>`)}</div>
   </div></form>`;
-  openModal(d ? `Editar Toner — ${d.modelo_toner}` : 'Cadastrar Toner', html, {type:'toner',mode:d?'edit':'new',id:d?.id});
+  openModal(d ? `Editar Estoque de Toner — ${d.modelo_toner}` : 'Cadastrar Toner/Cilindro', html, {type:'toner',mode:d?'edit':'new',id:d?.id});
 }
 
 function openManutModal(d, prefill={}) {
@@ -1389,11 +1396,16 @@ function onTipoTransfChange(tipo) {
   }
 }
 
-function openPedidoModal(d) {
+async function openPedidoModal(d) {
+  const estoque = await api('/api/estoque');
+  const optsEstoque = `<option value="">Nenhum / Não aplicável</option>
+    ${estoque.map(e=>`<option value="${e.id}" data-item="${e.item}" ${d?.estoque_id===e.id?'selected':''}>#${e.id} — ${e.item} (Estoque: ${e.quantidade})</option>`).join('')}`;
+
   const html = `<form id="modal-form"><div class="form-grid">
     ${d ? fld('ID','<input name="_id" value="'+d.id+'" readonly style="display:none">') : ''}
     ${fazendaFld(d, 'fazenda_solicitante', 'Fazenda Solicitante *')}
-    ${fld('Item *', `<input name="item" value="${d?.item||''}" required placeholder="Nome do item de TI">`)}
+    <div class="form-group">${fld('Vincular a Estoque', `<select name="estoque_id" onchange="const opt=this.options[this.selectedIndex]; if(opt.value){document.getElementById('ped-item').value=opt.dataset.item;}">${optsEstoque}</select>`)}</div>
+    ${fld('Item *', `<input id="ped-item" name="item" value="${d?.item||''}" required placeholder="Nome do item de TI">`)}
     ${fld('Quantidade *', `<input type="number" name="quantidade" value="${d?.quantidade||1}" min="1" required>`)}
     ${fld('Nº Requisição', `<input name="num_requisicao" value="${d?.num_requisicao||''}" placeholder="REQ-001">`)}
     ${fld('Status', st('status',d,['Aberto','Pendente de Envio','Enviado','Finalizado','Rejeitado']))}
