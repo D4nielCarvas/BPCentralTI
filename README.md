@@ -43,6 +43,7 @@ O **Inventário TI v3** é uma aplicação web local (desktop-like) que centrali
 | **Manutenções** | Abertura e acompanhamento de ordens de serviço |
 | **Descartes** | Registro de baixa patrimonial de ativos |
 | **Transferências** | Movimentação de ativos entre responsáveis/fazendas |
+| **Pedidos** | Registro de pedidos feitos pelos funcionario |
 | **Histórico** | Auditoria de todas as operações realizadas |
 | **Dashboard** | Painel com estatísticas gerais e atividade recente |
 | **Coleta Automática** | Importação de dados de hardware via script `.bat` |
@@ -232,7 +233,9 @@ TIPO-LOCAL-SETOR-ID
 | Almoxarifado Insumos | `ALI` | Turma | `TRM` |
 | Coordenador | `COO` | Abastecimento | `ABS` |
 | Administrativo | `ADM` | Irrigação | `IRR` |
-| Apoio | `APO` | | |
+| Apoio | `APO` | Agricola | `AGR` |
+| Sestr | `STR` | Líderes | `LDR` |
+| COA |  `COA` | CD | `CDP` |
 
 ### Exemplos Práticos de Aplicação
 1. Notebook da Fazenda Tangará do setor de Fito, equipamento número 01: `NT-TNG-FT-01`
