@@ -1369,30 +1369,45 @@ function openTransferenciaModal(d) {
 }
 
 function onTipoTransfChange(tipo) {
-  const all = ['trnsf-origem-usuario','trnsf-origem-fazenda','trnsf-destino-usuario','trnsf-destino-fazenda','trnsf-setor-destino'];
-  all.forEach(id => document.getElementById(id).style.display = 'none');
+  const allIds = ['trnsf-origem-usuario','trnsf-origem-fazenda','trnsf-destino-usuario','trnsf-destino-fazenda','trnsf-setor-destino'];
+  
+  // Esconde tudo e desabilita os campos para evitar validação de campos invisíveis
+  allIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = 'none';
+    el.querySelectorAll('input, select, textarea').forEach(inp => inp.disabled = true);
+  });
+
+  const show = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = '';
+    el.querySelectorAll('input, select, textarea').forEach(inp => inp.disabled = false);
+  };
+
   // Regras de exibição por tipo
   if (tipo === 'Estoque para Fazenda') {
-    document.getElementById('trnsf-destino-fazenda').style.display = '';
-    document.getElementById('trnsf-setor-destino').style.display = '';
+    show('trnsf-destino-fazenda');
+    show('trnsf-setor-destino');
   } else if (tipo === 'Fazenda para Estoque') {
-    document.getElementById('trnsf-origem-fazenda').style.display = '';
+    show('trnsf-origem-fazenda');
   } else if (tipo === 'Usuario para Usuario') {
-    document.getElementById('trnsf-origem-usuario').style.display = '';
-    document.getElementById('trnsf-destino-usuario').style.display = '';
-    document.getElementById('trnsf-destino-fazenda').style.display = '';
-    document.getElementById('trnsf-setor-destino').style.display = '';
+    show('trnsf-origem-usuario');
+    show('trnsf-destino-usuario');
+    show('trnsf-destino-fazenda');
+    show('trnsf-setor-destino');
   } else if (tipo === 'Usuario para Estoque') {
-    document.getElementById('trnsf-origem-usuario').style.display = '';
+    show('trnsf-origem-usuario');
   } else if (tipo === 'Usuario para Fazenda') {
-    document.getElementById('trnsf-origem-usuario').style.display = '';
-    document.getElementById('trnsf-destino-fazenda').style.display = '';
-    document.getElementById('trnsf-setor-destino').style.display = '';
+    show('trnsf-origem-usuario');
+    show('trnsf-destino-fazenda');
+    show('trnsf-setor-destino');
   } else if (tipo === 'Fazenda para Usuario') {
-    document.getElementById('trnsf-origem-fazenda').style.display = '';
-    document.getElementById('trnsf-destino-usuario').style.display = '';
-    document.getElementById('trnsf-destino-fazenda').style.display = '';
-    document.getElementById('trnsf-setor-destino').style.display = '';
+    show('trnsf-origem-fazenda');
+    show('trnsf-destino-usuario');
+    show('trnsf-destino-fazenda');
+    show('trnsf-setor-destino');
   }
 }
 
