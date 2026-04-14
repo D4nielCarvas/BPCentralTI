@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventário TI v2</title>
+<title>Inventário TI v3</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 :root{--bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e29;--border:#252b3b;--border2:#2e364d;--accent:#3b82f6;--accent2:#6366f1;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--orange:#f97316;--purple:#8b5cf6;--cyan:#06b6d4;--text:#e2e8f0;--text2:#94a3b8;--text3:#475569;--sidebar-w:248px}
@@ -88,6 +88,11 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 .badge-saida{background:rgba(239,68,68,.12);color:var(--red)}
 .badge-estoque{background:rgba(6,182,212,.12);color:var(--cyan)}
 .badge-baixo{background:rgba(239,68,68,.2);color:var(--red);animation:pulse 2s infinite}
+.badge-aberto{background:rgba(59,130,246,.12);color:var(--accent)}
+.badge-pendente{background:rgba(249,115,22,.12);color:var(--orange)}
+.badge-enviado{background:rgba(6,182,212,.12);color:var(--cyan)}
+.badge-finalizado{background:rgba(16,185,129,.12);color:var(--green)}
+.badge-rejeitado{background:rgba(239,68,68,.12);color:var(--red)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s}
 .modal-backdrop.open{opacity:1;pointer-events:all}
@@ -138,6 +143,7 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 .toner-cor-magenta::before{background:#ec4899!important}
 .toner-cor-amarelo::before{background:var(--yellow)!important}
 .sec-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.cond-field{transition:all .2s}
 </style>
 </head>
 <body>
@@ -146,7 +152,7 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   <div class="sidebar-logo">
     <div class="logo-icon">🖥️</div>
     <h1>Inventário TI</h1>
-    <p class="version">v2.0 · SQLite</p>
+    <p class="version">v3.0 · Supabase</p>
   </div>
   <nav>
     <div class="nav-label">Geral</div>
@@ -154,6 +160,7 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     <div class="nav-label">Celulares</div>
     <div class="nav-item" data-page="celulares"><span class="icon">📱</span> Celulares</div>
     <div class="nav-item" data-page="celulares_ponto"><span class="icon">🕐</span> Cel. Ponto/Turma</div>
+    <div class="nav-item" data-page="celulares_inspecao"><span class="icon">🔍</span> Cel. Inspeção</div>
     <div class="nav-label">Equipamentos</div>
     <div class="nav-item" data-page="computadores"><span class="icon">💻</span> Notebooks / PCs</div>
     <div class="nav-item" data-page="impressoras"><span class="icon">🖨️</span> Impressoras</div>
@@ -167,6 +174,7 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     <div class="nav-item" data-page="manutencoes"><span class="icon">🔧</span> Manutenções <span class="nav-badge" id="badge-man" style="display:none">0</span></div>
     <div class="nav-item" data-page="descartes"><span class="icon">🗑️</span> Descartes</div>
     <div class="nav-item" data-page="transferencias"><span class="icon">🔄</span> Transferências</div>
+    <div class="nav-item" data-page="pedidos"><span class="icon">📋</span> Pedidos <span class="nav-badge" id="badge-ped" style="display:none">0</span></div>
     <div class="nav-item" data-page="historico"><span class="icon">📜</span> Histórico</div>
   </nav>
   <div class="sidebar-footer"><div class="version">localhost:5000</div></div>
@@ -227,6 +235,24 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
         <div style="overflow-x:auto"><table>
           <thead><tr><th>ID Ativo</th><th>Fazenda</th><th>Função</th><th>Responsável</th><th>Nº Turma</th><th>Modelo</th><th>Status</th><th>Gmail ClockIn</th><th>Termo</th><th>Ações</th></tr></thead>
           <tbody id="tb-celulares_ponto"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- CELULARES INSPEÇÃO -->
+    <div class="page" id="page-celulares_inspecao">
+      <div class="table-card">
+        <div class="table-header"><h3>🔍 Celulares Inspeção</h3>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterTable('celulares_inspecao','',this)">Todos</button>
+            <button class="filter-btn" onclick="filterTable('celulares_inspecao','Ativo',this)">Ativos</button>
+            <button class="filter-btn" onclick="filterTable('celulares_inspecao','Inativo',this)">Inativos</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('celulares_inspecao')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>ID Ativo</th><th>ID Sistema</th><th>Fazenda</th><th>Responsável</th><th>Modelo</th><th>Número</th><th>Status</th><th>Termo</th><th>Ações</th></tr></thead>
+          <tbody id="tb-celulares_inspecao"></tbody>
         </table></div>
       </div>
     </div>
@@ -334,7 +360,7 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     <!-- TONERS -->
     <div class="page" id="page-toners">
       <div class="table-card">
-        <div class="table-header"><h3>🖨️ Controle de Toner</h3>
+        <div class="table-header"><h3>🖨️ Controle de Toner / Cilindro</h3>
           <button class="btn btn-ghost btn-sm" onclick="exportar('toners')">⬇ CSV</button>
         </div>
         <div style="overflow-x:auto"><table>
@@ -358,7 +384,7 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
           <button class="btn btn-ghost btn-sm" onclick="exportar('manutencoes')">⬇ CSV</button>
         </div>
         <div style="overflow-x:auto"><table>
-          <thead><tr><th>ID</th><th>Ativo</th><th>Tipo</th><th>Modelo</th><th>Problema</th><th>Recebimento</th><th>OS</th><th>Orçamento</th><th>Status</th><th>Ações</th></tr></thead>
+          <thead><tr><th>ID</th><th>Ativo</th><th>Tipo Eq.</th><th>Tipo Manut.</th><th>Modelo</th><th>Problema</th><th>Recebimento</th><th>OS</th><th>Orçamento</th><th>Status</th><th>Ações</th></tr></thead>
           <tbody id="tb-manutencoes"></tbody>
         </table></div>
       </div>
@@ -384,8 +410,29 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
           <button class="btn btn-ghost btn-sm" onclick="exportar('transferencias')">⬇ CSV</button>
         </div>
         <div style="overflow-x:auto"><table>
-          <thead><tr><th>Ativo</th><th>Tipo</th><th>Origem</th><th>Destino</th><th>Motivo</th><th>Data</th><th>Registrado Por</th></tr></thead>
+          <thead><tr><th>Ativo</th><th>Tipo Eq.</th><th>Tipo Transf.</th><th>Origem</th><th>Destino</th><th>Motivo</th><th>Data</th><th>Registrado Por</th></tr></thead>
           <tbody id="tb-transferencias"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- PEDIDOS -->
+    <div class="page" id="page-pedidos">
+      <div class="table-card">
+        <div class="table-header"><h3>📋 Pedidos de TI</h3>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterPedidos('',this)">Todos</button>
+            <button class="filter-btn" onclick="filterPedidos('Aberto',this)">Abertos</button>
+            <button class="filter-btn" onclick="filterPedidos('Pendente de Envio',this)">Pendentes</button>
+            <button class="filter-btn" onclick="filterPedidos('Enviado',this)">Enviados</button>
+            <button class="filter-btn" onclick="filterPedidos('Finalizado',this)">Finalizados</button>
+            <button class="filter-btn" onclick="filterPedidos('Rejeitado',this)">Rejeitados</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="exportar('pedidos')">⬇ CSV</button>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>ID</th><th>Fazenda Sol.</th><th>Item</th><th>Qtd</th><th>Nº Requisição</th><th>Motivo</th><th>Forma Envio</th><th>Data</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="tb-pedidos"></tbody>
         </table></div>
       </div>
     </div>
@@ -419,22 +466,32 @@ tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 </div>
 
 <script>
-// ─── STATE ─────────────────────────────────────────────────────────────────
+// ─── CONSTANTES ─────────────────────────────────────────────────────────────
+const FAZENDAS = ['Central','São Manoel','Tangará','São Pedro','São Judas','São Francisco',
+  'Santana','Santa Eliza','Santa Lucia','Santa Lucia 2','Caroline','São João',
+  'Santa Luzia','Santa Adelina','CD'];
+
+const FAZENDA_SIGLA = {
+  'Central':'CEN','São Manoel':'SMN','Tangará':'TNG','São Pedro':'SPD',
+  'São Judas':'SJU','São Francisco':'SFR','Santana':'STN','Santa Eliza':'SEL',
+  'Santa Lucia':'SLU','Santa Lucia 2':'SL2','Caroline':'CLN','São João':'SJO',
+  'Santa Luzia':'SLZ','Santa Adelina':'SAD','CD':'CD'
+};
+
+const SIGLAS_SETOR_JS = {
+  'FT':'Fito','ALP':'Almoxarifado Peças','ALI':'Almoxarifado Insumos',
+  'COO':'Coordenador','ADM':'Administrativo','APO':'Apoio','COL':'Colheita',
+  'PTO':'Ponto','TRM':'Turma','ABS':'Abastecimento','IRR':'Irrigação',
+  'STR':'Sestr','AGR':'Agrícola','CDP':'CD','INP':'Inspeção','LDR':'Líderes','TI':'TI'
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
 let currentPage = 'dashboard';
 let modalCtx = {};
 let filterState = {};
-let globalSearchFilter = ''; // Filtro vindo da busca global
-let siglas = { tipo:{}, local:{}, setor:{} };
+let globalSearchFilter = '';
 
-async function loadSiglas() {
-  const data = await api('/api/utils/siglas');
-  if (data && !data.msg) {
-    siglas = data;
-  }
-}
-loadSiglas();
-
-// ─── NAV ───────────────────────────────────────────────────────────────────
+// ─── NAV ─────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.nav-item[data-page]').forEach(el => {
   el.addEventListener('click', () => showPage(el.dataset.page));
 });
@@ -445,28 +502,37 @@ function showPage(page) {
   document.getElementById('page-' + page).classList.add('active');
   document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
   currentPage = page;
-  const titles = {dashboard:'Dashboard',celulares:'Celulares',celulares_ponto:'Celulares Ponto / Turma',
-    computadores:'Notebooks / Computadores',impressoras:'Impressoras',estabilizadores:'Estabilizadores / Nobreakes',
-    starlink:'Antenas Starlink',estoque:'Estoque Geral',estoque_equipamentos:'Estoque Equipamentos',toners:'Controle de Toner',
-    manutencoes:'Manutenções',descartes:'Descartes',transferencias:'Transferências',historico:'Histórico de Transações'};
+  const titles = {
+    dashboard:'Dashboard',celulares:'Celulares',celulares_ponto:'Celulares Ponto / Turma',
+    celulares_inspecao:'Celulares Inspeção',computadores:'Notebooks / Computadores',
+    impressoras:'Impressoras',estabilizadores:'Estabilizadores / Nobreakes',
+    starlink:'Antenas Starlink',estoque:'Estoque Geral',estoque_equipamentos:'Estoque Equipamentos',
+    toners:'Controle de Toner',manutencoes:'Manutenções',descartes:'Descartes',
+    transferencias:'Transferências',pedidos:'Pedidos de TI',historico:'Histórico de Transações'
+  };
   document.getElementById('page-title').textContent = titles[page] || page;
-  const noNew = ['dashboard','descartes','historico'];
+  const noNew = ['dashboard','descartes','historico','estoque_equipamentos'];
   const btn = document.getElementById('btn-new');
   btn.style.display = noNew.includes(page) ? 'none' : '';
-  const lbls = {celulares:'+ Celular',celulares_ponto:'+ Cel. Ponto',computadores:'+ Computador',
-    impressoras:'+ Impressora',estabilizadores:'+ Estabilizador',starlink:'+ Starlink',
-    estoque:'+ Item',toners:'+ Toner',manutencoes:'+ Manutenção',transferencias:'+ Transferência'};
+  const lbls = {
+    celulares:'+ Celular',celulares_ponto:'+ Cel. Ponto',celulares_inspecao:'+ Cel. Inspeção',
+    computadores:'+ Computador',impressoras:'+ Impressora',estabilizadores:'+ Estabilizador',
+    starlink:'+ Starlink',estoque:'+ Item',toners:'+ Toner',manutencoes:'+ Manutenção',
+    transferencias:'+ Transferência',pedidos:'+ Pedido'
+  };
   btn.textContent = lbls[page] || '+ Novo';
   loadPage(page);
 }
 
 function loadPage(page) {
-  // Se mudar de página e não for via busca, limpa o filtro global em alguns casos
-  // Mas aqui vamos deixar o loadPage usar o globalSearchFilter se ele existir
-  const loaders = {dashboard:loadDashboard,celulares:loadCelulares,celulares_ponto:loadCelularesPonto,
-    computadores:loadComputadores,impressoras:loadImpressoras,estabilizadores:loadEstabilizadores,
-    starlink:loadStarlink,estoque:loadEstoque,estoque_equipamentos:loadEstoqueEquipamentos,toners:loadToners,manutencoes:loadManutencoes,
-    descartes:loadDescartes,transferencias:loadTransferencias,historico:loadHistorico};
+  const loaders = {
+    dashboard:loadDashboard,celulares:loadCelulares,celulares_ponto:loadCelularesPonto,
+    celulares_inspecao:loadCelularesInspecao,computadores:loadComputadores,
+    impressoras:loadImpressoras,estabilizadores:loadEstabilizadores,
+    starlink:loadStarlink,estoque:loadEstoque,estoque_equipamentos:loadEstoqueEquipamentos,
+    toners:loadToners,manutencoes:loadManutencoes,descartes:loadDescartes,
+    transferencias:loadTransferencias,pedidos:loadPedidos,historico:loadHistorico
+  };
   loaders[page]?.();
 }
 
@@ -480,17 +546,20 @@ function filterManut(status, btn) {
   document.querySelectorAll('#page-manutencoes .filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active'); loadManutencoes();
 }
+function filterPedidos(status, btn) {
+  filterState.pedidos = status;
+  document.querySelectorAll('#page-pedidos .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active'); loadPedidos();
+}
 
-// ─── API ───────────────────────────────────────────────────────────────────
+// ─── API ─────────────────────────────────────────────────────────────────────
 async function api(path, method='GET', body=null) {
   try {
     const opts = {method, headers:{'Content-Type':'application/json'}};
     if (body) opts.body = JSON.stringify(body);
     const r = await fetch(path, opts);
-    const contentType = r.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      return await r.json();
-    }
+    const ct = r.headers.get("content-type");
+    if (ct && ct.includes("application/json")) return await r.json();
     return { ok: r.ok, msg: r.ok ? "Sucesso" : `Erro ${r.status}` };
   } catch (err) {
     console.error("Erro na API:", err);
@@ -498,53 +567,56 @@ async function api(path, method='GET', body=null) {
   }
 }
 
+// ─── FORMATAÇÃO DE TELEFONE ───────────────────────────────────────────────
+function formatPhone(el) {
+  let v = el.value.replace(/\D/g,'');
+  if (v.length > 11) v = v.slice(0,11);
+  if (v.length <= 10) {
+    v = v.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+  } else {
+    v = v.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+  }
+  el.value = v;
+}
+
+// ─── SUGESTÃO DE ID ──────────────────────────────────────────────────────────
 async function triggerIdSuggestion() {
   const { mode, type } = modalCtx;
   if (mode !== 'new') return;
-
   const form = document.getElementById('modal-form');
   if (!form) return;
 
-  // Mapeamento de tipo de página para sigla de tipo do id_generator
   const typeMap = {
     celulares: 'CL',
     celulares_ponto: 'CL',
-    computadores: form.querySelector('[name="tipo"]')?.value === 'Desktop' ? 'DK' : form.querySelector('[name="tipo"]')?.value === 'Notebook' ? 'NT' : 'DK',
+    celulares_inspecao: 'CL',
+    computadores: form.querySelector('[name="tipo"]')?.value === 'Desktop' ? 'DK' : 'NT',
     impressoras: 'IMP',
     estabilizadores: 'EST',
     starlink: 'STL'
   };
 
   const tipo = typeMap[type];
-  const localVal = form.querySelector('[name="fazenda"]')?.value || '';
+  const fazendaVal = form.querySelector('[name="fazenda"]')?.value || '';
   const setorVal = form.querySelector('[name="setor"]')?.value || '';
+  const numTurmaVal = form.querySelector('[name="num_turma"]')?.value || '';
 
-  // Dicionario de siglas (sincronizado com id_generator.py)
-  const siglas = {
-    local: {
-      "CEN": "Central", "SMN": "São Manoel", "TNG": "Tangará", "SPD": "São Pedro",
-      "SJU": "São Judas", "SFR": "São Francisco", "STN": "Santana", "CD": "CD",
-      "SEL": "Santa Eliza", "SLU": "Santa Lucia", "SL2": "Santa Lucia 2",
-      "CLN": "Caroline", "SJO": "São João", "SLZ": "Santa Luzia", "SAD": "Santa Adelina"
-    },
-    setor: {
-      "FT": "Fito", "ALP": "Almoxarifado Peças", "ALI": "Almoxarifado Insumos",
-      "COO": "Coordenador", "ADM": "Administrativo", "APO": "Apoio", "COL": "Colheita",
-      "PTO": "Ponto", "TRM": "Turma", "ABS": "Abastecimento", "IRR": "Irrigação", "TI": "TI"
-    }
-  };
+  const local = FAZENDA_SIGLA[fazendaVal] || null;
 
-  // Procura a sigla correspondente ao texto digitado (ex: "Tangará" -> "TNG")
   const findSigla = (val, dict) => {
     if (!val) return null;
-    const entry = Object.entries(dict).find(([s, n]) => 
+    const entry = Object.entries(dict).find(([s, n]) =>
       s.toLowerCase() === val.toLowerCase() || n.toLowerCase() === val.toLowerCase()
     );
     return entry ? entry[0] : null;
   };
 
-  const local = findSigla(localVal, siglas.local);
-  const setor = findSigla(setorVal, siglas.setor) || (type === 'celulares_ponto' ? 'PTO' : null);
+  let setor = null;
+  if (type === 'celulares_ponto') {
+    setor = numTurmaVal.trim() ? 'TRM' : 'PTO';
+  } else {
+    setor = findSigla(setorVal, SIGLAS_SETOR_JS) || null;
+  }
 
   if (tipo && local && setor) {
     const res = await api(`/api/utils/gerar-id?tipo=${tipo}&local=${local}&setor=${setor}`);
@@ -560,65 +632,46 @@ async function handleColetaImport(input) {
   const file = input.files[0];
   const formData = new FormData();
   formData.append('file', file);
-  input.value = ''; // Reset imediato para permitir reimportar o mesmo arquivo
-
+  input.value = '';
   toast('Processando arquivo de coleta...', 'info');
-
   try {
     const res = await fetch('/api/utils/parse-coleta', { method: 'POST', body: formData });
     const result = await res.json();
-
     if (result.ok && result.data) {
       const d = result.data;
-
-      // Normaliza o campo 'tipo' para os valores aceitos pelo select do formulario
-      const tipoMap = {
-        'desktop': 'Desktop',
-        'notebook': 'Notebook',
-        'laptop': 'Notebook',
-        'all-in-one': 'All-in-One',
-        'allinone': 'All-in-One',
-        'servidor': 'Servidor',
-        'server': 'Servidor',
-      };
-      if (d.tipo) {
-        d.tipo = tipoMap[d.tipo.toLowerCase()] || d.tipo;
-      }
-
-      // Se ip_rede e mac_address foram capturados, adiciona nas observacoes
+      const tipoMap = {'desktop':'Desktop','notebook':'Notebook','laptop':'Notebook','all-in-one':'All-in-One','servidor':'Servidor'};
+      if (d.tipo) d.tipo = tipoMap[d.tipo.toLowerCase()] || d.tipo;
       const extras = [];
       if (d.ip_rede) extras.push('IP Rede: ' + d.ip_rede);
       if (d.mac_address) extras.push('MAC: ' + d.mac_address);
-      if (extras.length > 0) {
-        d.observacoes = extras.join(' | ');
-      }
-
-      toast('\u2705 Dados importados! Preencha os campos restantes e salve.', 'success');
+      if (extras.length > 0) d.observacoes = extras.join(' | ');
+      toast('✅ Dados importados! Preencha os campos restantes e salve.', 'success');
       openComputadorModal(d);
     } else {
       toast(result.msg || 'Erro ao importar arquivo', 'error');
     }
   } catch (err) {
-    console.error('Erro ao importar coleta:', err);
-    toast('Erro de conex\u00e3o ao importar arquivo', 'error');
+    toast('Erro de conexão ao importar arquivo', 'error');
   }
 }
 
-// ─── DASHBOARD ─────────────────────────────────────────────────────────────
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
 async function loadDashboard() {
   const d = await api('/api/dashboard'); const eq = d.equipamentos;
   document.getElementById('dash-stats').innerHTML = `
     <div class="stat-card blue"><div class="stat-label">📱 Celulares</div><div class="stat-val">${eq.celulares.total}</div><div class="stat-sub">${eq.celulares.ativos} ativos</div></div>
     <div class="stat-card cyan"><div class="stat-label">🕐 Cel. Ponto</div><div class="stat-val">${eq.celulares_ponto.total}</div><div class="stat-sub">${eq.celulares_ponto.ativos} ativos</div></div>
+    <div class="stat-card purple"><div class="stat-label">🔍 Cel. Inspeção</div><div class="stat-val">${eq.celulares_inspecao?.total||0}</div><div class="stat-sub">${eq.celulares_inspecao?.ativos||0} ativos</div></div>
     <div class="stat-card green"><div class="stat-label">💻 Notebooks/PCs</div><div class="stat-val">${eq.computadores.total}</div><div class="stat-sub">${eq.computadores.ativos} ativos</div></div>
     <div class="stat-card yellow"><div class="stat-label">🖨️ Impressoras</div><div class="stat-val">${eq.impressoras.total}</div><div class="stat-sub">${eq.impressoras.ativos} ativas</div></div>
-    <div class="stat-card purple"><div class="stat-label">🔌 Estabilizadores</div><div class="stat-val">${eq.estabilizadores.total}</div><div class="stat-sub">${eq.estabilizadores.ativos} ativos</div></div>
-    <div class="stat-card cyan"><div class="stat-label">🛰️ Starlink</div><div class="stat-val">${eq.starlink.total}</div><div class="stat-sub">${eq.starlink.ativos} ativas</div></div>
     <div class="stat-card orange"><div class="stat-label">🔧 Manutenções</div><div class="stat-val">${d.manutencoes_abertas}</div><div class="stat-sub">em aberto</div></div>
+    <div class="stat-card ${d.pedidos_abertos>0?'orange':'green'}"><div class="stat-label">📋 Pedidos</div><div class="stat-val">${d.pedidos_abertos||0}</div><div class="stat-sub">em aberto</div></div>
     <div class="stat-card ${d.toner_alerta>0?'red':'green'}"><div class="stat-label">🖨️ Toners</div><div class="stat-val">${d.toner_alerta}</div><div class="stat-sub">${d.toner_alerta>0?'⚠️ Estoque baixo':'Estoque OK'}</div></div>
     <div class="stat-card blue"><div class="stat-label">📦 Itens Estoque</div><div class="stat-val">${d.estoque_itens}</div><div class="stat-sub">itens cadastrados</div></div>`;
   const b = document.getElementById('badge-man');
+  const bp = document.getElementById('badge-ped');
   if (d.manutencoes_abertas > 0) { b.style.display=''; b.textContent=d.manutencoes_abertas; } else b.style.display='none';
+  if (d.pedidos_abertos > 0) { bp.style.display=''; bp.textContent=d.pedidos_abertos; } else bp.style.display='none';
   document.getElementById('dash-activity').innerHTML = d.atividade_recente.length
     ? d.atividade_recente.map(a=>`<div class="activity-item"><div class="activity-dot"></div><div class="activity-text"><strong>${a.id_ativo||'—'}</strong> · ${a.acao} · ${a.tipo_equipamento||''}</div><div class="activity-time">${(a.data_hora||'').substring(0,16).replace('T',' ')}</div></div>`).join('')
     : '<div class="empty"><div class="empty-icon">📋</div><p>Sem atividade</p></div>';
@@ -628,10 +681,12 @@ async function loadDashboard() {
     : '<div class="empty"><div class="empty-icon">✅</div><p>Nenhuma aberta</p></div>';
 }
 
-// ─── STATUS / HELPERS ──────────────────────────────────────────────────────
+// ─── STATUS / HELPERS ────────────────────────────────────────────────────────
 function statusBadge(s) {
-  const map={Ativo:'badge-ativo',Inativo:'badge-inativo','Manutenção':'badge-manut',Descartado:'badge-desc',Estoque:'badge-estoque',
-    Aberta:'badge-aberta','Concluída':'badge-concluida','Em Análise':'badge-analise','Aguardando Peça':'badge-aguardando',Cancelada:'badge-inativo'};
+  const map={Ativo:'badge-ativo',Inativo:'badge-inativo','Manutenção':'badge-manut',Descartado:'badge-desc',
+    Estoque:'badge-estoque',Aberta:'badge-aberta','Concluída':'badge-concluida','Em Análise':'badge-analise',
+    'Aguardando Peça':'badge-aguardando',Cancelada:'badge-inativo',Aberto:'badge-aberto',
+    'Pendente de Envio':'badge-pendente',Enviado:'badge-enviado',Finalizado:'badge-finalizado',Rejeitado:'badge-rejeitado'};
   return `<span class="badge ${map[s]||'badge-inativo'}">${s||'—'}</span>`;
 }
 function pdfLink(filename) {
@@ -641,8 +696,11 @@ function pdfLink(filename) {
 function uploadBtn(tipo, id_ativo) {
   return `<button class="btn btn-ghost btn-xs" onclick="uploadPDF('${tipo}','${encodeURIComponent(id_ativo)}')">📎</button>`;
 }
+function emptyRow(cols, msg, icon) {
+  return `<tr><td colspan="${cols}"><div class="empty"><div class="empty-icon">${icon}</div><p>${msg}</p></div></td></tr>`;
+}
 
-// ─── CELULARES ─────────────────────────────────────────────────────────────
+// ─── LOADERS ─────────────────────────────────────────────────────────────────
 async function loadCelulares() {
   const q = globalSearchFilter || '';
   const rows = await api(`/api/celulares?status=${filterState.celulares||''}&q=${encodeURIComponent(q)}`);
@@ -650,7 +708,8 @@ async function loadCelulares() {
   if (!rows.length) { tb.innerHTML=emptyRow(9,'Nenhum celular cadastrado','📱'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
     <td class="td-id">${r.id_ativo}</td><td>${r.fazenda||'—'}</td><td>${r.setor||'—'}</td>
-    <td class="td-bold">${r.responsavel||'—'}<br><span style="font-size:10px;font-weight:normal;color:var(--text3)">${r.cargo||''}</span></td><td>${r.modelo||'—'}</td><td>${r.numero||'—'}</td>
+    <td class="td-bold">${r.responsavel||'—'}<br><span style="font-size:10px;font-weight:normal;color:var(--text3)">${r.cargo||''}</span></td>
+    <td>${r.modelo||'—'}</td><td>${r.numero||'—'}</td>
     <td>${statusBadge(r.status)}</td><td>${pdfLink(r.termo_pdf)}</td>
     <td><div class="tbl-actions">
       <button class="btn btn-ghost btn-xs" onclick="editItem('celulares','${r.id_ativo}')">✏️</button>
@@ -678,6 +737,25 @@ async function loadCelularesPonto() {
     </div></td></tr>`).join('');
 }
 
+async function loadCelularesInspecao() {
+  const q = globalSearchFilter || '';
+  const rows = await api(`/api/celulares_inspecao?status=${filterState.celulares_inspecao||''}&q=${encodeURIComponent(q)}`);
+  const tb = document.getElementById('tb-celulares_inspecao');
+  if (!rows.length) { tb.innerHTML=emptyRow(9,'Nenhum celular de inspeção cadastrado','🔍'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">${r.id_ativo}</td>
+    <td><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--purple)">${r.id_sistema||'—'}</span></td>
+    <td>${r.fazenda||'—'}</td>
+    <td class="td-bold">${r.responsavel||'—'}</td>
+    <td>${r.modelo||'—'}</td><td>${r.numero||'—'}</td>
+    <td>${statusBadge(r.status)}</td><td>${pdfLink(r.termo_pdf)}</td>
+    <td><div class="tbl-actions">
+      <button class="btn btn-ghost btn-xs" onclick="editItem('celulares_inspecao','${r.id_ativo}')">✏️</button>
+      ${uploadBtn('celular_inspecao', r.id_ativo)}
+      <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Celular Inspeção','${r.modelo||''}')">🔧</button>
+    </div></td></tr>`).join('');
+}
+
 async function loadComputadores() {
   const q = globalSearchFilter || '';
   const rows = await api(`/api/computadores?status=${filterState.computadores||''}&q=${encodeURIComponent(q)}`);
@@ -685,8 +763,8 @@ async function loadComputadores() {
   if (!rows.length) { tb.innerHTML=emptyRow(9,'Nenhum computador cadastrado','💻'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
     <td class="td-id">${r.id_ativo}</td><td>${r.fazenda||'—'}</td>
-    <td class="td-bold">${r.responsavel||'—'}<br><span style="font-size:10px;font-weight:normal;color:var(--text3)">${r.cargo||''}</span></td><td>${r.tipo||'—'}</td>
-    <td>${r.marca||'—'}</td><td>${r.modelo||'—'}</td>
+    <td class="td-bold">${r.responsavel||'—'}<br><span style="font-size:10px;font-weight:normal;color:var(--text3)">${r.cargo||''}</span></td>
+    <td>${r.tipo||'—'}</td><td>${r.marca||'—'}</td><td>${r.modelo||'—'}</td>
     <td>${statusBadge(r.status)}</td><td>${pdfLink(r.termo_pdf)}</td>
     <td><div class="tbl-actions">
       <button class="btn btn-ghost btn-xs" onclick="editItem('computadores','${r.id_ativo}')">✏️</button>
@@ -777,8 +855,8 @@ async function loadEstoqueEquipamentos() {
 }
 
 function editFromEstoque(tipoLabel, id) {
-  const map = {'Celular':'celulares','Celular Ponto':'celulares_ponto','Computador':'computadores',
-    'Impressora':'impressoras','Estabilizador':'estabilizadores','Starlink':'starlink'};
+  const map = {'Celular':'celulares','Celular Ponto':'celulares_ponto','Celular Inspeção':'celulares_inspecao',
+    'Computador':'computadores','Impressora':'impressoras','Estabilizador':'estabilizadores','Starlink':'starlink'};
   editItem(map[tipoLabel], id);
 }
 
@@ -807,10 +885,11 @@ async function loadToners() {
 async function loadManutencoes() {
   const rows = await api(`/api/manutencoes?status=${filterState.manutencoes||''}`);
   const tb = document.getElementById('tb-manutencoes');
-  if (!rows.length) { tb.innerHTML=emptyRow(10,'Nenhuma manutenção','🔧'); return; }
+  if (!rows.length) { tb.innerHTML=emptyRow(11,'Nenhuma manutenção','🔧'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
     <td class="td-id">#${r.id}</td><td class="td-bold">${r.id_ativo}</td>
     <td><span class="badge badge-analise">${r.tipo_equipamento}</span></td>
+    <td>${r.tipo_manutencao?`<span class="badge badge-inativo">${r.tipo_manutencao}</span>`:'—'}</td>
     <td>${r.modelo||'—'}</td>
     <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.problema_relatado||''}">${r.problema_relatado||'—'}</td>
     <td>${r.data_recebimento||'—'}</td><td>${r.os_manutencao||'—'}</td>
@@ -832,12 +911,31 @@ async function loadDescartes() {
 async function loadTransferencias() {
   const rows = await api('/api/transferencias');
   const tb = document.getElementById('tb-transferencias');
-  if (!rows.length) { tb.innerHTML=emptyRow(7,'Nenhuma transferência registrada','🔄'); return; }
+  if (!rows.length) { tb.innerHTML=emptyRow(8,'Nenhuma transferência registrada','🔄'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
     <td class="td-id">${r.id_ativo}</td><td>${r.tipo_equipamento}</td>
-    <td>${r.responsavel_origem||'Estoque'}</td><td class="td-bold">${r.responsavel_destino||'Estoque'}</td>
+    <td><span class="badge badge-analise" style="font-size:10px">${r.tipo_transferencia||'—'}</span></td>
+    <td>${r.responsavel_origem||r.fazenda_origem||'Estoque'}</td>
+    <td class="td-bold">${r.responsavel_destino||r.fazenda_destino||'Estoque'}</td>
     <td>${r.motivo||'—'}</td><td>${(r.data_transferencia||'').substring(0,10)}</td>
     <td>${r.registrado_por||'—'}</td></tr>`).join('');
+}
+
+async function loadPedidos() {
+  const rows = await api(`/api/pedidos?status=${filterState.pedidos||''}`);
+  const tb = document.getElementById('tb-pedidos');
+  if (!rows.length) { tb.innerHTML=emptyRow(10,'Nenhum pedido registrado','📋'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">#${r.id}</td>
+    <td class="td-bold">${r.fazenda_solicitante||'—'}</td>
+    <td>${r.item||'—'}</td>
+    <td style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700">${r.quantidade||1}</td>
+    <td>${r.num_requisicao||'—'}</td>
+    <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.motivo||''}">${r.motivo||'—'}</td>
+    <td>${r.forma_envio||'—'}</td>
+    <td>${r.data_pedido||'—'}</td>
+    <td>${statusBadge(r.status)}</td>
+    <td><button class="btn btn-ghost btn-xs" onclick="editPedido(${r.id})">✏️</button></td></tr>`).join('');
 }
 
 async function loadHistorico() {
@@ -846,7 +944,8 @@ async function loadHistorico() {
   if (!rows.length) { tb.innerHTML=emptyRow(8,'Nenhum evento registrado','📜'); return; }
   tb.innerHTML = rows.map(r=>`<tr>
     <td class="td-id">#${r.id}</td><td class="td-bold">${r.id_ativo||'—'}</td>
-    <td>${r.tipo_equipamento||'—'}</td><td><span class="badge ${r.acao.includes('Cadastro')?'badge-entrada':r.acao.includes('Edição')?'badge-manut':'badge-inativo'}">${r.acao}</span></td>
+    <td>${r.tipo_equipamento||'—'}</td>
+    <td><span class="badge ${r.acao.includes('Cadastro')?'badge-entrada':r.acao.includes('Edição')?'badge-manut':'badge-inativo'}">${r.acao}</span></td>
     <td>${r.campo_alterado||'—'}</td>
     <td style="font-size:11px"><span style="color:var(--text3)">${r.valor_anterior||''}</span> <span style="color:var(--accent)">${r.valor_anterior&&r.valor_novo?'→':''}</span> <span>${r.valor_novo||''}</span></td>
     <td style="font-size:11.5px;color:var(--text2)">${(r.data_hora||'').replace('T',' ').substring(0,19)}</td>
@@ -854,15 +953,12 @@ async function loadHistorico() {
   </tr>`).join('');
 }
 
-function emptyRow(cols, msg, icon) {
-  return `<tr><td colspan="${cols}"><div class="empty"><div class="empty-icon">${icon}</div><p>${msg}</p></div></td></tr>`;
-}
-
-// ─── MODAL ─────────────────────────────────────────────────────────────────
+// ─── MODAL ───────────────────────────────────────────────────────────────────
 function openModal(title, bodyHtml, ctx, showSave=true) {
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-body').innerHTML = bodyHtml;
   document.getElementById('modal-save').style.display = showSave ? '' : 'none';
+  document.getElementById('modal-save').onclick = saveModal;
   modalCtx = ctx;
   document.getElementById('modal-backdrop').classList.add('open');
 }
@@ -875,8 +971,8 @@ async function saveModal() {
   if (!form) return;
   if (!form.reportValidity()) return;
   const data = {};
-  form.querySelectorAll('[name]').forEach(el => { 
-    data[el.name] = el.value === "" ? null : el.value; 
+  form.querySelectorAll('[name]').forEach(el => {
+    data[el.name] = el.value === "" ? null : el.value;
   });
   let res;
   if (type === 'manutencao') res = mode==='new' ? await api('/api/manutencoes','POST',data) : await api(`/api/manutencoes/${id}`,'PUT',data);
@@ -887,6 +983,9 @@ async function saveModal() {
   } else if (type === 'toner') {
     if (mode === 'new') res = await api('/api/toners','POST',data);
     else res = await api(`/api/toners/${id}`,'PUT',data);
+  } else if (type === 'pedido') {
+    if (mode === 'new') res = await api('/api/pedidos','POST',data);
+    else res = await api(`/api/pedidos/${id}`,'PUT',data);
   } else {
     res = mode==='new' ? await api(`/api/${type}`,'POST',data) : await api(`/api/${type}/${id}`,'PUT',data);
   }
@@ -896,27 +995,34 @@ async function saveModal() {
 
 function openNew() {
   const page = currentPage;
-  const map = {celulares:()=>openCelularModal(null),celulares_ponto:()=>openCelularPontoModal(null),
+  const map = {
+    celulares:()=>openCelularModal(null),celulares_ponto:()=>openCelularPontoModal(null),
+    celulares_inspecao:()=>openCelularInspecaoModal(null),
     computadores:()=>openComputadorModal(null),impressoras:()=>openImpressoraModal(null),
     estabilizadores:()=>openEstabilizadorModal(null),starlink:()=>openStarlinkModal(null),
     estoque:()=>openEstoqueModal(null),toners:()=>openTonerModal(null),
     manutencoes:()=>openManutModal(null),descartes:()=>openDescarteModal(null),
-    transferencias:()=>openTransferenciaModal(null)};
+    transferencias:()=>openTransferenciaModal(null),pedidos:()=>openPedidoModal(null)
+  };
   map[page]?.();
 }
 
 async function editItem(type, id) {
   const data = await api(`/api/${type}/${id}`);
-  const map = {celulares:openCelularModal,celulares_ponto:openCelularPontoModal,
+  const map = {
+    celulares:openCelularModal,celulares_ponto:openCelularPontoModal,
+    celulares_inspecao:openCelularInspecaoModal,
     computadores:openComputadorModal,impressoras:openImpressoraModal,
-    estabilizadores:openEstabilizadorModal,starlink:openStarlinkModal};
+    estabilizadores:openEstabilizadorModal,starlink:openStarlinkModal
+  };
   map[type]?.(data);
 }
 async function editManut(id) { openManutModal(await api(`/api/manutencoes/${id}`)); }
 async function editEstoque(id) { openEstoqueModal(await api(`/api/estoque/${id}`)); }
 async function editToner(id) { openTonerModal(await api(`/api/toners/${id}`)); }
+async function editPedido(id) { openPedidoModal(await api(`/api/pedidos/${id}`)); }
 
-// ─── FORMS ─────────────────────────────────────────────────────────────────
+// ─── FORM HELPERS ────────────────────────────────────────────────────────────
 const st = (f,d,opts,onchange='') => {
   const options = Array.isArray(opts) ? opts : Object.entries(opts).map(([k,v])=>({v:k, l:v}));
   return `<select name="${f}" ${onchange?`onchange="${onchange}"`:''}>
@@ -928,18 +1034,31 @@ const st = (f,d,opts,onchange='') => {
     }).join('')}
   </select>`;
 };
-const inp = (f,d,ph='',type='text',ro=false) => `<input type="${type}" name="${f}" value="${d?.[f]||''}" placeholder="${ph}" ${ro?'readonly':''}>`; 
+const inp = (f,d,ph='',type='text',ro=false,extra='') => `<input type="${type}" name="${f}" value="${d?.[f]||''}" placeholder="${ph}" ${ro?'readonly':''} ${extra}>`;
 const fld = (label, html) => `<div class="form-group"><label>${label}</label>${html}</div>`;
 
+const fazendaFld = (d, fieldName='fazenda', label='Fazenda *') => fld(label,
+  `<select name="${fieldName}" onchange="triggerIdSuggestion()" required>
+    <option value="">Selecione a fazenda...</option>
+    ${FAZENDAS.map(f=>`<option value="${f}" ${(d?.[fieldName]||'')==f?'selected':''}>${f}</option>`).join('')}
+  </select>`
+);
+
+const setorSelect = (d) => fld('Setor', `<select name="setor" onchange="triggerIdSuggestion()">
+  <option value="">Selecione...</option>
+  ${Object.entries(SIGLAS_SETOR_JS).map(([k,v])=>`<option value="${v}" ${(d?.setor||'')==v?'selected':''}>${v} (${k})</option>`).join('')}
+</select>`);
+
+// ─── MODALS CELULARES ────────────────────────────────────────────────────────
 function commonCelFields(d) {
   return `
     ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="CL-XXX-XXX-01">`)}
     ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
-    ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
-    ${fld('Setor', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
+    ${fazendaFld(d)}
+    ${setorSelect(d)}
     ${fld('Tipo', `<input name="tipo" value="${d?.tipo||''}" placeholder="Smartphone, Tablet...">`)}
     ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}" placeholder="Samsung Galaxy A54">`)}
-    ${fld('Número', `<input name="numero" value="${d?.numero||''}" placeholder="(16) 99999-1234">`)}
+    ${fld('Número', `<input name="numero" value="${d?.numero||''}" placeholder="(16) 99999-1234" oninput="formatPhone(this)">`)}
     ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
     ${fld('Cargo', `<input name="cargo" value="${d?.cargo||''}" placeholder="Ex: Analista, Gerente">`)}
     ${fld('IMEI 1', `<input name="imei_1" value="${d?.imei_1||''}" placeholder="000000000000000">`)}
@@ -969,11 +1088,11 @@ function openCelularPontoModal(d) {
     <div class="form-section"><h4>🕐 Celular Ponto / Turma</h4><div class="form-grid">
       ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="CL-XXX-PTO-01">`)}
       ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
-      ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
+      ${fazendaFld(d)}
       <input type="hidden" name="setor" value="PTO">
       ${fld('Função', `<input name="funcao" value="${d?.funcao||''}" placeholder="Operador, Supervisor...">`)}
       ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
-      ${fld('Nº Turma', `<input name="num_turma" value="${d?.num_turma||''}" placeholder="Turma 01">`)}
+      ${fld('Nº Turma', `<input name="num_turma" value="${d?.num_turma||''}" oninput="triggerIdSuggestion()" placeholder="Turma 01">`)}
       ${fld('Tipo', `<input name="tipo" value="${d?.tipo||''}" placeholder="Smartphone">`)}
       ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}" placeholder="Samsung A14">`)}
       ${fld('Gmail ClockIn', `<input name="gmail_clockin" value="${d?.gmail_clockin||''}" placeholder="ponto@empresa.com">`)}
@@ -984,12 +1103,41 @@ function openCelularPontoModal(d) {
       ${fld('Armazenamento', `<input name="armazenamento" value="${d?.armazenamento||''}" placeholder="64GB">`)}
       ${fld('Carregador', st('carregador',d,['Sim','Não']))}
       ${fld('Uso Celular', `<input name="uso_celular" value="${d?.uso_celular||''}">`)}
+      ${fld('Número', `<input name="numero" value="${d?.numero||''}" oninput="formatPhone(this)" placeholder="(16) 99999-1234">`)}
       ${fld('Termo Assinado', st('termo_assinado',d,['Sim','Não']))}
       ${fld('Data Entrega', `<input type="date" name="data_entrega" value="${d?.data_entrega||''}">`)}
       ${fld('Data Devolução', `<input type="date" name="data_devolucao" value="${d?.data_devolucao||''}">`)}
       ${fld('Usuário Anterior', `<input name="usuario_anterior" value="${d?.usuario_anterior||''}">`)}
     </div></div></form>`;
   openModal(d ? `Editar Cel. Ponto — ${d.id_ativo}` : 'Cadastrar Celular Ponto', html, {type:'celulares_ponto',mode:d?'edit':'new',id:d?.id_ativo});
+}
+
+function openCelularInspecaoModal(d) {
+  const html = `<form id="modal-form">
+    <div class="form-section"><h4>🔍 Celular Inspeção</h4><div class="form-grid">
+      ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="CL-XXX-INP-01">`)}
+      ${fld('ID Sistema', `<input name="id_sistema" value="${d?.id_sistema||''}" placeholder="Ex: INS-0001">`)}
+      ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
+      ${fazendaFld(d)}
+      ${setorSelect(d)}
+      ${fld('Tipo', `<input name="tipo" value="${d?.tipo||''}" placeholder="Smartphone">`)}
+      ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}" placeholder="Samsung A14">`)}
+      ${fld('Número', `<input name="numero" value="${d?.numero||''}" oninput="formatPhone(this)" placeholder="(16) 99999-1234">`)}
+      ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
+      ${fld('Cargo', `<input name="cargo" value="${d?.cargo||''}">`)}
+      ${fld('IMEI 1', `<input name="imei_1" value="${d?.imei_1||''}">`)}
+      ${fld('IMEI 2', `<input name="imei_2" value="${d?.imei_2||''}">`)}
+      ${fld('Nº Série', `<input name="num_serie" value="${d?.num_serie||''}">`)}
+      ${fld('Armazenamento', `<input name="armazenamento" value="${d?.armazenamento||''}" placeholder="128GB">`)}
+      ${fld('Carregador', st('carregador',d,['Sim','Não']))}
+      ${fld('Gmail', `<input name="gmail" value="${d?.gmail||''}">`)}
+      ${fld('Senha', `<input name="senha" value="${d?.senha||''}">`)}
+      ${fld('Termo Assinado', st('termo_assinado',d,['Sim','Não']))}
+      ${fld('Data Entrega', `<input type="date" name="data_entrega" value="${d?.data_entrega||''}">`)}
+      ${fld('Usuário Anterior', `<input name="usuario_anterior" value="${d?.usuario_anterior||''}">`)}
+      <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${d?.observacoes||''}</textarea>`)}</div>
+    </div></div></form>`;
+  openModal(d ? `Editar Cel. Inspeção — ${d.id_ativo}` : 'Cadastrar Celular Inspeção', html, {type:'celulares_inspecao',mode:d?'edit':'new',id:d?.id_ativo});
 }
 
 function openComputadorModal(d) {
@@ -1000,8 +1148,8 @@ function openComputadorModal(d) {
       ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
       ${fld('Tipo *', st('tipo',d,['Notebook','Desktop','All-in-One','Servidor','Workstation'],'triggerIdSuggestion()'))}
       ${fld('Patrimônio', `<input name="patrimonio" value="${d?.patrimonio||''}">`)}
-      ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
-      ${fld('Setor *', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
+      ${fazendaFld(d)}
+      ${setorSelect(d)}
       ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
       ${fld('Cargo', `<input name="cargo" value="${d?.cargo||''}" placeholder="Ex: Analista, Gerente">`)}
       ${fld('Marca', `<input name="marca" value="${d?.marca||''}" placeholder="Dell, HP, Lenovo...">`)}
@@ -1027,8 +1175,8 @@ function openImpressoraModal(d) {
   const html = `<form id="modal-form"><div class="form-section"><h4>🖨️ Impressora</h4><div class="form-grid">
     ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="IMP-XXX-XXX-01">`)}
     ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
-    ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
-    ${fld('Setor *', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
+    ${fazendaFld(d)}
+    ${setorSelect(d)}
     ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
     ${fld('Marca', `<input name="marca" value="${d?.marca||''}" placeholder="HP, Epson...">`)}
     ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}">`)}
@@ -1049,8 +1197,8 @@ function openEstabilizadorModal(d) {
   const html = `<form id="modal-form"><div class="form-section"><h4>🔌 Estabilizador</h4><div class="form-grid">
     ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="EST-XXX-XXX-01">`)}
     ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
-    ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
-    ${fld('Setor *', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
+    ${fazendaFld(d)}
+    ${setorSelect(d)}
     ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}">`)}
     ${fld('Uso', `<input name="uso" value="${d?.uso||''}">`)}
     ${fld('Nº Série', `<input name="num_serie" value="${d?.num_serie||''}">`)}
@@ -1062,8 +1210,8 @@ function openStarlinkModal(d) {
   const html = `<form id="modal-form"><div class="form-section"><h4>🛰️ Starlink</h4><div class="form-grid">
     ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo||''}" ${d?'readonly':'required'} placeholder="STL-XXX-XXX-01">`)}
     ${fld('Status', st('status',d,['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}]))}
-    ${fld('Fazenda *', `<input name="fazenda" value="${d?.fazenda||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Tangará">`)}
-    ${fld('Setor *', `<input name="setor" value="${d?.setor||''}" oninput="triggerIdSuggestion()" placeholder="Ex: Administrativo">`)}
+    ${fazendaFld(d)}
+    ${setorSelect(d)}
     ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
     ${fld('Modelo', `<input name="modelo" value="${d?.modelo||''}">`)}
     ${fld('Nº Série', `<input name="num_serie" value="${d?.num_serie||''}">`)}
@@ -1076,8 +1224,6 @@ function openStarlinkModal(d) {
   </div></div></form>`;
   openModal(d ? `Editar Starlink — ${d.id_ativo}` : 'Cadastrar Starlink', html, {type:'starlink',mode:d?'edit':'new',id:d?.id_ativo});
 }
-
-
 
 function openEstoqueModal(d) {
   const html = `<form id="modal-form"><div class="form-grid">
@@ -1106,13 +1252,31 @@ function openTonerModal(d) {
 
 function openManutModal(d, prefill={}) {
   const v = f => d?.[f] || prefill[f] || '';
-  const tipos = ['Celular','Celular Ponto','Computador','Impressora','Estabilizador','Starlink'];
+  const tipos = ['Celular','Celular Ponto','Celular Inspeção','Computador','Impressora','Estabilizador','Starlink'];
+  const tipoManut = v('tipo_manutencao') || '';
   const html = `<form id="modal-form">
     <div class="form-section"><h4>📋 Ativo</h4><div class="form-grid">
       ${fld('ID Ativo *', `<input name="id_ativo" value="${v('id_ativo')}" required placeholder="CEL-001">`)}
       ${fld('Tipo *', `<select name="tipo_equipamento" required>${tipos.map(t=>`<option value="${t}" ${v('tipo_equipamento')===t?'selected':''}>${t}</option>`).join('')}</select>`)}
       ${fld('Modelo', `<input name="modelo" value="${v('modelo')}">`)}
       ${fld('Local Atual', `<input name="local_atual" value="${v('local_atual')}" placeholder="Almoxarifado TI">`)}
+    </div></div>
+    <div class="form-section"><h4>🔧 Tipo de Manutenção</h4><div class="form-grid">
+      <div class="form-group full">${fld('Tipo de Manutenção *', `<select name="tipo_manutencao" onchange="onTipoManutChange(this.value)" required>
+        <option value="">Selecione...</option>
+        <option value="Manutenção de 3°" ${tipoManut==='Manutenção de 3°'?'selected':''}>Manutenção de 3° (Terceiros)</option>
+        <option value="Manutenção Local" ${tipoManut==='Manutenção Local'?'selected':''}>Manutenção Local</option>
+        <option value="Garantia" ${tipoManut==='Garantia'?'selected':''}>Garantia</option>
+      </select>`)}</div>
+      <div id="cond-pecas" class="form-group full cond-field" style="${tipoManut==='Manutenção Local'?'':'display:none'}">
+        ${fld('Peças Utilizadas', `<textarea name="pecas_utilizadas" placeholder="Liste as peças utilizadas">${v('pecas_utilizadas')}</textarea>`)}
+      </div>
+      <div id="cond-subtipo" class="cond-field" style="${tipoManut==='Manutenção Local'?'':'display:none'}">
+        ${fld('Subtipo', `<select name="subtipo"><option value="">Selecione...</option>
+          <option value="Preventiva" ${v('subtipo')==='Preventiva'?'selected':''}>Preventiva</option>
+          <option value="Corretiva" ${v('subtipo')==='Corretiva'?'selected':''}>Corretiva</option>
+        </select>`)}
+      </div>
     </div></div>
     <div class="form-section"><h4>🔧 Detalhes</h4><div class="form-grid">
       ${fld('Data Recebimento', `<input type="date" name="data_recebimento" value="${v('data_recebimento')}">`)}
@@ -1132,9 +1296,21 @@ function openManutModal(d, prefill={}) {
   openModal(d ? `Editar Manutenção #${d.id}` : 'Nova Manutenção', html, {type:'manutencao',mode:d?'edit':'new',id:d?.id});
 }
 
+function onTipoManutChange(val) {
+  const showLocal = val === 'Manutenção Local';
+  document.getElementById('cond-pecas').style.display = showLocal ? '' : 'none';
+  document.getElementById('cond-subtipo').style.display = showLocal ? '' : 'none';
+  // Limpar campos se não Local
+  if (!showLocal) {
+    const f = document.getElementById('modal-form');
+    if (f.querySelector('[name="pecas_utilizadas"]')) f.querySelector('[name="pecas_utilizadas"]').value = '';
+    if (f.querySelector('[name="subtipo"]')) f.querySelector('[name="subtipo"]').value = '';
+  }
+}
+
 function openDescarteModal(d, prefill={}) {
   const v = f => d?.[f] || prefill[f] || '';
-  const tipos = ['Celular','Celular Ponto','Computador','Impressora','Estabilizador','Starlink'];
+  const tipos = ['Celular','Celular Ponto','Celular Inspeção','Computador','Impressora','Estabilizador','Starlink'];
   const html = `<form id="modal-form"><div class="form-grid">
     ${fld('ID Ativo *', `<input name="id_ativo" value="${v('id_ativo')}" required placeholder="CEL-001">`)}
     ${fld('Tipo *', `<select name="tipo_equipamento" required>${tipos.map(t=>`<option value="${t}" ${v('tipo_equipamento')===t?'selected':''}>${t}</option>`).join('')}</select>`)}
@@ -1151,20 +1327,86 @@ function openDescarteModal(d, prefill={}) {
 }
 
 function openTransferenciaModal(d) {
+  const tipos = ['Celular','Celular Ponto','Celular Inspeção','Computador','Impressora','Estabilizador','Starlink'];
+  const tiposTransf = ['Estoque para Fazenda','Fazenda para Estoque','Usuario para Usuario','Usuario para Estoque','Usuario para Fazenda','Fazenda para Usuario'];
   const html = `<form id="modal-form"><div class="form-grid">
     ${fld('ID Ativo *', `<input name="id_ativo" required placeholder="CEL-001">`)}
-    ${fld('Tipo Equipamento *', st('tipo_equipamento', {}, ['Celular','Celular Ponto','Computador','Impressora','Estabilizador','Starlink']))}
-    <div class="form-group full">${fld('Tipo de Transferência', st('tipo_transferencia', {}, ['Transferência Comum','Estoque para Usuario','Usuario para Estoque']))}</div>
-    ${fld('Resp. Destino', `<input name="responsavel_destino" placeholder="Nome do responsavel">`)}
-    ${fld('Fazenda Destino', `<input name="fazenda_destino" placeholder="Mogiana">`)}
-    ${fld('Setor Destino', `<input name="setor_destino" placeholder="ADM">`)}
+    ${fld('Tipo Equipamento *', st('tipo_equipamento', {}, tipos))}
+    <div class="form-group full">${fld('Tipo de Transferência *', `<select name="tipo_transferencia" required onchange="onTipoTransfChange(this.value)">
+      <option value="">Selecione o tipo...</option>
+      ${tiposTransf.map(t=>`<option value="${t}">${t}</option>`).join('')}
+    </select>`)}</div>
+
+    <div id="trnsf-origem-usuario" class="form-group cond-field" style="display:none">
+      ${fld('Responsável Origem', `<input name="responsavel_origem" placeholder="Nome do responsável origem">`)}
+    </div>
+    <div id="trnsf-origem-fazenda" class="form-group cond-field" style="display:none">
+      ${fazendaFld({}, 'fazenda_origem', 'Fazenda Origem')}
+    </div>
+
+    <div id="trnsf-destino-usuario" class="form-group cond-field" style="display:none">
+      ${fld('Responsável Destino *', `<input name="responsavel_destino" placeholder="Nome do destinatário">`)}
+    </div>
+    <div id="trnsf-destino-fazenda" class="form-group cond-field" style="display:none">
+      ${fazendaFld({}, 'fazenda_destino', 'Fazenda Destino')}
+    </div>
+    <div id="trnsf-setor-destino" class="form-group cond-field" style="display:none">
+      ${fld('Setor Destino', `<input name="setor_destino" placeholder="ADM, COL...">`)}
+    </div>
+
     ${fld('Data Devolução (Se aplicável)', `<input type="date" name="data_devolucao">`)}
+    ${fld('Registrado Por', `<input name="registrado_por" placeholder="Seu nome">`)}
     <div class="form-group full">${fld('Motivo', `<textarea name="motivo" placeholder="Troca de equipamento..."></textarea>`)}</div>
   </div></form>`;
   openModal('Nova Transferência', html, {type:'transferencias',mode:'new'});
 }
 
-// ─── UPLOAD PDF ────────────────────────────────────────────────────────────
+function onTipoTransfChange(tipo) {
+  const all = ['trnsf-origem-usuario','trnsf-origem-fazenda','trnsf-destino-usuario','trnsf-destino-fazenda','trnsf-setor-destino'];
+  all.forEach(id => document.getElementById(id).style.display = 'none');
+  // Regras de exibição por tipo
+  if (tipo === 'Estoque para Fazenda') {
+    document.getElementById('trnsf-destino-fazenda').style.display = '';
+    document.getElementById('trnsf-setor-destino').style.display = '';
+  } else if (tipo === 'Fazenda para Estoque') {
+    document.getElementById('trnsf-origem-fazenda').style.display = '';
+  } else if (tipo === 'Usuario para Usuario') {
+    document.getElementById('trnsf-origem-usuario').style.display = '';
+    document.getElementById('trnsf-destino-usuario').style.display = '';
+    document.getElementById('trnsf-destino-fazenda').style.display = '';
+    document.getElementById('trnsf-setor-destino').style.display = '';
+  } else if (tipo === 'Usuario para Estoque') {
+    document.getElementById('trnsf-origem-usuario').style.display = '';
+  } else if (tipo === 'Usuario para Fazenda') {
+    document.getElementById('trnsf-origem-usuario').style.display = '';
+    document.getElementById('trnsf-destino-fazenda').style.display = '';
+    document.getElementById('trnsf-setor-destino').style.display = '';
+  } else if (tipo === 'Fazenda para Usuario') {
+    document.getElementById('trnsf-origem-fazenda').style.display = '';
+    document.getElementById('trnsf-destino-usuario').style.display = '';
+    document.getElementById('trnsf-destino-fazenda').style.display = '';
+    document.getElementById('trnsf-setor-destino').style.display = '';
+  }
+}
+
+function openPedidoModal(d) {
+  const html = `<form id="modal-form"><div class="form-grid">
+    ${d ? fld('ID','<input name="_id" value="'+d.id+'" readonly style="display:none">') : ''}
+    ${fazendaFld(d, 'fazenda_solicitante', 'Fazenda Solicitante *')}
+    ${fld('Item *', `<input name="item" value="${d?.item||''}" required placeholder="Nome do item de TI">`)}
+    ${fld('Quantidade *', `<input type="number" name="quantidade" value="${d?.quantidade||1}" min="1" required>`)}
+    ${fld('Nº Requisição', `<input name="num_requisicao" value="${d?.num_requisicao||''}" placeholder="REQ-001">`)}
+    ${fld('Status', st('status',d,['Aberto','Pendente de Envio','Enviado','Finalizado','Rejeitado']))}
+    ${fld('Forma de Envio', st('forma_envio',d,['Motoboy','Transportadora','Pessoalmente','Correios','Outro']))}
+    ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel||''}">`)}
+    ${fld('Data do Pedido', `<input type="date" name="data_pedido" value="${d?.data_pedido||new Date().toISOString().split('T')[0]}">`)}
+    <div class="form-group full">${fld('Motivo / Justificativa', `<textarea name="motivo">${d?.motivo||''}</textarea>`)}</div>
+    <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${d?.observacoes||''}</textarea>`)}</div>
+  </div></form>`;
+  openModal(d ? `Editar Pedido #${d.id}` : 'Novo Pedido de TI', html, {type:'pedido',mode:d?'edit':'new',id:d?.id});
+}
+
+// ─── UPLOAD PDF ──────────────────────────────────────────────────────────────
 function uploadPDF(tipo, id_ativo) {
   const input = document.createElement('input');
   input.type = 'file'; input.accept = '.pdf';
@@ -1182,9 +1424,8 @@ function uploadPDF(tipo, id_ativo) {
   input.click();
 }
 
-// ─── ESTOQUE: MOVIMENTAR ───────────────────────────────────────────────────
+// ─── ESTOQUE: MOVIMENTAR ─────────────────────────────────────────────────────
 function movimentarEstoque(eid, tipo, item) {
-  const cor = tipo === 'entrada' ? 'var(--green)' : 'var(--red)';
   const label = tipo === 'entrada' ? '📥 Registrar Entrada' : '📤 Registrar Saída';
   const html = `<form id="modal-form">
     <div class="form-group"><label>Quantidade</label><input type="number" name="quantidade" min="1" value="1" required></div>
@@ -1224,12 +1465,14 @@ async function verHistoricoEstoque(eid, item) {
 async function verHistoricoToner(tid, modelo) {
   const rows = await api(`/api/toners/${tid}/trocas`);
   const html = rows.length ? `<table style="width:100%"><thead><tr>
+    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Tipo</th>
     <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Qtd</th>
     <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Responsável</th>
     <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Impressora</th>
     <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Data</th>
     <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Obs.</th>
     </tr></thead><tbody>${rows.map(r=>`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:8px"><span class="badge badge-analise">${r.tipo_suprimento||'Toner'}</span></td>
       <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-weight:700">${r.quantidade}</td>
       <td style="padding:8px">${r.responsavel||'—'}</td>
       <td style="padding:8px">${r.impressora_id_ativo||'—'}</td>
@@ -1240,30 +1483,45 @@ async function verHistoricoToner(tid, modelo) {
   openModal(`📋 Histórico Trocas — ${modelo}`, html, {}, false);
 }
 
-function registrarTroca(tid, impressora, toner, estoque) {
+async function registrarTroca(tid, impressora, toner, estoque) {
+  // Carregar impressoras da Central para seleção
+  const impressoras = await api('/api/impressoras/por_fazenda?fazenda=Central');
+  const optsImp = `<option value="">Digite manualmente...</option>
+    ${impressoras.map(i=>`<option value="${i.id_ativo}">${i.id_ativo} — ${i.modelo||''}</option>`).join('')}`;
+
   const html = `<form id="modal-form">
     <p style="color:var(--text2);font-size:13px;margin-bottom:16px">Estoque atual: <strong style="color:var(--text)">${estoque} un</strong></p>
-    <div class="form-group"><label>Quantidade</label><input type="number" name="quantidade" min="1" max="${estoque}" value="1" required></div>
-    <div class="form-group"><label>Responsável</label><input name="responsavel" placeholder="Quem realizou a troca?"></div>
-    <div class="form-group"><label>ID da Impressora</label><input name="impressora_id_ativo" placeholder="IMP-001"></div>
-    <div class="form-group"><label>Observações</label><textarea name="observacoes"></textarea></div>
+    <div class="form-grid">
+      <div class="form-group">${fld('Tipo de Suprimento', `<select name="tipo_suprimento">
+        <option value="Toner">Toner</option>
+        <option value="Cilindro">Cilindro</option>
+      </select>`)}</div>
+      <div class="form-group"><label>Quantidade</label><input type="number" name="quantidade" min="1" max="${estoque}" value="1" required></div>
+      <div class="form-group"><label>Responsável</label><input name="responsavel" placeholder="Quem realizou a troca?"></div>
+      <div class="form-group">${fld('Impressora (Central)', `<select name="impressora_id_ativo" onchange="if(this.value){document.getElementById('imp-manual').value=this.value;}">${optsImp}</select>`)}</div>
+      <div class="form-group full"><label>ID da Impressora (manual)</label><input id="imp-manual" name="impressora_id_ativo_manual" placeholder="IMP-CEN-XXX-01" oninput="this.previousElementSibling.previousElementSibling.querySelector('select').value=''"></div>
+      <div class="form-group full"><label>Observações</label><textarea name="observacoes"></textarea></div>
+    </div>
   </form>`;
   openModal(`🔄 Registrar Troca — ${toner}`, html, {});
   document.getElementById('modal-save').onclick = async () => {
     const form = document.getElementById('modal-form');
     const data = {};
-    form.querySelectorAll('[name]').forEach(el => data[el.name]=el.value);
+    form.querySelectorAll('[name]').forEach(el => { if(el.name !== 'impressora_id_ativo_manual') data[el.name]=el.value; });
+    // Prioriza valor manual se preenchido
+    const manual = form.querySelector('[name="impressora_id_ativo_manual"]')?.value;
+    if (manual) data.impressora_id_ativo = manual;
     const res = await api(`/api/toners/${tid}/troca`, 'POST', data);
     if (res.ok) { toast(res.msg,'success'); closeModal(); loadToners(); }
     else toast(res.msg,'error');
   };
 }
 
-// ─── ATALHOS ───────────────────────────────────────────────────────────────
+// ─── ATALHOS ─────────────────────────────────────────────────────────────────
 function newManutFromAtivo(id, tipo, modelo) { showPage('manutencoes'); openManutModal(null, {id_ativo:id,tipo_equipamento:tipo,modelo}); }
 function newDescarteFromAtivo(id, tipo, modelo) { showPage('descartes'); openDescarteModal(null, {id_ativo:id,tipo_equipamento:tipo,modelo}); }
 
-// ─── BUSCA GLOBAL ──────────────────────────────────────────────────────────
+// ─── BUSCA GLOBAL ─────────────────────────────────────────────────────────────
 let searchTimeout;
 const searchInput = document.getElementById('global-search');
 const searchResults = document.getElementById('search-results');
@@ -1271,31 +1529,20 @@ const searchResults = document.getElementById('search-results');
 searchInput.addEventListener('input', () => {
   clearTimeout(searchTimeout);
   const q = searchInput.value.trim();
-  
-  if (!q) { 
-    searchResults.style.display='none'; 
-    globalSearchFilter = ''; 
-    return; 
+  if (!q) {
+    searchResults.style.display='none';
+    globalSearchFilter = '';
+    return;
   }
-
-  // Feedback visual de carregamento
   searchResults.innerHTML = '<div style="padding:15px; color:var(--text3); font-size:12px">🔍 Buscando...</div>';
   searchResults.style.display = 'block';
-
   searchTimeout = setTimeout(async () => {
     const results = await api(`/api/busca?q=${encodeURIComponent(q)}`);
-    
-    if (results.ok === false) {
-      toast(results.msg || "Erro na busca", "error");
-      searchResults.style.display = 'none';
-      return;
-    }
-
+    if (results.ok === false) { toast(results.msg || "Erro na busca", "error"); searchResults.style.display='none'; return; }
     if (!Array.isArray(results) || results.length === 0) {
       searchResults.innerHTML = '<div style="padding:15px; color:var(--text3); font-size:12px; text-align:center">Nenhum resultado encontrado</div>';
       return;
     }
-
     searchResults.innerHTML = results.map(r=>`
       <div class="sr-item" onclick="goToAtivo('${r.tipo}', '${r.id_ativo}')">
         <span class="badge badge-analise" style="font-size:10px">${r.tipo}</span>
@@ -1308,47 +1555,33 @@ searchInput.addEventListener('input', () => {
   }, 300);
 });
 
-document.addEventListener('click', e => { 
-  if (!e.target.closest('.search-wrap')) searchResults.style.display='none'; 
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) searchResults.style.display='none';
 });
 
 function goToAtivo(tipo, idAtivo) {
-  searchResults.style.display='none'; 
-  searchInput.value = idAtivo; // Deixa o ID na barra para referência
-  globalSearchFilter = idAtivo; // Define o filtro para as tabelas
-  
+  searchResults.style.display='none';
+  searchInput.value = idAtivo;
+  globalSearchFilter = idAtivo;
   const map={
-    'Celular':'celulares',
-    'Celular Ponto':'celulares_ponto',
-    'Computador':'computadores',
-    'Impressora':'impressoras',
-    'Estabilizador':'estabilizadores',
-    'Starlink':'starlink'
+    'Celular':'celulares','Celular Ponto':'celulares_ponto','Celular Inspeção':'celulares_inspecao',
+    'Computador':'computadores','Impressora':'impressoras','Estabilizador':'estabilizadores','Starlink':'starlink'
   };
-  
   const page = map[tipo] || 'dashboard';
   showPage(page);
-  
-  // Limpar o filtro após alguns segundos ou ao trocar de aba manualmente
-  // Para que o usuário não fique "preso" em um só item
   toast(`Exibindo detalhes de ${idAtivo}`, 'info');
 }
 
-// Limpar filtro global ao clicar nos itens da sidebar manualmente
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', () => {
-    // Se a navegação não foi via busca (clique direto na barra lateral)
-    if (globalSearchFilter !== '') {
-       globalSearchFilter = '';
-       searchInput.value = '';
-    }
+    if (globalSearchFilter !== '') { globalSearchFilter = ''; searchInput.value = ''; }
   });
 });
 
-// ─── EXPORTAR ──────────────────────────────────────────────────────────────
+// ─── EXPORTAR ─────────────────────────────────────────────────────────────────
 function exportar(tabela) { window.open(`/api/exportar/${tabela}`, '_blank'); }
 
-// ─── TOAST ─────────────────────────────────────────────────────────────────
+// ─── TOAST ───────────────────────────────────────────────────────────────────
 function toast(msg, type='info') {
   const icons = {success:'✅',error:'❌',info:'ℹ️'};
   const el = document.createElement('div');

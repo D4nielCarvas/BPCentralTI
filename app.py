@@ -261,6 +261,7 @@ def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
     tabela_map = {
         "celular": "celulares",
         "celular_ponto": "celulares_ponto",
+        "celular_inspecao": "celulares_inspecao",
         "computador": "computadores",
     }
     tabela = tabela_map.get(tipo)
@@ -303,7 +304,7 @@ def dashboard() -> Response:
         with conn.cursor() as cur:
             stats: dict[str, dict] = {}
             for tbl in [
-                "celulares", "celulares_ponto", "computadores",
+                "celulares", "celulares_ponto", "celulares_inspecao", "computadores",
                 "impressoras", "estabilizadores", "starlink",
             ]:
                 cur.execute(f"SELECT COUNT(*) AS n FROM {tbl}")
@@ -330,6 +331,12 @@ def dashboard() -> Response:
             cur.execute("SELECT COUNT(*) AS n FROM estoque")
             est_itens = cur.fetchone()["n"]
 
+            cur.execute(
+                "SELECT COUNT(*) AS n FROM pedidos "
+                "WHERE status NOT IN ('Finalizado','Rejeitado')"
+            )
+            ped_abertos = cur.fetchone()["n"]
+
             recentes = _fetch_all(
                 cur,
                 "SELECT id_ativo,tipo_equipamento,acao,data_hora "
@@ -343,6 +350,7 @@ def dashboard() -> Response:
             "descartes": desc,
             "toner_alerta": ton_alerta,
             "estoque_itens": est_itens,
+            "pedidos_abertos": ped_abertos,
             "atividade_recente": recentes,
         }
     )
@@ -413,6 +421,7 @@ def atualizar_celular(id_ativo: str) -> Response:
                     d.get("modelo"), d.get("numero"), d.get("status"), d.get("uso_celular"),
                     d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
                     d.get("data_devolucao"), d.get("gmail"), d.get("senha"),
+                    d.get("usuario_anterior"), d.get("imei_1"), d.get("imei_2"),
                     d.get("num_serie"), d.get("armazenamento"), d.get("cargo"), id_ativo,
                 ),
             )
@@ -494,6 +503,81 @@ def atualizar_celular_ponto(id_ativo: str) -> Response:
             )
             log_historico(cur, id_ativo, "Celular Ponto", "Edição")
     return jsonify({"ok": True, "msg": "Celular de ponto atualizado!"})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CELULARES INSPEÇÃO
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/api/celulares_inspecao", methods=["GET"])
+def listar_celulares_inspecao() -> Response:
+    """Lista celulares de inspeção com filtros."""
+    return _list_table("celulares_inspecao", ["id_ativo", "responsavel", "modelo", "numero", "id_sistema"])
+
+
+@app.route("/api/celulares_inspecao", methods=["POST"])
+def criar_celular_inspecao() -> tuple[Response, int] | Response:
+    """Cadastra um novo celular de inspeção."""
+    d = request.json
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            try:
+                cur.execute(
+                    """INSERT INTO celulares_inspecao
+                       (id_ativo,id_sistema,fazenda,setor,responsavel,cargo,tipo,modelo,numero,
+                        status,uso_celular,carregador,termo_assinado,data_entrega,data_devolucao,
+                        gmail,senha,usuario_anterior,imei_1,imei_2,num_serie,armazenamento,observacoes)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    (
+                        d["id_ativo"], d.get("id_sistema"), d.get("fazenda"), d.get("setor"),
+                        d.get("responsavel"), d.get("cargo"), d.get("tipo"), d.get("modelo"),
+                        d.get("numero"), d.get("status", "Ativo"), d.get("uso_celular"),
+                        d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
+                        d.get("data_devolucao"), d.get("gmail"), d.get("senha"),
+                        d.get("usuario_anterior"), d.get("imei_1"), d.get("imei_2"),
+                        d.get("num_serie"), d.get("armazenamento"), d.get("observacoes"),
+                    ),
+                )
+                log_historico(cur, d["id_ativo"], "Celular Inspeção", "Cadastro")
+            except psycopg2.IntegrityError:
+                return jsonify({"ok": False, "msg": "ID de ativo já existe!"}), 400
+    return jsonify({"ok": True, "msg": "Celular de inspeção cadastrado!"})
+
+
+@app.route("/api/celulares_inspecao/<id_ativo>", methods=["GET"])
+def get_celular_inspecao(id_ativo: str) -> Response:
+    """Retorna dados de um celular de inspeção."""
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            row = _fetch_one(cur, "SELECT * FROM celulares_inspecao WHERE id_ativo=%s", (id_ativo,))
+    return jsonify(row)
+
+
+@app.route("/api/celulares_inspecao/<id_ativo>", methods=["PUT"])
+def atualizar_celular_inspecao(id_ativo: str) -> Response:
+    """Atualiza dados de um celular de inspeção."""
+    d = request.json
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """UPDATE celulares_inspecao SET
+                   id_sistema=%s,fazenda=%s,setor=%s,responsavel=%s,cargo=%s,tipo=%s,modelo=%s,
+                   numero=%s,status=%s,uso_celular=%s,carregador=%s,termo_assinado=%s,
+                   data_entrega=%s,data_devolucao=%s,gmail=%s,senha=%s,usuario_anterior=%s,
+                   imei_1=%s,imei_2=%s,num_serie=%s,armazenamento=%s,observacoes=%s,updated_at=NOW()
+                   WHERE id_ativo=%s""",
+                (
+                    d.get("id_sistema"), d.get("fazenda"), d.get("setor"), d.get("responsavel"),
+                    d.get("cargo"), d.get("tipo"), d.get("modelo"), d.get("numero"),
+                    d.get("status"), d.get("uso_celular"), d.get("carregador"),
+                    d.get("termo_assinado"), d.get("data_entrega"), d.get("data_devolucao"),
+                    d.get("gmail"), d.get("senha"), d.get("usuario_anterior"),
+                    d.get("imei_1"), d.get("imei_2"), d.get("num_serie"),
+                    d.get("armazenamento"), d.get("observacoes"), id_ativo,
+                ),
+            )
+            log_historico(cur, id_ativo, "Celular Inspeção", "Edição")
+    return jsonify({"ok": True, "msg": "Celular de inspeção atualizado!"})
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -911,6 +995,129 @@ def historico_estoque(eid: int) -> Response:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# PEDIDOS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/api/pedidos", methods=["GET"])
+def listar_pedidos() -> Response:
+    """Lista pedidos com filtros de status e busca."""
+    filtro = request.args.get("status", "")
+    busca = request.args.get("q", "")
+    query = "SELECT * FROM pedidos WHERE 1=1"
+    params: list[Any] = []
+    if filtro:
+        query += " AND status=%s"
+        params.append(filtro)
+    if busca:
+        query += " AND (item ILIKE %s OR fazenda_solicitante ILIKE %s OR num_requisicao ILIKE %s)"
+        params += [f"%{busca}%"] * 3
+    query += " ORDER BY id DESC"
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            rows = _fetch_all(cur, query, tuple(params))
+    return jsonify(rows)
+
+
+@app.route("/api/pedidos", methods=["POST"])
+def criar_pedido() -> Response:
+    """Cadastra um novo pedido."""
+    d = request.json
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO pedidos
+                   (fazenda_solicitante,data_pedido,status,quantidade,num_requisicao,
+                    item,estoque_id,motivo,forma_envio,responsavel,observacoes)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                (
+                    d["fazenda_solicitante"], d.get("data_pedido") or date.today().isoformat(),
+                    d.get("status", "Aberto"), d.get("quantidade", 1), d.get("num_requisicao"),
+                    d["item"], d.get("estoque_id"), d.get("motivo"), d.get("forma_envio"),
+                    d.get("responsavel"), d.get("observacoes"),
+                ),
+            )
+    return jsonify({"ok": True, "msg": "Pedido cadastrado!"})
+
+
+@app.route("/api/pedidos/<int:pid>", methods=["GET"])
+def get_pedido(pid: int) -> Response:
+    """Retorna dados de um pedido."""
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            row = _fetch_one(cur, "SELECT * FROM pedidos WHERE id=%s", (pid,))
+    return jsonify(row)
+
+
+@app.route("/api/pedidos/<int:pid>", methods=["PUT"])
+def atualizar_pedido(pid: int) -> tuple[Response, int] | Response:
+    """Atualiza status e dados de um pedido. Ao finalizar, desconta do estoque se houver estoque_id."""
+    d = request.json
+    novo_status = d.get("status", "")
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            pedido = _fetch_one(cur, "SELECT * FROM pedidos WHERE id=%s", (pid,))
+            if not pedido:
+                return jsonify({"ok": False, "msg": "Pedido não encontrado"}), 404
+
+            cur.execute(
+                """UPDATE pedidos SET
+                   fazenda_solicitante=%s,status=%s,quantidade=%s,num_requisicao=%s,
+                   item=%s,estoque_id=%s,motivo=%s,forma_envio=%s,responsavel=%s,
+                   observacoes=%s,updated_at=NOW() WHERE id=%s""",
+                (
+                    d.get("fazenda_solicitante", pedido["fazenda_solicitante"]),
+                    novo_status,
+                    d.get("quantidade", pedido["quantidade"]),
+                    d.get("num_requisicao", pedido["num_requisicao"]),
+                    d.get("item", pedido["item"]),
+                    d.get("estoque_id", pedido["estoque_id"]),
+                    d.get("motivo", pedido["motivo"]),
+                    d.get("forma_envio", pedido["forma_envio"]),
+                    d.get("responsavel", pedido["responsavel"]),
+                    d.get("observacoes", pedido["observacoes"]),
+                    pid,
+                ),
+            )
+
+            # Descontar do estoque ao finalizar
+            if novo_status == "Finalizado" and pedido["status"] != "Finalizado":
+                eid = d.get("estoque_id") or pedido["estoque_id"]
+                qtd = int(d.get("quantidade") or pedido["quantidade"])
+                if eid:
+                    item_est = _fetch_one(cur, "SELECT * FROM estoque WHERE id=%s", (eid,))
+                    if item_est:
+                        nova_qtd = item_est["quantidade"] - qtd
+                        if nova_qtd < 0:
+                            return jsonify({"ok": False, "msg": "Estoque insuficiente para finalizar pedido!"}), 400
+                        cur.execute("UPDATE estoque SET quantidade=%s,updated_at=NOW() WHERE id=%s", (nova_qtd, eid))
+                        cur.execute(
+                            """INSERT INTO estoque_movimentacoes (estoque_id,tipo,quantidade,motivo,responsavel)
+                               VALUES (%s,'saida',%s,%s,%s)""",
+                            (eid, qtd, f"Pedido #{pid} finalizado", d.get("responsavel")),
+                        )
+
+    return jsonify({"ok": True, "msg": "Pedido atualizado!"})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# IMPRESSORAS POR FAZENDA (para seleção no Toner)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/api/impressoras/por_fazenda")
+def impressoras_por_fazenda() -> Response:
+    """Retorna impressoras filtradas por fazenda para uso no módulo de toners."""
+    fazenda = request.args.get("fazenda", "Central")
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            rows = _fetch_all(
+                cur,
+                "SELECT id_ativo, modelo, ip_rede FROM impressoras WHERE fazenda=%s AND status='Ativo' ORDER BY id_ativo",
+                (fazenda,),
+            )
+    return jsonify(rows)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # TONERS
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1004,9 +1211,10 @@ def registrar_troca_toner(tid: int) -> tuple[Response, int] | Response:
             )
             cur.execute(
                 """INSERT INTO toner_trocas
-                   (toner_id,quantidade,responsavel,impressora_id_ativo,data_troca,observacoes)
-                   VALUES (%s,%s,%s,%s,%s,%s)""",
-                (tid, qtd, d.get("responsavel"), d.get("impressora_id_ativo"), hoje, d.get("observacoes")),
+                   (toner_id,quantidade,responsavel,impressora_id_ativo,data_troca,observacoes,tipo_suprimento)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+                (tid, qtd, d.get("responsavel"), d.get("impressora_id_ativo"), hoje,
+                 d.get("observacoes"), d.get("tipo_suprimento", "Toner")),
             )
 
     return jsonify({"ok": True, "msg": f"Troca registrada! Estoque restante: {nova_qtd}", "nova_quantidade": nova_qtd})
@@ -1067,15 +1275,17 @@ def criar_manutencao() -> Response:
                    (id_ativo,tipo_equipamento,modelo,local_atual,data_recebimento,
                     pessoa_recebimento,problema_relatado,data_manutencao,os_manutencao,
                     orcamento,status,data_envio,forma_envio,data_retorno,
-                    solucao_aplicada,tecnico,observacoes)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    solucao_aplicada,tecnico,observacoes,
+                    tipo_manutencao,pecas_utilizadas,subtipo)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (
                     d["id_ativo"], d["tipo_equipamento"], d.get("modelo"), d.get("local_atual"),
                     d.get("data_recebimento"), d.get("pessoa_recebimento"), d.get("problema_relatado"),
                     d.get("data_manutencao"), d.get("os_manutencao"), d.get("orcamento"),
                     d.get("status", "Aberta"), d.get("data_envio"), d.get("forma_envio"),
                     d.get("data_retorno"), d.get("solucao_aplicada"), d.get("tecnico"),
-                    d.get("observacoes"),
+                    d.get("observacoes"), d.get("tipo_manutencao"),
+                    d.get("pecas_utilizadas"), d.get("subtipo"),
                 ),
             )
             log_historico(cur, d["id_ativo"], d["tipo_equipamento"], "Manutenção Aberta")
@@ -1102,14 +1312,16 @@ def atualizar_manutencao(mid: int) -> Response:
                    local_atual=%s,data_recebimento=%s,pessoa_recebimento=%s,
                    problema_relatado=%s,data_manutencao=%s,os_manutencao=%s,orcamento=%s,
                    status=%s,data_envio=%s,forma_envio=%s,data_retorno=%s,
-                   solucao_aplicada=%s,tecnico=%s,observacoes=%s,updated_at=NOW()
+                   solucao_aplicada=%s,tecnico=%s,observacoes=%s,
+                   tipo_manutencao=%s,pecas_utilizadas=%s,subtipo=%s,updated_at=NOW()
                    WHERE id=%s""",
                 (
                     d.get("local_atual"), d.get("data_recebimento"), d.get("pessoa_recebimento"),
                     d.get("problema_relatado"), d.get("data_manutencao"), d.get("os_manutencao"),
                     d.get("orcamento"), d.get("status"), d.get("data_envio"), d.get("forma_envio"),
                     d.get("data_retorno"), d.get("solucao_aplicada"), d.get("tecnico"),
-                    d.get("observacoes"), mid,
+                    d.get("observacoes"), d.get("tipo_manutencao"),
+                    d.get("pecas_utilizadas"), d.get("subtipo"), mid,
                 ),
             )
     return jsonify({"ok": True, "msg": "Manutenção atualizada!"})
@@ -1194,9 +1406,9 @@ def historico_ativo(id_ativo: str) -> Response:
 def exportar(tabela: str) -> tuple[Response, int] | Response:
     """Exporta todos os dados de uma tabela em formato CSV."""
     tabelas_validas = {
-        "celulares", "celulares_ponto", "computadores", "impressoras",
+        "celulares", "celulares_ponto", "celulares_inspecao", "computadores", "impressoras",
         "estabilizadores", "starlink", "manutencoes", "descartes", "estoque", "toners",
-        "transferencias", "historico", "estoque_equipamentos",
+        "transferencias", "historico", "estoque_equipamentos", "pedidos",
     }
     if tabela not in tabelas_validas:
         return jsonify({"ok": False, "msg": "Tabela inválida"}), 400
@@ -1666,6 +1878,7 @@ def busca_global() -> Response:
     tabelas_busca = [
         ("Celular", "celulares", ["id_ativo", "responsavel", "modelo", "fazenda", "numero", "setor", "cargo", "num_serie", "imei_1"]),
         ("Celular Ponto", "celulares_ponto", ["id_ativo", "responsavel", "modelo", "fazenda", "num_turma", "funcao", "num_serie"]),
+        ("Celular Inspeção", "celulares_inspecao", ["id_ativo", "responsavel", "modelo", "fazenda", "numero", "id_sistema", "num_serie"]),
         ("Computador", "computadores", ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "numero_serie", "setor", "cargo"]),
         ("Impressora", "impressoras", ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "ip_rede", "setor", "numero_serie"]),
         ("Estabilizador", "estabilizadores", ["id_ativo", "modelo", "fazenda", "setor", "num_serie", "uso"]),
@@ -1799,7 +2012,7 @@ def parse_coleta() -> Response:
 
 if __name__ == "__main__":
     print("\n" + "=" * 55)
-    print("  🖥️  SISTEMA DE INVENTÁRIO TI  v3.0")
+    print("  SISTEMA DE INVENTARIO TI  v3.0")
     print("  Banco: Supabase (PostgreSQL)")
     print("  Acesse: http://localhost:5000")
     print("=" * 55 + "\n")

@@ -64,7 +64,7 @@ SIGLAS_LOCAL: dict[str, str] = {
 
 # C. Setores
 SIGLAS_SETOR: dict[str, str] = {
-    "FT": "Fito",
+    "FT":  "Fito",
     "ALP": "Almoxarifado Peças",
     "ALI": "Almoxarifado Insumos",
     "COO": "Coordenador",
@@ -75,6 +75,11 @@ SIGLAS_SETOR: dict[str, str] = {
     "TRM": "Turma",
     "ABS": "Abastecimento",
     "IRR": "Irrigação",
+    "STR": "Sestr",
+    "AGR": "Agrícola",
+    "CDP": "CD",
+    "INP": "Inspeção",
+    "LDR": "Líderes",
 }
 
 # Mapeamento tipo → tabela do banco (para proximo_sequencial)
@@ -82,6 +87,7 @@ _TABELA_POR_TIPO: dict[str, str] = {
     "DK":  "computadores",
     "NT":  "computadores",
     "CL":  "celulares",
+    "CLI": "celulares_inspecao",
     "IMP": "impressoras",
     "TB":  "celulares",
     "EST": "estabilizadores",
