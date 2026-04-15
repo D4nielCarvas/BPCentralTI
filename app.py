@@ -23,8 +23,15 @@ from flask import Flask, Response, jsonify, render_template, request, send_from_
 from werkzeug.utils import secure_filename
 
 # ── Importações dos módulos internos ──────────────────────────────────────────
-from id_generator import gerar_id_ativo, proximo_sequencial, sugerir_id
-from id_generator import SIGLAS_TIPO, SIGLAS_LOCAL, SIGLAS_SETOR
+from id_generator import (
+    gerar_id_ativo, proximo_sequencial, sugerir_id,
+    gerar_id_turma, proximo_sequencial_turma, sugerir_id_turma,
+    SIGLAS_TIPO, SIGLAS_LOCAL, SIGLAS_SETOR,
+)
+
+# ── Dicts inversos: nome completo → sigla (para regen de ID após transferência) ─
+FAZENDA_PARA_SIGLA: dict[str, str] = {v: k for k, v in SIGLAS_LOCAL.items()}
+SETOR_PARA_SIGLA: dict[str, str]   = {v: k for k, v in SIGLAS_SETOR.items()}
 
 # ── Carrega variáveis de ambiente ─────────────────────────────────────────────
 load_dotenv()
@@ -234,6 +241,52 @@ def serve_termo(filename: str) -> Response:
 # UPLOAD PDF
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# ITEM 1 — BUSCA UNIFICADA DE ATIVO POR ID
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Tabelas pesquisadas em ordem de prioridade
+_TABELAS_ATIVO_BUSCA: list[tuple[str, str]] = [
+    ("celulares",          "Celular"),
+    ("celulares_ponto",    "Celular Ponto"),
+    ("celulares_inspecao", "Celular Inspeção"),
+    ("celulares_turma",    "Celular Turma"),
+    ("computadores",       "Computador"),
+    ("impressoras",        "Impressora"),
+    ("estabilizadores",    "Estabilizador"),
+    ("starlink",           "Starlink"),
+]
+
+
+@app.route("/api/ativos/<id_ativo>")
+def get_ativo_universal(id_ativo: str) -> tuple[Response, int] | Response:
+    """
+    Busca um ativo em todas as tabelas de equipamentos pelo ID.
+
+    Usado pela aba de Manutenção para autopreenchimento de campos.
+    Complexidade: O(k) onde k = número de tabelas (~8 queries no pior caso).
+
+    Args:
+        id_ativo: ID do ativo no padrão TIPO-LOCAL-SETOR-NN ou CL-TRM-NN.
+
+    Returns:
+        JSON com os dados do ativo + campo 'tipo_equipamento', ou 404.
+    """
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            for tabela, tipo_nome in _TABELAS_ATIVO_BUSCA:
+                row = _fetch_one(
+                    cur,
+                    f"SELECT * FROM {tabela} WHERE id_ativo=%s",
+                    (id_ativo,),
+                )
+                if row:
+                    row["tipo_equipamento"] = tipo_nome
+                    return jsonify(row)
+
+    return jsonify({"ok": False, "msg": f"Ativo '{id_ativo}' não encontrado"}), 404
+
+
 @app.route("/api/upload_termo/<tipo>/<id_ativo>", methods=["POST"])
 def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
     """
@@ -262,6 +315,7 @@ def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
         "celular": "celulares",
         "celular_ponto": "celulares_ponto",
         "celular_inspecao": "celulares_inspecao",
+        "celular_turma": "celulares_turma",
         "computador": "computadores",
     }
     tabela = tabela_map.get(tipo)
@@ -274,7 +328,7 @@ def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
                     (safe_name, id_ativo),
                 )
                 log_historico(cur, id_ativo, tipo, "PDF Termo Anexado")
-
+ 
     return jsonify({"ok": True, "msg": "PDF anexado!", "filename": safe_name})
 
 
@@ -304,8 +358,9 @@ def dashboard() -> Response:
         with conn.cursor() as cur:
             stats: dict[str, dict] = {}
             for tbl in [
-                "celulares", "celulares_ponto", "celulares_inspecao", "computadores",
-                "impressoras", "estabilizadores", "starlink",
+                "celulares", "celulares_ponto", "celulares_inspecao",
+                "celulares_turma",
+                "computadores", "impressoras", "estabilizadores", "starlink",
             ]:
                 cur.execute(f"SELECT COUNT(*) AS n FROM {tbl}")
                 tot = cur.fetchone()["n"]
@@ -798,7 +853,7 @@ def listar_starlink() -> Response:
 
 @app.route("/api/starlink", methods=["POST"])
 def criar_starlink() -> tuple[Response, int] | Response:
-    """Cadastra uma nova antena Starlink."""
+    """Cadastra uma nova antena Starlink. Item 7: inclui campos de login."""
     d = request.json
     with get_db() as conn:
         with conn.cursor() as cur:
@@ -806,13 +861,16 @@ def criar_starlink() -> tuple[Response, int] | Response:
                 cur.execute(
                     """INSERT INTO starlink
                        (id_ativo,fazenda,setor,responsavel,modelo,num_serie,mac_address,
-                        ip_rede,status,data_instalacao,data_aquisicao,plano,observacoes)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                        ip_rede,status,data_instalacao,data_aquisicao,plano,observacoes,
+                        id_starlink,numero_kit,email_login,senha_login)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                     (
                         d["id_ativo"], d.get("fazenda"), d.get("setor"), d.get("responsavel"),
                         d.get("modelo"), d.get("num_serie"), d.get("mac_address"), d.get("ip_rede"),
                         d.get("status", "Ativo"), d.get("data_instalacao"), d.get("data_aquisicao"),
                         d.get("plano"), d.get("observacoes"),
+                        d.get("id_starlink"), d.get("numero_kit"),
+                        d.get("email_login"), d.get("senha_login"),
                     ),
                 )
                 log_historico(cur, d["id_ativo"], "Starlink", "Cadastro")
@@ -832,7 +890,7 @@ def get_starlink(id_ativo: str) -> Response:
 
 @app.route("/api/starlink/<id_ativo>", methods=["PUT"])
 def atualizar_starlink(id_ativo: str) -> Response:
-    """Atualiza dados de uma antena Starlink."""
+    """Atualiza dados de uma antena Starlink. Item 7: inclui campos de login."""
     d = request.json
     with get_db() as conn:
         with conn.cursor() as cur:
@@ -840,16 +898,99 @@ def atualizar_starlink(id_ativo: str) -> Response:
                 """UPDATE starlink SET
                    fazenda=%s,setor=%s,responsavel=%s,modelo=%s,num_serie=%s,mac_address=%s,
                    ip_rede=%s,status=%s,data_instalacao=%s,data_aquisicao=%s,plano=%s,
-                   observacoes=%s,updated_at=NOW() WHERE id_ativo=%s""",
+                   observacoes=%s,id_starlink=%s,numero_kit=%s,email_login=%s,senha_login=%s,
+                   updated_at=NOW() WHERE id_ativo=%s""",
                 (
                     d.get("fazenda"), d.get("setor"), d.get("responsavel"), d.get("modelo"),
                     d.get("num_serie"), d.get("mac_address"), d.get("ip_rede"), d.get("status"),
                     d.get("data_instalacao"), d.get("data_aquisicao"), d.get("plano"),
-                    d.get("observacoes"), id_ativo,
+                    d.get("observacoes"),
+                    d.get("id_starlink"), d.get("numero_kit"),
+                    d.get("email_login"), d.get("senha_login"),
+                    id_ativo,
                 ),
             )
             log_historico(cur, id_ativo, "Starlink", "Edição")
     return jsonify({"ok": True, "msg": "Starlink atualizada!"})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CELULARES TURMA (Item 4)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/api/celulares_turma", methods=["GET"])
+def listar_celulares_turma() -> Response:
+    """Lista celulares de turma com filtros de status e busca textual."""
+    return _list_table(
+        "celulares_turma",
+        ["id_ativo", "responsavel", "modelo", "num_turma", "fazenda", "num_serie"],
+    )
+
+
+@app.route("/api/celulares_turma", methods=["POST"])
+def criar_celular_turma() -> tuple[Response, int] | Response:
+    """Cadastra um novo celular de turma (ID no formato CL-TRM-NN)."""
+    d = request.json
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            try:
+                cur.execute(
+                    """INSERT INTO celulares_turma
+                       (id_ativo,num_turma,responsavel,fazenda,setor,modelo,tipo,status,
+                        uso_celular,carregador,termo_assinado,data_entrega,data_devolucao,
+                        gmail_clockin,senha,usuario_anterior,imei_1,imei_2,num_serie,
+                        armazenamento,observacoes)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    (
+                        d["id_ativo"], d.get("num_turma"), d.get("responsavel"),
+                        d.get("fazenda"), d.get("setor"), d.get("modelo"), d.get("tipo"),
+                        d.get("status", "Ativo"), d.get("uso_celular"), d.get("carregador"),
+                        d.get("termo_assinado"), d.get("data_entrega"), d.get("data_devolucao"),
+                        d.get("gmail_clockin"), d.get("senha"), d.get("usuario_anterior"),
+                        d.get("imei_1"), d.get("imei_2"), d.get("num_serie"),
+                        d.get("armazenamento"), d.get("observacoes"),
+                    ),
+                )
+                log_historico(cur, d["id_ativo"], "Celular Turma", "Cadastro")
+            except psycopg2.IntegrityError:
+                return jsonify({"ok": False, "msg": "ID de ativo já existe!"}), 400
+    return jsonify({"ok": True, "msg": "Celular de turma cadastrado!"})
+
+
+@app.route("/api/celulares_turma/<id_ativo>", methods=["GET"])
+def get_celular_turma(id_ativo: str) -> Response:
+    """Retorna dados de um celular de turma."""
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            row = _fetch_one(cur, "SELECT * FROM celulares_turma WHERE id_ativo=%s", (id_ativo,))
+    return jsonify(row)
+
+
+@app.route("/api/celulares_turma/<id_ativo>", methods=["PUT"])
+def atualizar_celular_turma(id_ativo: str) -> Response:
+    """Atualiza dados de um celular de turma."""
+    d = request.json
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """UPDATE celulares_turma SET
+                   num_turma=%s,responsavel=%s,fazenda=%s,setor=%s,modelo=%s,tipo=%s,
+                   status=%s,uso_celular=%s,carregador=%s,termo_assinado=%s,data_entrega=%s,
+                   data_devolucao=%s,gmail_clockin=%s,senha=%s,usuario_anterior=%s,
+                   imei_1=%s,imei_2=%s,num_serie=%s,armazenamento=%s,observacoes=%s,
+                   updated_at=NOW() WHERE id_ativo=%s""",
+                (
+                    d.get("num_turma"), d.get("responsavel"), d.get("fazenda"), d.get("setor"),
+                    d.get("modelo"), d.get("tipo"), d.get("status"), d.get("uso_celular"),
+                    d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
+                    d.get("data_devolucao"), d.get("gmail_clockin"), d.get("senha"),
+                    d.get("usuario_anterior"), d.get("imei_1"), d.get("imei_2"),
+                    d.get("num_serie"), d.get("armazenamento"), d.get("observacoes"),
+                    id_ativo,
+                ),
+            )
+            log_historico(cur, id_ativo, "Celular Turma", "Edição")
+    return jsonify({"ok": True, "msg": "Celular de turma atualizado!"})
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -876,12 +1017,13 @@ def listar_estoque() -> Response:
 def listar_estoque_equipamentos() -> Response:
     """Lista todos os equipamentos com status 'Em Estoque' de todas as tabelas."""
     tabelas = [
-        ("celulares", "Celular"),
-        ("celulares_ponto", "Celular Ponto"),
-        ("computadores", "Computador"),
-        ("impressoras", "Impressora"),
-        ("estabilizadores", "Estabilizador"),
-        ("starlink", "Starlink"),
+        ("celulares",        "Celular"),
+        ("celulares_ponto",  "Celular Ponto"),
+        ("celulares_turma",  "Celular Turma"),
+        ("computadores",     "Computador"),
+        ("impressoras",      "Impressora"),
+        ("estabilizadores",  "Estabilizador"),
+        ("starlink",         "Starlink"),
     ]
     query_parts = []
     for tbl, label in tabelas:
@@ -1020,23 +1162,27 @@ def listar_pedidos() -> Response:
 
 @app.route("/api/pedidos", methods=["POST"])
 def criar_pedido() -> Response:
-    """Cadastra um novo pedido."""
+    """Cadastra um novo pedido. Item 9: inclui responsavel_envio, retorna id para upload de nota."""
     d = request.json
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """INSERT INTO pedidos
                    (fazenda_solicitante,data_pedido,status,quantidade,num_requisicao,
-                    item,estoque_id,motivo,forma_envio,responsavel,observacoes)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    item,estoque_id,motivo,forma_envio,responsavel,observacoes,
+                    responsavel_envio)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                   RETURNING id""",
                 (
                     d["fazenda_solicitante"], d.get("data_pedido") or date.today().isoformat(),
                     d.get("status", "Aberto"), d.get("quantidade", 1), d.get("num_requisicao"),
                     d["item"], d.get("estoque_id"), d.get("motivo"), d.get("forma_envio"),
                     d.get("responsavel"), d.get("observacoes"),
+                    d.get("responsavel_envio"),
                 ),
             )
-    return jsonify({"ok": True, "msg": "Pedido cadastrado!"})
+            novo_id = cur.fetchone()["id"]
+    return jsonify({"ok": True, "msg": "Pedido cadastrado!", "id": novo_id})
 
 
 @app.route("/api/pedidos/<int:pid>", methods=["GET"])
@@ -1063,7 +1209,7 @@ def atualizar_pedido(pid: int) -> tuple[Response, int] | Response:
                 """UPDATE pedidos SET
                    fazenda_solicitante=%s,status=%s,quantidade=%s,num_requisicao=%s,
                    item=%s,estoque_id=%s,motivo=%s,forma_envio=%s,responsavel=%s,
-                   observacoes=%s,updated_at=NOW() WHERE id=%s""",
+                   observacoes=%s,responsavel_envio=%s,updated_at=NOW() WHERE id=%s""",
                 (
                     d.get("fazenda_solicitante", pedido["fazenda_solicitante"]),
                     novo_status,
@@ -1075,6 +1221,7 @@ def atualizar_pedido(pid: int) -> tuple[Response, int] | Response:
                     d.get("forma_envio", pedido["forma_envio"]),
                     d.get("responsavel", pedido["responsavel"]),
                     d.get("observacoes", pedido["observacoes"]),
+                    d.get("responsavel_envio", pedido.get("responsavel_envio")),
                     pid,
                 ),
             )
@@ -1093,7 +1240,7 @@ def atualizar_pedido(pid: int) -> tuple[Response, int] | Response:
                         cur.execute(
                             """INSERT INTO estoque_movimentacoes (estoque_id,tipo,quantidade,motivo,responsavel)
                                VALUES (%s,'saida',%s,%s,%s)""",
-                            (eid, qtd, f"Pedido #{pid} finalizado", d.get("responsavel")),
+                            (eid, qtd, f"Pedido #{pid} finalizado", d.get("responsavel") or pedido["responsavel"]),
                         )
 
     return jsonify({"ok": True, "msg": "Pedido atualizado!"})
@@ -1341,17 +1488,51 @@ def listar_descartes() -> Response:
     return jsonify(rows)
 
 
+@app.route("/api/pedidos/<int:pid>/upload-nota", methods=["POST"])
+def upload_nota_pedido(pid: int) -> tuple[Response, int] | Response:
+    """
+    Item 9: Recebe e salva o PDF/imagem de nota fiscal de um pedido.
+
+    Aceita: .pdf, .jpg, .jpeg, .png
+    Salva em: database/termos/pedido_{id}_nota.{ext}
+    Atualiza: campo nota_fiscal_pdf na tabela pedidos.
+    """
+    if "file" not in request.files:
+        return jsonify({"ok": False, "msg": "Nenhum arquivo enviado"}), 400
+
+    file = request.files["file"]
+    if not file.filename:
+        return jsonify({"ok": False, "msg": "Arquivo vazio"}), 400
+
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in {"pdf", "jpg", "jpeg", "png"}:
+        return jsonify({"ok": False, "msg": "Extensão não permitida. Use PDF, JPG ou PNG"}), 400
+
+    safe_name = f"pedido_{pid}_nota.{ext}"
+    file.save(os.path.join(UPLOAD_FOLDER, safe_name))
+
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE pedidos SET nota_fiscal_pdf=%s,updated_at=NOW() WHERE id=%s",
+                (safe_name, pid),
+            )
+
+    return jsonify({"ok": True, "msg": "Nota fiscal anexada!", "filename": safe_name})
+
+
 @app.route("/api/descartes", methods=["POST"])
 def criar_descarte() -> Response:
     """Registra o descarte de um ativo e atualiza seu status na tabela de origem."""
     d = request.json
     tabela_map = {
-        "Celular": "celulares",
-        "Celular Ponto": "celulares_ponto",
-        "Computador": "computadores",
-        "Impressora": "impressoras",
-        "Estabilizador": "estabilizadores",
-        "Starlink": "starlink",
+        "Celular":          "celulares",
+        "Celular Ponto":    "celulares_ponto",
+        "Celular Turma":    "celulares_turma",
+        "Computador":       "computadores",
+        "Impressora":       "impressoras",
+        "Estabilizador":    "estabilizadores",
+        "Starlink":         "starlink",
     }
     with get_db() as conn:
         with conn.cursor() as cur:
@@ -1405,29 +1586,56 @@ def historico_ativo(id_ativo: str) -> Response:
 
 @app.route("/api/exportar/<tabela>")
 def exportar(tabela: str) -> tuple[Response, int] | Response:
-    """Exporta todos os dados de uma tabela em formato CSV."""
+    """Exporta todos os dados de uma tabela em formato CSV. Datas em DD/MM/AAAA."""
     tabelas_validas = {
-        "celulares", "celulares_ponto", "celulares_inspecao", "computadores", "impressoras",
+        "celulares", "celulares_ponto", "celulares_inspecao", "celulares_turma",
+        "computadores", "impressoras",
         "estabilizadores", "starlink", "manutencoes", "descartes", "estoque", "toners",
         "transferencias", "historico", "estoque_equipamentos", "pedidos",
     }
     if tabela not in tabelas_validas:
         return jsonify({"ok": False, "msg": "Tabela inválida"}), 400
 
+    # Campos de data para converter para DD/MM/AAAA na exportação
+    _DATE_FIELDS = {
+        "data_entrega", "data_devolucao", "data_transferencia", "data_recebimento",
+        "data_descarte", "data_pedido", "data_instalacao", "data_aquisicao",
+        "data_manutencao", "data_envio", "data_retorno", "data_ultima_troca",
+    }
+
+    def _fmt_date(val: Any) -> Any:
+        """Converte date/datetime para string DD/MM/AAAA, mantém outros tipos."""
+        if val is None:
+            return ""
+        if hasattr(val, "strftime"):
+            return val.strftime("%d/%m/%Y")
+        if isinstance(val, str) and len(val) >= 10 and val[4] == "-":
+            try:
+                parts = val[:10].split("-")
+                return f"{parts[2]}/{parts[1]}/{parts[0]}"
+            except (IndexError, ValueError):
+                return val
+        return val
+
     with get_db() as conn:
         with conn.cursor() as cur:
             if tabela == "estoque_equipamentos":
                 tabelas = [
-                    ("celulares", "Celular"),
+                    ("celulares",       "Celular"),
                     ("celulares_ponto", "Celular Ponto"),
-                    ("computadores", "Computador"),
-                    ("impressoras", "Impressora"),
+                    ("celulares_inspecao", "Celular Inspeção"),
+                    ("celulares_turma", "Celular Turma"),
+                    ("computadores",    "Computador"),
+                    ("impressoras",     "Impressora"),
                     ("estabilizadores", "Estabilizador"),
-                    ("starlink", "Starlink"),
+                    ("starlink",        "Starlink"),
                 ]
                 query_parts = []
                 for tbl, label in tabelas:
-                    query_parts.append(f"SELECT id_ativo, modelo, fazenda, '{label}' as tipo_equipamento, status FROM {tbl} WHERE status = 'Estoque'")
+                    query_parts.append(
+                        f"SELECT id_ativo, modelo, fazenda, '{label}' as tipo_equipamento, status "
+                        f"FROM {tbl} WHERE status = 'Estoque'"
+                    )
                 rows = _fetch_all(cur, " UNION ALL ".join(query_parts) + " ORDER BY id_ativo ASC")
             else:
                 rows = _fetch_all(cur, f"SELECT * FROM {tabela}")
@@ -1435,10 +1643,19 @@ def exportar(tabela: str) -> tuple[Response, int] | Response:
     if not rows:
         return jsonify({"ok": False, "msg": "Sem dados para exportar"}), 404
 
+    # Converte campos de data para o formato brasileiro
+    rows_export = []
+    for row in rows:
+        row_conv = dict(row)
+        for field in _DATE_FIELDS:
+            if field in row_conv:
+                row_conv[field] = _fmt_date(row_conv[field])
+        rows_export.append(row_conv)
+
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=rows[0].keys())
+    writer = csv.DictWriter(output, fieldnames=rows_export[0].keys())
     writer.writeheader()
-    writer.writerows(rows)
+    writer.writerows(rows_export)
 
     return Response(
         output.getvalue(),
@@ -1629,12 +1846,26 @@ def importar_coleta() -> tuple[Response, int] | Response:
 
 # Mapeamento tipo_equipamento → nome da tabela
 _TABELA_POR_TIPO: dict[str, str] = {
-    "Celular": "celulares",
-    "Celular Ponto": "celulares_ponto",
-    "Computador": "computadores",
-    "Impressora": "impressoras",
-    "Estabilizador": "estabilizadores",
-    "Starlink": "starlink",
+    "Celular":          "celulares",
+    "Celular Ponto":    "celulares_ponto",
+    "Celular Inspeção": "celulares_inspecao",
+    "Celular Turma":    "celulares_turma",
+    "Computador":       "computadores",
+    "Impressora":       "impressoras",
+    "Estabilizador":    "estabilizadores",
+    "Starlink":         "starlink",
+}
+
+# Mapeamento tipo_equipamento → sigla para id_generator
+_SIGLA_TIPO_MAP: dict[str, str] = {
+    "Celular":          "CL",
+    "Celular Ponto":    "CL",
+    "Celular Inspeção": "CL",
+    "Celular Turma":    "CL",  # Não remapeado — usa CL-TRM-NN
+    "Impressora":       "IMP",
+    "Estabilizador":    "EST",
+    "Starlink":         "STL",
+    # Computador: DK ou NT — determinado dinamicamente pelo campo 'tipo'
 }
 
 _STATUS_BLOQUEADOS = {"Manutenção", "Descartado"}
@@ -1759,6 +1990,57 @@ def criar_transferencia() -> tuple[Response, int] | Response:
                 f"Transferência: {tipo_transf} → {d.get('responsavel_destino') or 'Estoque'}",
             )
 
+            # 5. Regen de ID após transferência (Item 6)
+            # Apenas para transferências entre usuário/fazendas (não para Estoque)
+            fazenda_dest = d.get("fazenda_destino", "")
+            setor_dest   = d.get("setor_destino", "")
+            if (
+                tipo_transf not in ("Usuario para Estoque",)
+                and fazenda_dest
+                and setor_dest
+                and not id_ativo.startswith("CL-TRM-")  # Turma: sem regen
+            ):
+                tipo_sigla = _SIGLA_TIPO_MAP.get(tipo_eq)
+                # Para Computador, busca o campo 'tipo' do ativo para determinar DK ou NT
+                if tipo_eq == "Computador" and not tipo_sigla:
+                    ativo_full = _fetch_one(cur, "SELECT tipo FROM computadores WHERE id_ativo=%s", (id_ativo,))
+                    tipo_sigla = "DK" if (ativo_full or {}).get("tipo", "").lower() == "desktop" else "NT"
+
+                if tipo_sigla:
+                    local_sigla = FAZENDA_PARA_SIGLA.get(fazenda_dest, fazenda_dest.upper()[:3])
+                    setor_sigla = SETOR_PARA_SIGLA.get(setor_dest, setor_dest.upper()[:3])
+                    try:
+                        seq = proximo_sequencial(cur, tipo_sigla, local_sigla, setor_sigla)
+                        novo_id = gerar_id_ativo(tipo_sigla, local_sigla, setor_sigla, seq)
+                        # Registra ID anterior em observacoes da transferência
+                        cur.execute(
+                            "UPDATE transferencias SET observacoes = CASE "
+                            "WHEN observacoes IS NULL OR observacoes = '' THEN %s "
+                            "ELSE observacoes || ' | ' || %s END "
+                            "WHERE id_ativo=%s AND id=(SELECT MAX(id) FROM transferencias WHERE id_ativo=%s)",
+                            (
+                                f"ID anterior: {id_ativo}", f"ID anterior: {id_ativo}",
+                                id_ativo, id_ativo,
+                            ),
+                        )
+                        # Atualiza id_ativo na tabela de origem
+                        cur.execute(
+                            f"UPDATE {tabela} SET id_ativo=%s WHERE id_ativo=%s",
+                            (novo_id, id_ativo),
+                        )
+                        # Atualiza histórico e transferências para rastreabilidade
+                        cur.execute(
+                            "UPDATE historico SET id_ativo=%s WHERE id_ativo=%s",
+                            (novo_id, id_ativo),
+                        )
+                        cur.execute(
+                            "UPDATE transferencias SET id_ativo=%s WHERE id_ativo=%s",
+                            (novo_id, id_ativo),
+                        )
+                        id_ativo = novo_id  # Atualiza variável local
+                    except ValueError:
+                        pass  # Sigla inválida — mantém ID original
+
     return jsonify({"ok": True, "msg": "Transferência registrada com sucesso!"})
 
 
@@ -1877,13 +2159,14 @@ def busca_global() -> Response:
     resultados: list[dict] = []
     
     tabelas_busca = [
-        ("Celular", "celulares", ["id_ativo", "responsavel", "modelo", "fazenda", "numero", "setor", "cargo", "num_serie", "imei_1"]),
-        ("Celular Ponto", "celulares_ponto", ["id_ativo", "responsavel", "modelo", "fazenda", "num_turma", "funcao", "num_serie"]),
+        ("Celular",          "celulares",          ["id_ativo", "responsavel", "modelo", "fazenda", "numero", "setor", "cargo", "num_serie", "imei_1"]),
+        ("Celular Ponto",    "celulares_ponto",    ["id_ativo", "responsavel", "modelo", "fazenda", "num_turma", "funcao", "num_serie"]),
         ("Celular Inspeção", "celulares_inspecao", ["id_ativo", "responsavel", "modelo", "fazenda", "numero", "id_sistema", "num_serie"]),
-        ("Computador", "computadores", ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "numero_serie", "setor", "cargo"]),
-        ("Impressora", "impressoras", ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "ip_rede", "setor", "numero_serie"]),
-        ("Estabilizador", "estabilizadores", ["id_ativo", "modelo", "fazenda", "setor", "num_serie", "uso"]),
-        ("Starlink", "starlink", ["id_ativo", "responsavel", "modelo", "fazenda", "setor", "num_serie", "ip_rede"]),
+        ("Celular Turma",    "celulares_turma",    ["id_ativo", "responsavel", "modelo", "fazenda", "num_turma", "num_serie", "imei_1"]),
+        ("Computador",       "computadores",       ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "numero_serie", "setor", "cargo"]),
+        ("Impressora",       "impressoras",        ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "ip_rede", "setor", "numero_serie"]),
+        ("Estabilizador",    "estabilizadores",    ["id_ativo", "modelo", "fazenda", "setor", "num_serie", "uso"]),
+        ("Starlink",         "starlink",           ["id_ativo", "responsavel", "modelo", "fazenda", "setor", "num_serie", "ip_rede"]),
     ]
 
     with get_db() as conn:
@@ -1938,6 +2221,22 @@ def api_sugerir_id() -> Response:
         return jsonify({"ok": True, "id_sugerido": novo_id})
     except Exception as e:
         return jsonify({"ok": False, "msg": f"Erro ao gerar ID: {str(e)}"}), 500
+
+
+@app.route("/api/utils/gerar-id-turma")
+def api_sugerir_id_turma() -> Response:
+    """
+    Retorna o próximo ID disponível para Celular Turma no formato CL-TRM-NN.
+
+    Celulares de turma são itinerantes e não possuem fazenda/localidade fixa.
+    """
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                novo_id = sugerir_id_turma(cur)
+        return jsonify({"ok": True, "id_sugerido": novo_id})
+    except Exception as e:
+        return jsonify({"ok": False, "msg": f"Erro ao gerar ID Turma: {str(e)}"}), 500
 
 
 @app.route("/api/utils/parse-coleta", methods=["POST"])
@@ -2013,7 +2312,7 @@ def parse_coleta() -> Response:
 
 if __name__ == "__main__":
     print("\n" + "=" * 55)
-    print("  SISTEMA DE INVENTARIO TI  v3.0")
+    print("  SISTEMA DE INVENTARIO TI  v3.0.1-HOTFIX")
     print("  Banco: Supabase (PostgreSQL)")
     print("  Acesse: http://localhost:5000")
     print("=" * 55 + "\n")

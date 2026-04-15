@@ -1,11 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <title>Inventário TI v3</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
@@ -816,7 +813,6 @@ async function loadComputadores() {
         <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Computador','${r.modelo||''}')">🗑️</button>
       </div></td></tr>`;
   }).join('');
-}
 
 async function loadImpressoras() {
   const q = globalSearchFilter || '';
@@ -888,35 +884,32 @@ async function loadEstoque() {
 async function loadEstoqueEquipamentos() {
   const rows = await api('/api/estoque_equipamentos');
   const tb = document.getElementById('tb-estoque_equipamentos');
-  if (!rows.length) { tb.innerHTML=emptyRow(6,'Nenhum equipamento em estoque','\uD83C\uDFE2'); return; }
-  tb.innerHTML = rows.map(function(r) {
-    return '<tr>' +
-      '<td class="td-id">' + (r.id_ativo||'') + '</td>' +
-      '<td><span class="badge badge-analise">' + (r.tipo_equipamento||'') + '</span></td>' +
-      '<td class="td-bold">' + (r.modelo||'\u2014') + '</td>' +
-      '<td>' + (r.fazenda||'\u2014') + '</td>' +
-      '<td>' + statusBadge(r.status) + '</td>' +
-      '<td><div class="tbl-actions">' +
-        '<button class="btn btn-ghost btn-xs" onclick="goToAtivo(\'' + (r.tipo_equipamento||'') + '\',\'' + (r.id_ativo||'') + '\')">\uD83D\uDC41\uFE0F</button>' +
-      '</div></td></tr>';
-  }).join('');
-}
-
-async function loadToners() {
-  const q = globalSearchFilter || '';
-  const rows = await api(`/api/toners?q=${encodeURIComponent(q)}`);
-  const tb = document.getElementById('tb-toners');
-  if (!rows.length) { tb.innerHTML = emptyRow(7, 'Nenhum toner cadastrado', '🖨️'); return; }
-  tb.innerHTML = rows.map(r => {
-    const baixo = r.quantidade_estoque <= r.quantidade_minima;
-    const cls = r.quantidade_estoque === 0 ? 'qtd-zero' : (baixo ? 'qtd-baixo' : 'qtd-ok');
-    return `<tr>
-      <td class="td-bold">${r.modelo_impressora}</td>
-      <td>${r.modelo_toner}</td>
-      <td><span class="toner-cor-${(r.cor||'Preto').toLowerCase()}" style="background:transparent">${r.cor}</span></td>
+  if (!rows.length) { tb.innerHTML=emptyRow(6,'Nenhum equipamento em estoque','🏢'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">${r.id_ativo}</td>
+    <td><span class="badge badge-analise">${r.tipo_equipamento}</span></td>
+    <td class="td-bold">${r.modelo||'—'}</td>
+    <td>${r.fazenda||'—'}</td>
+    <td>${statusBadge(r.status)}</td>
+    <td><div class="tbl-actions">
+      <button class="btn btn-ghost btn-xsasync function loadManutencoes() {
+  const rows = await api(`/api/manutencoes?status=${filterState.manutencoes||''}`);
+  const tb = document.getElementById('tb-manutencoes');
+  if (!rows.length) { tb.innerHTML=emptyRow(11,'Nenhuma manutenção','🔧'); return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="td-id">#${r.id}</td><td class="td-bold">${r.id_ativo}</td>
+    <td><span class="badge badge-analise">${r.tipo_equipamento}</span></td>
+    <td>${r.tipo_manutencao?`<span class="badge badge-inativo">${r.tipo_manutencao}</span>`:'—'}</td>
+    <td>${r.modelo||'—'}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.problema_relatado||''}">${r.problema_relatado||'—'}</td>
+    <td>${formatarData(r.data_recebimento)}</td><td>${r.os_manutencao||'—'}</td>
+    <td>${r.orcamento?'R$ '+Number(r.orcamento).toFixed(2):'—'}</td>
+    <td>${statusBadge(r.status)}</td>
+    <td><button class="btn btn-ghost btn-xs" onclick="editManut(${r.id})">✏️</button></td></tr>`).join('');
+}="badge badge-ativo" style="background:transparent">${r.cor}</span></td>
       <td><span class="estoque-qtd ${cls}">${r.quantidade_estoque}</span> ${baixo?'<span class="badge badge-baixo">⚠️ Baixo</span>':''}</td>
       <td>${r.quantidade_minima}</td>
-      <td>${formatarData(r.data_ultima_troca)}</td>
+      <td>${r.data_ultima_troca||'—'}</td>
       <td><div class="tbl-actions">
         <button class="btn btn-warn btn-xs" onclick="registrarTroca(${r.id},'${r.modelo_impressora}','${r.modelo_toner}',${r.quantidade_estoque})">🔄 Troca</button>
         <button class="btn btn-ghost btn-xs" onclick="editToner(${r.id})">✏️</button>
@@ -935,7 +928,7 @@ async function loadManutencoes() {
     <td>${r.tipo_manutencao?`<span class="badge badge-inativo">${r.tipo_manutencao}</span>`:'—'}</td>
     <td>${r.modelo||'—'}</td>
     <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.problema_relatado||''}">${r.problema_relatado||'—'}</td>
-    <td>${formatarData(r.data_recebimento)}</td><td>${r.os_manutencao||'—'}</td>
+    <td>${r.data_recebimento||'—'}</td><td>${r.os_manutencao||'—'}</td>
     <td>${r.orcamento?'R$ '+Number(r.orcamento).toFixed(2):'—'}</td>
     <td>${statusBadge(r.status)}</td>
     <td><button class="btn btn-ghost btn-xs" onclick="editManut(${r.id})">✏️</button></td></tr>`).join('');
@@ -1747,7 +1740,7 @@ searchInput.addEventListener('input', () => {
       return;
     }
     searchResults.innerHTML = results.map(r=>`
-      <div class="sr-item" data-tipo="${r.tipo}" data-id="${r.id_ativo}" onclick="goToAtivo(this.dataset.tipo,this.dataset.id)">
+      <div class="sr-item" onclick="goToAtivo('${r.tipo}', '${r.id_ativo}')">
         <span class="badge badge-analise" style="font-size:10px">${r.tipo}</span>
         <div style="flex:1">
           <div style="color:var(--text);font-weight:600;font-size:12px">${r.id_ativo}</div>

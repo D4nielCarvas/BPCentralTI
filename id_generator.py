@@ -4,6 +4,9 @@ id_generator.py — Módulo de geração de IDs padronizados de ativos de TI.
 Padrão de ID: TIPO-LOCAL-SETOR-NN
 Exemplo: NT-CEN-ADM-03
 
+Celulares de Turma usam formato especial: CL-TRM-NN (sem fazenda fixa)
+Exemplo: CL-TRM-01, CL-TRM-02
+
 Fonte: Guia de Padronização de Nomenclatura de TI (documento oficial)
 
 Regras:
@@ -14,8 +17,11 @@ Regras:
 
 Integração:
     Importe este módulo no app.py:
-        from id_generator import gerar_id_ativo, proximo_sequencial, sugerir_id
-        from id_generator import SIGLAS_TIPO, SIGLAS_LOCAL, SIGLAS_SETOR
+        from id_generator import (
+            gerar_id_ativo, proximo_sequencial, sugerir_id,
+            gerar_id_turma, proximo_sequencial_turma, sugerir_id_turma,
+            SIGLAS_TIPO, SIGLAS_LOCAL, SIGLAS_SETOR,
+        )
 
 Dependências:
     - psycopg2-binary (conexão PostgreSQL)
@@ -34,11 +40,11 @@ if TYPE_CHECKING:
 
 # A. Tipos de Equipamento
 SIGLAS_TIPO: dict[str, str] = {
-    "DK": "Desktop (Computador de Mesa)",
-    "NT": "Notebook",
-    "CL": "Celular / Smartphone",
+    "DK":  "Desktop (Computador de Mesa)",
+    "NT":  "Notebook",
+    "CL":  "Celular / Smartphone",
     "IMP": "Impressora",
-    "TB": "Tablet",
+    "TB":  "Tablet",
     "EST": "Estabilizador",
     "STL": "Starlink",
 }
@@ -52,7 +58,7 @@ SIGLAS_LOCAL: dict[str, str] = {
     "SJU": "São Judas",
     "SFR": "São Francisco",
     "STN": "Santana",
-    "CD": "CD",
+    "CD":  "CD",
     "SEL": "Santa Eliza",
     "SLU": "Santa Lucia",
     "SL2": "Santa Lucia 2",
@@ -80,6 +86,7 @@ SIGLAS_SETOR: dict[str, str] = {
     "CDP": "CD",
     "INP": "Inspeção",
     "LDR": "Líderes",
+    "TI":  "TI",
 }
 
 # Mapeamento tipo → tabela do banco (para proximo_sequencial)
@@ -94,8 +101,11 @@ _TABELA_POR_TIPO: dict[str, str] = {
     "STL": "starlink",
 }
 
+# Prefixo exclusivo para Celulares Turma (formato CL-TRM-NN)
+_TURMA_PREFIX = "CL-TRM-"
 
-# ── Funções públicas ───────────────────────────────────────────────────────────
+
+# ── Funções públicas — Equipamentos padrão ─────────────────────────────────────
 
 def gerar_id_ativo(tipo: str, localidade: str, setor: str, sequencial: int) -> str:
     """
@@ -109,7 +119,7 @@ def gerar_id_ativo(tipo: str, localidade: str, setor: str, sequencial: int) -> s
               Deve ser uma chave válida em SIGLAS_TIPO.
         localidade: Sigla da localidade (ex.: 'CEN', 'SMN').
                     Deve ser uma chave válida em SIGLAS_LOCAL.
-        setor: Sigla do setor (ex.: 'ADM', 'FT').
+        setor: Sigla do setor (ex.: 'ADM', 'TI').
                Deve ser uma chave válida em SIGLAS_SETOR.
         sequencial: Número sequencial do ativo (inteiro positivo).
 
@@ -136,10 +146,8 @@ def gerar_id_ativo(tipo: str, localidade: str, setor: str, sequencial: int) -> s
 
     # Formata com dois dígitos mínimos; expande automaticamente se > 99
     seq_str = f"{sequencial:02d}"
-    
-    id_gerado = f"{tipo}-{localidade}-{setor}-{seq_str}"
-    
-    return id_gerado
+
+    return f"{tipo}-{localidade}-{setor}-{seq_str}"
 
 
 def proximo_sequencial(
@@ -150,9 +158,13 @@ def proximo_sequencial(
 ) -> int:
     """
     Consulta o banco e retorna o próximo número sequencial disponível.
+
+    Busca todos os IDs com o prefixo TIPO-LOCAL-SETOR- na tabela correspondente
+    e retorna max_encontrado + 1. IDs liberados por transferência podem ser
+    reutilizados se o max cair (comportamento natural do max+1).
     """
     tabela = _TABELA_POR_TIPO.get(tipo, "computadores")
-    if tipo == "CL" and setor in ("PTO", "TRM"):
+    if tipo == "CL" and setor in ("PTO",):
         tabela = "celulares_ponto"
 
     prefixo = f"{tipo}-{localidade}-{setor}-"
@@ -180,7 +192,60 @@ def sugerir_id(
     setor: str,
 ) -> str:
     """
-    Sugere o próximo ID disponível para um ativo.
+    Sugere o próximo ID disponível para um ativo no formato padrão.
     """
     seq = proximo_sequencial(cur, tipo, localidade, setor)
     return gerar_id_ativo(tipo, localidade, setor, seq)
+
+
+# ── Funções públicas — Celulares Turma (formato especial CL-TRM-NN) ───────────
+
+def gerar_id_turma(sequencial: int) -> str:
+    """
+    Gera um ID de celular de turma no formato CL-TRM-NN.
+
+    Celulares de turma são itinerantes (sem fazenda fixa), portanto o ID
+    não carrega sigla de localidade.
+
+    Args:
+        sequencial: Número sequencial do ativo (inteiro positivo).
+
+    Returns:
+        String no formato 'CL-TRM-NN' (ex.: 'CL-TRM-01').
+
+    Raises:
+        ValueError: Se sequencial for menor ou igual a zero.
+    """
+    if sequencial <= 0:
+        raise ValueError(f"Sequencial deve ser maior que zero, recebido: {sequencial}")
+    return f"{_TURMA_PREFIX}{sequencial:02d}"
+
+
+def proximo_sequencial_turma(cur: "psycopg2.extensions.cursor") -> int:
+    """
+    Consulta a tabela celulares_turma e retorna o próximo sequencial disponível.
+
+    Busca todos os IDs com prefixo 'CL-TRM-' e retorna max_encontrado + 1.
+    """
+    cur.execute(
+        "SELECT id_ativo FROM celulares_turma WHERE id_ativo LIKE %s",
+        (f"{_TURMA_PREFIX}%",),
+    )
+    rows = cur.fetchall()
+
+    maior = 0
+    for row in rows:
+        id_val: str = row["id_ativo"] if isinstance(row, dict) else row[0]
+        sufixo = id_val[len(_TURMA_PREFIX):]
+        if sufixo.isdigit():
+            maior = max(maior, int(sufixo))
+
+    return maior + 1
+
+
+def sugerir_id_turma(cur: "psycopg2.extensions.cursor") -> str:
+    """
+    Sugere o próximo ID disponível para um celular de turma (CL-TRM-NN).
+    """
+    seq = proximo_sequencial_turma(cur)
+    return gerar_id_turma(seq)

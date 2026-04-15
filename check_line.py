@@ -1,0 +1,6 @@
+﻿content = open("templates/index.html", encoding="utf-8").read()
+lines = content.splitlines()
+print(f"Total lines: {len(lines)}")
+print(f"Line 896: {repr(lines[895])}")
+print(f"Line 895: {repr(lines[894])}")
+print(f"Line 897: {repr(lines[896])}")
