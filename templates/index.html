@@ -1204,12 +1204,14 @@
                 <tr>
                   <th>ID Ativo</th>
                   <th>Fazenda</th>
+                  <th>Setor</th>
                   <th>Responsável</th>
-                  <th>Tipo</th>
                   <th>Marca</th>
                   <th>Modelo</th>
+                  <th>Memória RAM</th>
+                  <th>Armazenamento</th>
+                  <th>OS</th>
                   <th>Status</th>
-                  <th>Termo</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -1309,6 +1311,7 @@
                   <th>Plano</th>
                   <th>ID StarLink</th>
                   <th>Email</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody id="tb-starlink"></tbody>
@@ -1496,7 +1499,9 @@
               <button class="filter-btn" onclick="filterPedidos('Finalizado',this)">Finalizados</button>
               <button class="filter-btn" onclick="filterPedidos('Rejeitado',this)">Rejeitados</button>
             </div>
-            <input type="text" id="pedidos-search" placeholder="🔍 Nº Requisição..." oninput="filterState.pedidos_q=this.value;loadPedidos()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:5px 10px;font-size:12px;width:185px;outline:none;font-family:inherit">
+            <input type="text" id="pedidos-search" placeholder="🔍 Nº Requisição..."
+              oninput="filterState.pedidos_q=this.value;loadPedidos()"
+              style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:5px 10px;font-size:12px;width:185px;outline:none;font-family:inherit">
             <button class="btn btn-ghost btn-sm" onclick="exportar('pedidos')">⬇ CSV</button>
           </div>
           <div style="overflow-x:auto">
@@ -1821,12 +1826,12 @@
       try {
         const dt = new Date(s);
         if (!isNaN(dt.getTime())) {
-          const day   = String(dt.getUTCDate()).padStart(2, '0');
+          const day = String(dt.getUTCDate()).padStart(2, '0');
           const month = String(dt.getUTCMonth() + 1).padStart(2, '0');
-          const year  = dt.getUTCFullYear();
+          const year = dt.getUTCFullYear();
           return day + '/' + month + '/' + year;
         }
-      } catch (_) {}
+      } catch (_) { }
       return s;
     }
 
