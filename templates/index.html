@@ -2673,10 +2673,7 @@
       <option value="">Selecione...</option>
       <option value="CD" ${formaEnvioAtual === 'CD' ? 'selected' : ''}>CD (Nota Fiscal obrigatória)</option>
       <option value="Apoio" ${formaEnvioAtual === 'Apoio' ? 'selected' : ''}>Apoio (Responsável obrigatório)</option>
-      <option value="Motoboy" ${formaEnvioAtual === 'Motoboy' ? 'selected' : ''}>Motoboy</option>
-      <option value="Transportadora" ${formaEnvioAtual === 'Transportadora' ? 'selected' : ''}>Transportadora</option>
       <option value="Pessoalmente" ${formaEnvioAtual === 'Pessoalmente' ? 'selected' : ''}>Pessoalmente</option>
-      <option value="Correios" ${formaEnvioAtual === 'Correios' ? 'selected' : ''}>Correios</option>
     </select>`)}
     <!-- Item 9: Campo condicional - nota fiscal (visível somente para CD) -->
     <div id="div-nota-fiscal" class="form-group" style="display:${formaEnvioAtual === 'CD' ? '' : 'none'}">

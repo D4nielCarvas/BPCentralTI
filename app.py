@@ -66,9 +66,12 @@ def resource_path(relative_path: str) -> str:
 
 app = Flask(__name__, template_folder=resource_path("templates"))
 
-UPLOAD_FOLDER: str = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "database", "termos"
-)
+if getattr(sys, "frozen", False):
+    application_path = os.path.dirname(sys.executable)
+else:
+    application_path = os.path.dirname(os.path.abspath(__file__))
+
+UPLOAD_FOLDER: str = os.path.join(application_path, "database", "termos")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 DATABASE_URL: str = os.environ["SUPABASE_DATABASE_URL"]  # falha rápido se ausente
