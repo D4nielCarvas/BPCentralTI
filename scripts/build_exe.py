@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 """
-build_exe.py — Script de build para gerar o executável .exe via PyInstaller.
+scripts/build_exe.py — Script de build para gerar o executável .exe via PyInstaller.
 
-Uso:
-    python build_exe.py
+Uso (a partir da RAIZ do projeto):
+    python scripts/build_exe.py
 
 O executável será gerado em: dist/InventarioTI/InventarioTI.exe
 
 Pré-requisitos:
     pip install pyinstaller==6.11.1
 
-Estrutura esperada do projeto:
-    inventario-ti/
-    ├── app.py
+Estrutura do projeto:
+    inventario-ti-v3/
+    ├── app.py               ← entry point
+    ├── db_layer.py
     ├── id_generator.py
-    ├── build_exe.py          ← este arquivo
-    ├── .env                  ← NÃO incluído no exe (carregado em runtime)
-    ├── requirements.txt
+    ├── blueprints/
     ├── templates/
-    │   └── index.html
-    └── database/
-        └── termos/           ← criado automaticamente em runtime
+    ├── database/
+    ├── scripts/
+    │   ├── build_exe.py     ← este arquivo
+    │   └── COLETAR_PC.bat
+    └── migrations/
 """
 
 import os
@@ -49,6 +50,11 @@ import sys
 
 def main() -> None:
     """Executa o build do executável via PyInstaller."""
+    # Garante que o cwd é sempre a RAIZ do projeto, independente de onde
+    # o script foi invocado (scripts/ ou raiz)
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.chdir(root)
+
     sep = ";" if sys.platform == "win32" else ":"
 
     cmd = [
@@ -58,8 +64,11 @@ def main() -> None:
         "--noconsole",
         f"--add-data=templates{sep}templates",
         "--hidden-import=id_generator",
+        "--hidden-import=db_layer",
+        "--hidden-import=blueprints.celulares",
         "--hidden-import=psycopg2",
         "--hidden-import=psycopg2.extras",
+        "--hidden-import=psycopg2.pool",
         "--hidden-import=dotenv",
         "--hidden-import=werkzeug.utils",
         "--hidden-import=flask",
@@ -71,7 +80,7 @@ def main() -> None:
     ]
 
     print("=" * 60)
-    print("  BUILD: Inventário TI v3.0")
+    print(f"  BUILD: Inventário TI v3.0  (cwd: {root})")
     print("=" * 60)
     print(f"\nComando:\n  {' '.join(cmd)}\n")
 

@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -23,6 +22,7 @@ wheels/
 
 # Virtual Environment
 venv/
+.venv/
 ENV/
 
 # Configuration and Secrets
@@ -46,3 +46,12 @@ desktop.ini
 *.sqlite
 node_modules/
 .gemini/
+
+# Testes / Coverage
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Uploads (termos de responsabilidade — dados sensíveis)
+database/termos/*.pdf

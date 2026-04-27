@@ -12,15 +12,21 @@ import os
 import sys
 import threading
 import webbrowser
-from contextlib import contextmanager
 from datetime import date, datetime
-from typing import Any, Generator, Optional
+from typing import Any, Optional
 
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
+
+# ── Camada de banco com pooling ───────────────────────────────────────────────
+from db_layer import acquire_conn, fetch_all, fetch_one, init_pool, close_pool
+# Mantém get_db como alias para rotas ainda não migradas
+get_db = acquire_conn
+_fetch_all = fetch_all
+_fetch_one = fetch_one
 
 # ── Importações dos módulos internos ──────────────────────────────────────────
 from id_generator import (
@@ -67,42 +73,19 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 DATABASE_URL: str = os.environ["SUPABASE_DATABASE_URL"]  # falha rápido se ausente
 
+# ── Inicializar pool e registrar blueprints ───────────────────────────────────
+with app.app_context():
+    init_pool(minconn=2, maxconn=10)
 
-# ── Conexão com banco de dados ────────────────────────────────────────────────
+import atexit
+atexit.register(close_pool)
 
-@contextmanager
-def get_db() -> Generator[psycopg2.extensions.connection, None, None]:
-    """
-    Context manager que fornece uma conexão PostgreSQL com commit/rollback automático.
+from blueprints.celulares import celulares_bp
+app.register_blueprint(celulares_bp)
 
-    Realiza commit se o bloco terminar sem exceção; rollback caso contrário.
-    Garante que a conexão seja sempre fechada ao final.
 
-    Yields:
-        Conexão psycopg2 com cursor_factory RealDictCursor configurado.
-
-    Raises:
-        psycopg2.OperationalError: Quando não é possível conectar ao banco.
-    """
-    conn: Optional[psycopg2.extensions.connection] = None
-    try:
-        conn = psycopg2.connect(
-            DATABASE_URL,
-            cursor_factory=psycopg2.extras.RealDictCursor,
-        )
-        yield conn
-        conn.commit()
-    except psycopg2.OperationalError:
-        if conn:
-            conn.rollback()
-        raise
-    except Exception:
-        if conn:
-            conn.rollback()
-        raise
-    finally:
-        if conn:
-            conn.close()
+# ── Conexão com banco de dados (delegado ao db_layer com pool) ───────────────
+# get_db, _fetch_all, _fetch_one já importados acima via db_layer aliases.
 
 
 # ── Helpers de resultado ──────────────────────────────────────────────────────
@@ -317,6 +300,7 @@ def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
         "celular_inspecao": "celulares_inspecao",
         "celular_turma": "celulares_turma",
         "computador": "computadores",
+        "starlink": "starlink",
     }
     tabela = tabela_map.get(tipo)
 
@@ -412,227 +396,11 @@ def dashboard() -> Response:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# CELULARES
+# CELULARES — migrado para blueprints/celulares.py (celulares_bp)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@app.route("/api/celulares", methods=["GET"])
-def listar_celulares() -> Response:
-    """Lista celulares com suporte a filtro de status e busca textual."""
-    return _list_table("celulares", ["id_ativo", "responsavel", "modelo", "numero"])
 
-
-@app.route("/api/celulares", methods=["POST"])
-def criar_celular() -> tuple[Response, int] | Response:
-    """Cadastra um novo celular."""
-    d = request.json
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            try:
-                cur.execute(
-                    """INSERT INTO celulares
-                       (id_ativo,fazenda,setor,responsavel,tipo,modelo,numero,status,
-                        uso_celular,carregador,termo_assinado,data_entrega,data_devolucao,
-                        gmail,senha,usuario_anterior,imei_1,imei_2,num_serie,armazenamento,cargo)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                    (
-                        d["id_ativo"], d.get("fazenda"), d.get("setor"), d.get("responsavel"),
-                        d.get("tipo"), d.get("modelo"), d.get("numero"), d.get("status", "Ativo"),
-                        d.get("uso_celular"), d.get("carregador"), d.get("termo_assinado"),
-                        d.get("data_entrega"), d.get("data_devolucao"), d.get("gmail"),
-                        d.get("senha"), d.get("usuario_anterior"), d.get("imei_1"),
-                        d.get("imei_2"), d.get("num_serie"), d.get("armazenamento"), d.get("cargo"),
-                    ),
-                )
-                log_historico(cur, d["id_ativo"], "Celular", "Cadastro")
-            except psycopg2.IntegrityError:
-                return jsonify({"ok": False, "msg": "ID de ativo já existe!"}), 400
-    return jsonify({"ok": True, "msg": "Celular cadastrado!"})
-
-
-@app.route("/api/celulares/<id_ativo>", methods=["GET"])
-def get_celular(id_ativo: str) -> Response:
-    """Retorna os dados de um celular pelo ID do ativo."""
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            row = _fetch_one(cur, "SELECT * FROM celulares WHERE id_ativo=%s", (id_ativo,))
-    return jsonify(row)
-
-
-@app.route("/api/celulares/<id_ativo>", methods=["PUT"])
-def atualizar_celular(id_ativo: str) -> Response:
-    """Atualiza os dados de um celular existente."""
-    d = request.json
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """UPDATE celulares SET
-                   fazenda=%s,setor=%s,responsavel=%s,tipo=%s,modelo=%s,numero=%s,status=%s,
-                   uso_celular=%s,carregador=%s,termo_assinado=%s,data_entrega=%s,
-                   data_devolucao=%s,gmail=%s,senha=%s,usuario_anterior=%s,imei_1=%s,
-                   imei_2=%s,num_serie=%s,armazenamento=%s,cargo=%s,updated_at=NOW()
-                   WHERE id_ativo=%s""",
-                (
-                    d.get("fazenda"), d.get("setor"), d.get("responsavel"), d.get("tipo"),
-                    d.get("modelo"), d.get("numero"), d.get("status"), d.get("uso_celular"),
-                    d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
-                    d.get("data_devolucao"), d.get("gmail"), d.get("senha"),
-                    d.get("usuario_anterior"), d.get("imei_1"), d.get("imei_2"),
-                    d.get("num_serie"), d.get("armazenamento"), d.get("cargo"), id_ativo,
-                ),
-            )
-            log_historico(cur, id_ativo, "Celular", "Edição")
-    return jsonify({"ok": True, "msg": "Celular atualizado!"})
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# CELULARES PONTO
-# ═══════════════════════════════════════════════════════════════════════════════
-
-@app.route("/api/celulares_ponto", methods=["GET"])
-def listar_celulares_ponto() -> Response:
-    """Lista celulares de ponto com filtros."""
-    return _list_table(
-        "celulares_ponto",
-        ["id_ativo", "responsavel", "modelo", "num_turma", "funcao"],
-    )
-
-
-@app.route("/api/celulares_ponto", methods=["POST"])
-def criar_celular_ponto() -> tuple[Response, int] | Response:
-    """Cadastra um novo celular de ponto/turma."""
-    d = request.json
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            try:
-                cur.execute(
-                    """INSERT INTO celulares_ponto
-                       (id_ativo,fazenda,funcao,responsavel,num_turma,tipo,modelo,status,
-                        uso_celular,carregador,termo_assinado,data_entrega,data_devolucao,
-                        gmail_clockin,senha,usuario_anterior,imei_1,imei_2,num_serie,armazenamento)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                    (
-                        d["id_ativo"], d.get("fazenda"), d.get("funcao"), d.get("responsavel"),
-                        d.get("num_turma"), d.get("tipo"), d.get("modelo"), d.get("status", "Ativo"),
-                        d.get("uso_celular"), d.get("carregador"), d.get("termo_assinado"),
-                        d.get("data_entrega"), d.get("data_devolucao"), d.get("gmail_clockin"),
-                        d.get("senha"), d.get("usuario_anterior"), d.get("imei_1"),
-                        d.get("imei_2"), d.get("num_serie"), d.get("armazenamento"),
-                    ),
-                )
-                log_historico(cur, d["id_ativo"], "Celular Ponto", "Cadastro")
-            except psycopg2.IntegrityError:
-                return jsonify({"ok": False, "msg": "ID de ativo já existe!"}), 400
-    return jsonify({"ok": True, "msg": "Celular de ponto cadastrado!"})
-
-
-@app.route("/api/celulares_ponto/<id_ativo>", methods=["GET"])
-def get_celular_ponto(id_ativo: str) -> Response:
-    """Retorna dados de um celular de ponto."""
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            row = _fetch_one(cur, "SELECT * FROM celulares_ponto WHERE id_ativo=%s", (id_ativo,))
-    return jsonify(row)
-
-
-@app.route("/api/celulares_ponto/<id_ativo>", methods=["PUT"])
-def atualizar_celular_ponto(id_ativo: str) -> Response:
-    """Atualiza dados de um celular de ponto."""
-    d = request.json
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """UPDATE celulares_ponto SET
-                   fazenda=%s,funcao=%s,responsavel=%s,num_turma=%s,tipo=%s,modelo=%s,status=%s,
-                   uso_celular=%s,carregador=%s,termo_assinado=%s,data_entrega=%s,
-                   data_devolucao=%s,gmail_clockin=%s,senha=%s,usuario_anterior=%s,
-                   imei_1=%s,imei_2=%s,num_serie=%s,armazenamento=%s,updated_at=NOW()
-                   WHERE id_ativo=%s""",
-                (
-                    d.get("fazenda"), d.get("funcao"), d.get("responsavel"), d.get("num_turma"),
-                    d.get("tipo"), d.get("modelo"), d.get("status"), d.get("uso_celular"),
-                    d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
-                    d.get("data_devolucao"), d.get("gmail_clockin"), d.get("senha"),
-                    d.get("usuario_anterior"), d.get("imei_1"), d.get("imei_2"),
-                    d.get("num_serie"), d.get("armazenamento"), id_ativo,
-                ),
-            )
-            log_historico(cur, id_ativo, "Celular Ponto", "Edição")
-    return jsonify({"ok": True, "msg": "Celular de ponto atualizado!"})
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# CELULARES INSPEÇÃO
-# ═══════════════════════════════════════════════════════════════════════════════
-
-@app.route("/api/celulares_inspecao", methods=["GET"])
-def listar_celulares_inspecao() -> Response:
-    """Lista celulares de inspeção com filtros."""
-    return _list_table("celulares_inspecao", ["id_ativo", "responsavel", "modelo", "numero", "id_sistema"])
-
-
-@app.route("/api/celulares_inspecao", methods=["POST"])
-def criar_celular_inspecao() -> tuple[Response, int] | Response:
-    """Cadastra um novo celular de inspeção."""
-    d = request.json
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            try:
-                cur.execute(
-                    """INSERT INTO celulares_inspecao
-                       (id_ativo,id_sistema,fazenda,setor,responsavel,cargo,tipo,modelo,numero,
-                        status,uso_celular,carregador,termo_assinado,data_entrega,data_devolucao,
-                        gmail,senha,usuario_anterior,imei_1,imei_2,num_serie,armazenamento,observacoes)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                    (
-                        d["id_ativo"], d.get("id_sistema"), d.get("fazenda"), d.get("setor"),
-                        d.get("responsavel"), d.get("cargo"), d.get("tipo"), d.get("modelo"),
-                        d.get("numero"), d.get("status", "Ativo"), d.get("uso_celular"),
-                        d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
-                        d.get("data_devolucao"), d.get("gmail"), d.get("senha"),
-                        d.get("usuario_anterior"), d.get("imei_1"), d.get("imei_2"),
-                        d.get("num_serie"), d.get("armazenamento"), d.get("observacoes"),
-                    ),
-                )
-                log_historico(cur, d["id_ativo"], "Celular Inspeção", "Cadastro")
-            except psycopg2.IntegrityError:
-                return jsonify({"ok": False, "msg": "ID de ativo já existe!"}), 400
-    return jsonify({"ok": True, "msg": "Celular de inspeção cadastrado!"})
-
-
-@app.route("/api/celulares_inspecao/<id_ativo>", methods=["GET"])
-def get_celular_inspecao(id_ativo: str) -> Response:
-    """Retorna dados de um celular de inspeção."""
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            row = _fetch_one(cur, "SELECT * FROM celulares_inspecao WHERE id_ativo=%s", (id_ativo,))
-    return jsonify(row)
-
-
-@app.route("/api/celulares_inspecao/<id_ativo>", methods=["PUT"])
-def atualizar_celular_inspecao(id_ativo: str) -> Response:
-    """Atualiza dados de um celular de inspeção."""
-    d = request.json
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """UPDATE celulares_inspecao SET
-                   id_sistema=%s,fazenda=%s,setor=%s,responsavel=%s,cargo=%s,tipo=%s,modelo=%s,
-                   numero=%s,status=%s,uso_celular=%s,carregador=%s,termo_assinado=%s,
-                   data_entrega=%s,data_devolucao=%s,gmail=%s,senha=%s,usuario_anterior=%s,
-                   imei_1=%s,imei_2=%s,num_serie=%s,armazenamento=%s,observacoes=%s,updated_at=NOW()
-                   WHERE id_ativo=%s""",
-                (
-                    d.get("id_sistema"), d.get("fazenda"), d.get("setor"), d.get("responsavel"),
-                    d.get("cargo"), d.get("tipo"), d.get("modelo"), d.get("numero"),
-                    d.get("status"), d.get("uso_celular"), d.get("carregador"),
-                    d.get("termo_assinado"), d.get("data_entrega"), d.get("data_devolucao"),
-                    d.get("gmail"), d.get("senha"), d.get("usuario_anterior"),
-                    d.get("imei_1"), d.get("imei_2"), d.get("num_serie"),
-                    d.get("armazenamento"), d.get("observacoes"), id_ativo,
-                ),
-            )
-            log_historico(cur, id_ativo, "Celular Inspeção", "Edição")
-    return jsonify({"ok": True, "msg": "Celular de inspeção atualizado!"})
+# CELULARES PONTO / INSPEÇÃO — migrados para blueprints/celulares.py
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1085,11 +853,17 @@ def movimentar_estoque(eid: int) -> tuple[Response, int] | Response:
     """
     Registra entrada ou saída de um item de estoque.
 
-    Valida saldo disponível antes de registrar saídas.
-    Registra a movimentação no histórico de movimentações.
+    Usa SELECT FOR UPDATE para evitar race condition TOCTOU:
+    dois requests simultâneos não conseguem ler e modificar o mesmo
+    saldo concorrentemente — o segundo aguarda o commit do primeiro.
+
+    Complexidade: O(1) — operação em linha única com lock pessimista.
     """
-    d = request.json
+    d = request.json or {}
     tipo = d.get("tipo")
+    if tipo not in ("entrada", "saida"):
+        return jsonify({"ok": False, "msg": "tipo deve ser 'entrada' ou 'saida'"}), 400
+
     try:
         qtd = int(d.get("quantidade", 0))
     except (ValueError, TypeError):
@@ -1100,7 +874,9 @@ def movimentar_estoque(eid: int) -> tuple[Response, int] | Response:
 
     with get_db() as conn:
         with conn.cursor() as cur:
-            item = _fetch_one(cur, "SELECT * FROM estoque WHERE id=%s", (eid,))
+            # FOR UPDATE: bloqueia a linha até o commit — elimina race condition
+            cur.execute("SELECT * FROM estoque WHERE id=%s FOR UPDATE", (eid,))
+            item = row_to_dict(cur.fetchone())
             if not item:
                 return jsonify({"ok": False, "msg": "Item não encontrado"}), 404
 
@@ -1151,8 +927,11 @@ def listar_pedidos() -> Response:
         query += " AND status=%s"
         params.append(filtro)
     if busca:
-        query += " AND (item ILIKE %s OR fazenda_solicitante ILIKE %s OR num_requisicao ILIKE %s)"
-        params += [f"%{busca}%"] * 3
+        query += (
+            " AND (item ILIKE %s OR fazenda_solicitante ILIKE %s"
+            " OR num_requisicao ILIKE %s OR CAST(id AS TEXT) ILIKE %s)"
+        )
+        params += [f"%{busca}%"] * 4
     query += " ORDER BY id DESC"
     with get_db() as conn:
         with conn.cursor() as cur:

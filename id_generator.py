@@ -87,6 +87,7 @@ SIGLAS_SETOR: dict[str, str] = {
     "INP": "Inspeção",
     "LDR": "Líderes",
     "TI":  "TI",
+    "BLC": "Balança",
 }
 
 # Mapeamento tipo → tabela do banco (para proximo_sequencial)
@@ -99,6 +100,7 @@ _TABELA_POR_TIPO: dict[str, str] = {
     "TB":  "celulares",
     "EST": "estabilizadores",
     "STL": "starlink",
+    "BLC": "balancas",
 }
 
 # Prefixo exclusivo para Celulares Turma (formato CL-TRM-NN)
