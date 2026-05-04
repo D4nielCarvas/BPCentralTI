@@ -1,0 +1,13 @@
+﻿[hardware]
+tipo=Notebook
+marca=ASUSTeK COMPUTER INC.
+modelo=Vivobook_ASUSLaptop X1605VA_X1605VA
+num_serie=T9N0B601968636F
+processador=13th Gen Intel(R) Core(TM) i7-1355U
+memoria_ram=15.6GB
+armazenamento=475GB
+sistema_operacional=Microsoft Windows 11 Home Single Language
+versao_so=10.0.26100 Build 26100
+ip_rede=192.168.2.137
+mac_address=58:02:05:53:E4:03
+usuario=João Pedro - COA
