@@ -101,8 +101,15 @@
           </div>
         </form>
         {% else %}
-        <div style="text-align:center;padding:14px 0;font-size:13px;color:var(--text3);border-top:1px solid var(--border);margin-top:12px">
-          Chamado <strong>{{ chamado.status | replace('_',' ') }}</strong>.
+        <div style="text-align:center;padding:14px 0;font-size:13px;color:var(--text3);border-top:1px solid var(--border);margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:10px">
+          <div>Chamado <strong>{{ chamado.status | replace('_',' ') }}</strong>.</div>
+          <form method="POST" action="{{ url_for('admin_chamados.detalhe_chamado_admin', chamado_id=chamado.id) }}" style="margin:0">
+            <input type="hidden" name="mensagem" value="Chamado reaberto pela equipe de TI.">
+            <input type="hidden" name="novo_status" value="em_atendimento">
+            <button type="submit" class="btn btn-warn btn-sm">
+              🔓 Reabrir Chamado
+            </button>
+          </form>
         </div>
         {% endif %}
       </div>
@@ -143,6 +150,7 @@
     {% endif %}
 
     {# Atalhos de status rápido #}
+    {% if chamado.status not in ['resolvido', 'fechado'] %}
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
       <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Atalhos de Status</div>
       <div style="display:flex;flex-direction:column;gap:6px">
@@ -161,6 +169,7 @@
         {% endfor %}
       </div>
     </div>
+    {% endif %}
 
     {# Painel de Etiquetas #}
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
