@@ -1,0 +1,238 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block title %}Usuários — Admin — Inventário TI{% endblock %}
+{% block page_title %}Gestão de Usuários{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('admin.novo_usuario') }}" class="btn btn-primary btn-sm">＋ Novo Usuário</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="stat-mini">
+  {% set total    = usuarios | length %}
+  {% set admins   = usuarios | selectattr('role','equalto','admin')  | list | length %}
+  {% set viewers  = usuarios | selectattr('role','equalto','viewer') | list | length %}
+  {% set inativos = usuarios | rejectattr('ativo') | list | length %}
+  <div class="stat-mini-card">
+    <div class="label">Total</div>
+    <div class="val">{{ total }}</div>
+  </div>
+  <div class="stat-mini-card">
+    <div class="label" style="color:var(--accent)">Admins</div>
+    <div class="val" style="color:var(--accent)">{{ admins }}</div>
+  </div>
+  <div class="stat-mini-card">
+    <div class="label" style="color:var(--green)">Viewers</div>
+    <div class="val" style="color:var(--green)">{{ viewers }}</div>
+  </div>
+  <div class="stat-mini-card">
+    <div class="label" style="color:var(--text3)">Inativos</div>
+    <div class="val" style="color:var(--text3)">{{ inativos }}</div>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-header">
+    <h3>Usuários cadastrados</h3>
+    <span style="font-size:12px;color:var(--text3)">{{ usuarios | length }} usuário(s)</span>
+  </div>
+
+  {% if usuarios %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nome</th>
+        <th>Login</th>
+        <th>Role</th>
+        <th>Localidade</th>
+        <th>Status</th>
+        <th>Criado em</th>
+        <th style="text-align:center">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in usuarios %}
+      <tr>
+        <td style="color:var(--text3);font-size:11px">{{ u.id }}</td>
+        <td style="color:var(--text);font-weight:500">{{ u.nome }}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cyan)">{{ u.login }}</td>
+        <td>
+          {% if u.role == 'admin' %}
+          <span class="badge badge-em_analise">👑 admin</span>
+          {% else %}
+          <span class="badge badge-ativo">👁 viewer</span>
+          {% endif %}
+        </td>
+        <td style="color:var(--text2)">{{ u.localidade_nome or '—' }}</td>
+        <td>
+          {% if u.ativo %}
+          <span class="badge badge-ativo">Ativo</span>
+          {% else %}
+          <span class="badge badge-inativo">Inativo</span>
+          {% endif %}
+        </td>
+        <td style="font-size:11px;color:var(--text3)">
+          {{ u.created_at.strftime('%d/%m/%Y') if u.created_at is not string
+             else u.created_at[:10] }}
+        </td>
+        <td>
+          <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap">
+
+            {# Toggle ativo/inativo — admin nao pode desativar a si mesmo #}
+            {% if u.id != session.usuario_id %}
+            <form method="POST"
+                  action="{{ url_for('admin.toggle_ativo_usuario', usuario_id=u.id) }}"
+                  style="margin:0"
+                  onsubmit="return confirm('{{ 'Desativar' if u.ativo else 'Ativar' }} o usuário {{ u.login }}?')">
+              <button type="submit"
+                      class="btn btn-xs {{ 'btn-danger' if u.ativo else 'btn-success' }}">
+                {{ 'Desativar' if u.ativo else 'Ativar' }}
+              </button>
+            </form>
+            {% else %}
+            <span style="font-size:11px;color:var(--text3)">você</span>
+            {% endif %}
+
+            {# Reset de senha — abre modal inline #}
+            <button class="btn btn-xs btn-warn"
+                    onclick="abrirReset({{ u.id }}, '{{ u.login }}')">
+              🔑 Senha
+            </button>
+
+            {# Editar Role/Localidade #}
+            {% if u.id != session.usuario_id %}
+            <button class="btn btn-xs btn-primary"
+                    onclick="abrirEditar({{ u.id }}, '{{ u.login }}', '{{ u.role }}', '{{ u.localidade_id or '' }}')">
+              ✏️ Editar
+            </button>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:40px;text-align:center;color:var(--text3)">
+    Nenhum usuário cadastrado.
+    <div style="margin-top:12px">
+      <a href="{{ url_for('admin.novo_usuario') }}" class="btn btn-primary btn-sm">＋ Criar primeiro usuário</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── Modal de Reset de Senha ────────────────────────────────────────────── #}
+<div id="modal-reset" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+     z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#13161e;border:1px solid #2e364d;border-radius:14px;
+              padding:28px;width:100%;max-width:360px;box-shadow:0 32px 64px rgba(0,0,0,.5)">
+    <h3 style="font-size:14px;margin-bottom:4px">🔑 Redefinir Senha</h3>
+    <p id="modal-user-label" style="font-size:12px;color:#475569;margin-bottom:18px"></p>
+
+    <form id="form-reset-senha" method="POST" style="margin:0">
+      <div class="form-group">
+        <label>Nova Senha (mín. 6 caracteres)</label>
+        <input type="password" id="input-nova-senha" name="nova_senha"
+               placeholder="••••••••" required minlength="6"
+               style="background:#1a1e29;border:1px solid #252b3b;color:#e2e8f0;
+                      border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none">
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button type="button" onclick="fecharReset()"
+                class="btn btn-ghost btn-sm">Cancelar</button>
+        <button type="submit" class="btn btn-warn btn-sm">Salvar Nova Senha</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function abrirReset(id, login) {
+    document.getElementById('modal-user-label').textContent = 'Usuário: ' + login;
+    document.getElementById('form-reset-senha').action = '/admin/usuarios/' + id + '/resetar-senha';
+    document.getElementById('input-nova-senha').value = '';
+    const modal = document.getElementById('modal-reset');
+    modal.style.display = 'flex';
+  }
+  function fecharReset() {
+    document.getElementById('modal-reset').style.display = 'none';
+  }
+  // Fecha ao clicar fora
+  document.getElementById('modal-reset').addEventListener('click', function(e) {
+    if (e.target === this) fecharReset();
+  });
+
+  // ── Modal Editar Role/Localidade ──
+  function abrirEditar(id, login, role, localidade_id) {
+    document.getElementById('modal-editar-label').textContent = 'Usuário: ' + login;
+    document.getElementById('form-editar-usuario').action = '/admin/usuarios/' + id + '/editar';
+    
+    document.getElementById('edit-role').value = role;
+    document.getElementById('edit-localidade_id').value = localidade_id;
+    toggleLocalidadeEdit(role);
+
+    const modal = document.getElementById('modal-editar');
+    modal.style.display = 'flex';
+  }
+  function fecharEditar() {
+    document.getElementById('modal-editar').style.display = 'none';
+  }
+  function toggleLocalidadeEdit(role) {
+    const grupo = document.getElementById('edit-grupo-localidade');
+    const select = document.getElementById('edit-localidade_id');
+    if (role === 'viewer') {
+      grupo.style.display = 'flex';
+      select.required = true;
+    } else {
+      grupo.style.display = 'none';
+      select.required = false;
+      select.value = '';
+    }
+  }
+  document.getElementById('modal-editar').addEventListener('click', function(e) {
+    if (e.target === this) fecharEditar();
+  });
+</script>
+
+{# ── Modal de Edição de Usuário ────────────────────────────────────────── #}
+<div id="modal-editar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+     z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#13161e;border:1px solid #2e364d;border-radius:14px;
+              padding:28px;width:100%;max-width:400px;box-shadow:0 32px 64px rgba(0,0,0,.5)">
+    <h3 style="font-size:14px;margin-bottom:4px">✏️ Editar Perfil do Usuário</h3>
+    <p id="modal-editar-label" style="font-size:12px;color:#475569;margin-bottom:18px"></p>
+
+    <form id="form-editar-usuario" method="POST" style="margin:0">
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Perfil de Acesso *</label>
+        <select id="edit-role" name="role" required onchange="toggleLocalidadeEdit(this.value)"
+                style="background:#1a1e29;border:1px solid #252b3b;color:#e2e8f0;
+                       border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none">
+          <option value="admin">👑 Admin — acesso total ao sistema</option>
+          <option value="viewer">👁 Viewer — acesso restrito à localidade</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="edit-grupo-localidade" style="display:none;flex-direction:column;margin-bottom:12px">
+        <label>Localidade *</label>
+        <select id="edit-localidade_id" name="localidade_id"
+                style="background:#1a1e29;border:1px solid #252b3b;color:#e2e8f0;
+                       border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none">
+          <option value="">Selecione a localidade…</option>
+          {% for loc in localidades %}
+          <option value="{{ loc.id }}">{{ loc.nome }} ({{ loc.tipo }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button type="button" onclick="fecharEditar()" class="btn btn-ghost btn-sm">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm">Salvar Alterações</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

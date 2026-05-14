@@ -1,0 +1,88 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block title %}Equipamentos — Inventário TI{% endblock %}
+{% block page_title %}Equipamentos Ativos{% endblock %}
+
+{% block topbar_actions %}
+<form id="form-busca-itens" method="GET" action="{{ url_for('fazenda.listar_itens') }}" style="display:contents">
+  <div class="filter-bar">
+    <input type="text" name="q" value="{{ busca }}" placeholder="Buscar por ID, modelo, responsável…" style="width:220px">
+    <select name="tipo" id="sel-tipo-item">
+      <option value="">Todos os tipos</option>
+      {% for t in tipos %}
+      <option value="{{ t }}" {% if tipo_filtro == t %}selected{% endif %}>{{ t }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">🔍 Buscar</button>
+    {% if busca or tipo_filtro %}
+    <a href="{{ url_for('fazenda.listar_itens') }}" class="btn btn-ghost btn-sm">✖ Limpar</a>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}
+
+{% block content %}
+
+<!-- Totalizadores rápidos -->
+<div class="stat-mini">
+  <div class="stat-mini-card">
+    <div class="label">Total exibido</div>
+    <div class="val">{{ itens | length }}</div>
+  </div>
+  {% set tipos_count = itens | groupby('tipo') | list %}
+  {% for tipo_g, grupo in tipos_count %}
+  <div class="stat-mini-card">
+    <div class="label">{{ tipo_g }}</div>
+    <div class="val">{{ grupo | list | length }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="table-card">
+  <div class="table-header">
+    <h3>Equipamentos
+      {% if tipo_filtro %}<span style="color:var(--accent);font-weight:400"> — {{ tipo_filtro }}</span>{% endif %}
+    </h3>
+    <span style="font-size:12px;color:var(--text3)">{{ itens | length }} registro(s)</span>
+  </div>
+
+  {% if itens %}
+  <table>
+    <thead>
+      <tr>
+        <th>ID Ativo</th>
+        <th>Tipo</th>
+        <th>Modelo</th>
+        <th>Responsável</th>
+        <th>Fazenda / Setor</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in itens %}
+      <tr>
+        <td class="td-id">{{ item.id_ativo }}</td>
+        <td style="color:var(--text2)">{{ item.tipo }}</td>
+        <td style="color:var(--text)">{{ item.modelo or '—' }}</td>
+        <td>{{ item.responsavel or '—' }}</td>
+        <td>
+          {{ item.fazenda or '—' }}
+          {% if item.setor %}<span style="color:var(--text3)"> / {{ item.setor }}</span>{% endif %}
+        </td>
+        <td>
+          {% set s = (item.status or '') | lower %}
+          <span class="badge badge-{{ 'ativo' if s == 'ativo' else 'estoque' if s == 'estoque' else 'manut' if 'manut' in s else 'desc' if 'descart' in s else 'inativo' }}">
+            {{ item.status }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:40px;text-align:center;color:var(--text3)">
+    Nenhum equipamento ativo encontrado para a sua localidade.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block title %}Pedido #{{ pedido.id }} — Admin — Inventário TI{% endblock %}
+{% block page_title %}Gerenciar Pedido #{{ pedido.id }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('admin_pedidos.listar_pedidos_admin') }}" class="btn btn-ghost btn-sm">← Todos os Pedidos</a>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start">
+
+  {# ── Coluna esquerda ────────────────────────────────────────────────────── #}
+  <div>
+
+    {# Detalhes do pedido #}
+    <div class="form-card" style="margin-bottom:20px">
+      <div class="form-card-header" style="display:flex;align-items:center;gap:10px">
+        <h3>Detalhes do Pedido</h3>
+        {% set s = pedido.status | lower %}
+        <span class="badge badge-{{ s | replace(' ','_') }}">
+          {{ s | replace('_',' ') | title }}
+        </span>
+      </div>
+      <div class="form-card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Solicitante</div>
+            <div style="font-size:13px;color:var(--text)">{{ pedido.usuario_nome }}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Localidade</div>
+            <div style="font-size:13px;color:var(--text)">{{ pedido.localidade_nome }}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Criado em</div>
+            <div style="font-size:13px;color:var(--text2)">
+              {{ pedido.criado_em.strftime('%d/%m/%Y às %H:%M') if pedido.criado_em is not string
+                 else pedido.criado_em[:16] | replace('T',' ') }}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Última atualização</div>
+            <div style="font-size:13px;color:var(--text2)">
+              {{ pedido.atualizado_em.strftime('%d/%m/%Y às %H:%M') if pedido.atualizado_em is not string
+                 else pedido.atualizado_em[:16] | replace('T',' ') }}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Descrição completa</div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap">{{ pedido.descricao }}</div>
+        </div>
+      </div>
+    </div>
+
+    {# Timeline do histórico #}
+    <div class="form-card">
+      <div class="form-card-header">
+        <h3>🕒 Histórico de Status</h3>
+      </div>
+      <div class="form-card-body">
+        {% if historico %}
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot timeline-dot-pendente"></div>
+            <div class="timeline-content">
+              <div class="timeline-meta">Pedido criado</div>
+              <div style="font-size:12px;color:var(--text2)">Status inicial: pendente</div>
+            </div>
+          </div>
+          {% for h in historico %}
+          <div class="timeline-item">
+            <div class="timeline-dot timeline-dot-{{ (h.status_novo or 'default') | lower | replace(' ','_') }}"></div>
+            <div class="timeline-content">
+              <div class="timeline-meta">
+                {% if h.alterado_em is not string %}{{ h.alterado_em.strftime('%d/%m/%Y %H:%M') }}
+                {% else %}{{ h.alterado_em[:16] | replace('T',' ') }}{% endif %}
+                {% if h.alterado_por_nome %} · <strong>{{ h.alterado_por_nome }}</strong>{% endif %}
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:4px">
+                <span class="badge badge-{{ (h.status_anterior or '') | lower | replace(' ','_') }}" style="font-size:10px">
+                  {{ (h.status_anterior or '—') | replace('_',' ') | title }}
+                </span>
+                <span style="color:var(--text3)">→</span>
+                <span class="badge badge-{{ (h.status_novo or '') | lower | replace(' ','_') }}" style="font-size:10px">
+                  {{ (h.status_novo or '—') | replace('_',' ') | title }}
+                </span>
+              </div>
+              {% if h.observacao %}
+              <div class="timeline-obs">{{ h.observacao }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:16px 0;text-align:center;color:var(--text3);font-size:13px">
+          Nenhuma atualização de status registrada ainda.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  {# ── Coluna direita: formulário de atualização ───────────────────────────── #}
+  <div>
+    <div class="form-card">
+      <div class="form-card-header">
+        <h3>⚙ Atualizar Status</h3>
+        <p style="font-size:12px;color:var(--text3);margin-top:4px">
+          O status atual é
+          <span class="badge badge-{{ pedido.status | lower | replace(' ','_') }}" style="vertical-align:middle">
+            {{ pedido.status | replace('_',' ') | title }}
+          </span>
+        </p>
+      </div>
+      <div class="form-card-body">
+        <form method="POST"
+              action="{{ url_for('admin_pedidos.atualizar_status_pedido', pedido_id=pedido.id) }}"
+              id="form-status">
+          <div class="form-group">
+            <label for="novo_status">Novo Status *</label>
+            <select name="novo_status" id="novo_status" required>
+              <option value="">Selecione…</option>
+              {% for s in status_validos %}
+              <option value="{{ s }}" {% if s == pedido.status %}disabled{% endif %}>
+                {{ s | replace('_',' ') | title }}
+                {% if s == pedido.status %} (atual){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="observacao">Observação</label>
+            <textarea name="observacao" id="observacao" rows="4"
+                      placeholder="Informe o motivo da mudança, orientações ou próximos passos…"
+                      maxlength="1000"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="btn-salvar-status">
+              💾 Salvar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {# ── Atalhos de status rápido #}
+    <div style="margin-top:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Atalhos Rápidos</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        {% for s, label, cls in [
+          ('em_analise','🔍 Colocar Em Análise','btn-warn'),
+          ('aprovado','✅ Aprovar Pedido','btn-success'),
+          ('recusado','❌ Recusar Pedido','btn-danger'),
+          ('concluido','🏁 Marcar Concluído','btn-ghost')
+        ] %}
+        {% if s != pedido.status %}
+        <form method="POST"
+              action="{{ url_for('admin_pedidos.atualizar_status_pedido', pedido_id=pedido.id) }}"
+              style="margin:0">
+          <input type="hidden" name="novo_status" value="{{ s }}">
+          <button type="submit" class="btn {{ cls }} btn-sm" style="width:100%;justify-content:center">
+            {{ label }}
+          </button>
+        </form>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.getElementById('form-status').addEventListener('submit', function () {
+    document.getElementById('btn-salvar-status').disabled = true;
+    document.getElementById('btn-salvar-status').textContent = '⏳ Salvando…';
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block title %}Novo Usuário — Admin — Inventário TI{% endblock %}
+{% block page_title %}Novo Usuário{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('admin.listar_usuarios') }}" class="btn btn-ghost btn-sm">← Voltar</a>
+{% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width:520px">
+  <div class="form-card-header">
+    <h3>➕ Criar Novo Usuário</h3>
+    <p style="font-size:12px;color:var(--text3);margin-top:4px">
+      Apenas administradores podem criar contas. Não há cadastro público.
+    </p>
+  </div>
+  <div class="form-card-body">
+    <form method="POST" action="{{ url_for('admin.novo_usuario') }}" id="form-novo-usuario">
+
+      <div class="form-group">
+        <label for="nome">Nome completo *</label>
+        <input type="text" id="nome" name="nome"
+               value="{{ form.get('nome', '') }}"
+               placeholder="Ex: João da Silva"
+               required maxlength="150">
+      </div>
+
+      <div class="form-group">
+        <label for="username">Usuário (login) *</label>
+        <input type="text" id="username" name="username"
+               value="{{ form.get('username', '') }}"
+               placeholder="Ex: joao.silva"
+               autocomplete="off"
+               required maxlength="80"
+               style="font-family:'IBM Plex Mono',monospace">
+        <span style="font-size:11px;color:var(--text3)">
+          Somente letras minúsculas, números e pontos. Será salvo em minúsculo.
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="senha">Senha *</label>
+        <input type="password" id="senha" name="senha"
+               placeholder="Mínimo 6 caracteres"
+               autocomplete="new-password"
+               required minlength="6">
+      </div>
+
+      <div class="form-group">
+        <label for="role">Perfil de acesso *</label>
+        <select id="role" name="role" required onchange="toggleLocalidade(this.value)">
+          <option value="">Selecione…</option>
+          <option value="admin"  {% if form.get('role') == 'admin'  %}selected{% endif %}>
+            👑 Admin — acesso total ao sistema
+          </option>
+          <option value="viewer" {% if form.get('role') == 'viewer' %}selected{% endif %}>
+            👁 Viewer — acesso restrito à localidade
+          </option>
+        </select>
+      </div>
+
+      {# ── Localidade — visível apenas para viewers ─────────────────────── #}
+      <div class="form-group" id="grupo-localidade"
+           {% if form.get('role') == 'viewer' %}style="display:flex"{% else %}style="display:none"{% endif %}>
+        <label for="localidade_id">Localidade *</label>
+        <select id="localidade_id" name="localidade_id">
+          <option value="">Selecione a localidade…</option>
+          {% for loc in localidades %}
+          <option value="{{ loc.id }}"
+            {% if form.get('localidade_id', '') | string == loc.id | string %}selected{% endif %}>
+            {{ loc.nome }}
+            <span style="color:var(--text3)"> — {{ loc.tipo }}</span>
+          </option>
+          {% endfor %}
+        </select>
+        <span style="font-size:11px;color:var(--text3)">
+          O viewer visualizará apenas dados desta localidade.
+        </span>
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('admin.listar_usuarios') }}" class="btn btn-ghost">Cancelar</a>
+        <button type="submit" id="btn-criar" class="btn btn-primary">
+          💾 Criar Usuário
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function toggleLocalidade(role) {
+    const grupo = document.getElementById('grupo-localidade');
+    const select = document.getElementById('localidade_id');
+    const visivel = role === 'viewer';
+
+    grupo.style.display = visivel ? 'flex' : 'none';
+
+    // Obrigatório apenas para viewer
+    select.required = visivel;
+    if (!visivel) select.value = '';
+  }
+
+  // Aplica no carregamento caso haja valor pré-selecionado (re-render por erro)
+  document.addEventListener('DOMContentLoaded', function () {
+    const role = document.getElementById('role').value;
+    if (role) toggleLocalidade(role);
+  });
+
+  document.getElementById('form-novo-usuario').addEventListener('submit', function () {
+    const btn = document.getElementById('btn-criar');
+    btn.disabled = true;
+    btn.textContent = '⏳ Salvando…';
+  });
+</script>
+{% endblock %}

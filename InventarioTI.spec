@@ -15,9 +15,14 @@ a = Analysis(
         # ── Módulos internos ──────────────────────────────────────
         'id_generator',
         'db_layer',
+        'auth_utils',
         # ── Blueprints (rotas modulares) ──────────────────────────
         'blueprints',
         'blueprints.celulares',
+        'blueprints.auth',
+        'blueprints.fazenda',
+        'blueprints.admin_pedidos',
+        'blueprints.admin',
         # ── PostgreSQL / psycopg2 ─────────────────────────────────
         'psycopg2',
         'psycopg2.extras',
@@ -32,10 +37,10 @@ a = Analysis(
         'werkzeug.utils',
         'werkzeug.routing',
         'werkzeug.exceptions',
+        'werkzeug.security',   # generate_password_hash / check_password_hash
         'click',
         # ── Variáveis de ambiente ─────────────────────────────────
         'dotenv',
-        'python_dotenv',
     ],
     hookspath=[],
     hooksconfig={},

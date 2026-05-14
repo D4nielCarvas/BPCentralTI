@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Inventário TI{% endblock %}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --bg: #0d0f14; --bg2: #13161e; --bg3: #1a1e29;
+      --border: #252b3b; --border2: #2e364d;
+      --accent: #3b82f6; --accent2: #6366f1;
+      --green: #10b981; --yellow: #f59e0b;
+      --red: #ef4444; --orange: #f97316;
+      --purple: #8b5cf6; --cyan: #06b6d4;
+      --text: #e2e8f0; --text2: #94a3b8; --text3: #475569;
+      --sidebar-w: 220px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box }
+    body { font-family:'IBM Plex Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex }
+    a { color:inherit; text-decoration:none }
+
+    /* ── Sidebar ──────────────────────────── */
+    #sidebar {
+      width: var(--sidebar-w); min-height:100vh;
+      background:var(--bg2); border-right:1px solid var(--border);
+      display:flex; flex-direction:column; flex-shrink:0; overflow-y:auto;
+    }
+    .sidebar-logo { padding:20px 18px 16px; border-bottom:1px solid var(--border) }
+    .logo-icon {
+      width:34px; height:34px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      border-radius:8px; display:flex; align-items:center;
+      justify-content:center; font-size:16px; margin-bottom:10px
+    }
+    .sidebar-logo h1 { font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase }
+    .sidebar-logo p  { font-size:9px; color:var(--text3); margin-top:2px; font-family:'IBM Plex Mono',monospace }
+    .sidebar-user {
+      padding:10px 18px; border-bottom:1px solid var(--border);
+      display:flex; align-items:center; gap:9px;
+    }
+    .user-avatar {
+      width:30px; height:30px; border-radius:50%;
+      background:linear-gradient(135deg,var(--accent),var(--purple));
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:700; flex-shrink:0;
+    }
+    .user-info .user-name  { font-size:12px; font-weight:600 }
+    .user-info .user-role  { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:.5px }
+    nav { flex:1; padding:8px 0 }
+    .nav-label { font-size:9px; font-weight:700; color:var(--text3); letter-spacing:1.5px; text-transform:uppercase; padding:12px 18px 4px }
+    .nav-item {
+      display:flex; align-items:center; gap:9px; padding:8px 18px;
+      cursor:pointer; color:var(--text2); font-size:13px;
+      border-left:3px solid transparent; transition:all .15s; text-decoration:none;
+    }
+    .nav-item:hover { background:var(--bg3); color:var(--text) }
+    .nav-item.active { background:rgba(59,130,246,.1); border-left-color:var(--accent); color:var(--accent) }
+    .nav-item .icon { font-size:14px; width:16px; text-align:center }
+    .sidebar-footer { padding:12px 18px; border-top:1px solid var(--border) }
+    .sidebar-footer a { font-size:12px; color:var(--text3); display:flex; align-items:center; gap:7px }
+    .sidebar-footer a:hover { color:var(--red) }
+
+    /* ── Main ─────────────────────────────── */
+    #main { flex:1; display:flex; flex-direction:column; overflow:hidden }
+    #topbar {
+      height:52px; background:var(--bg2); border-bottom:1px solid var(--border);
+      display:flex; align-items:center; padding:0 22px; gap:14px; flex-shrink:0;
+    }
+    #topbar h2 { font-size:14px; font-weight:600; flex:1 }
+    #content { flex:1; overflow-y:auto; padding:22px }
+
+    /* ── Botões ───────────────────────────── */
+    .btn {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:7px 14px; border-radius:8px; border:none; cursor:pointer;
+      font-size:13px; font-weight:500; font-family:inherit; transition:all .15s; white-space:nowrap;
+    }
+    .btn-primary  { background:var(--accent); color:#fff }
+    .btn-primary:hover  { background:#2563eb }
+    .btn-success  { background:var(--green); color:#fff }
+    .btn-danger   { background:var(--red);   color:#fff }
+    .btn-ghost    { background:transparent; border:1px solid var(--border2); color:var(--text2) }
+    .btn-ghost:hover { background:var(--bg3); color:var(--text) }
+    .btn-warn     { background:var(--yellow); color:#000 }
+    .btn-sm       { padding:5px 10px; font-size:12px }
+    .btn-xs       { padding:3px 8px; font-size:11px; border-radius:5px }
+
+    /* ── Cards / Tabela ───────────────────── */
+    .table-card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; overflow:hidden }
+    .table-header {
+      padding:14px 18px; border-bottom:1px solid var(--border);
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    }
+    .table-header h3 { font-size:13px; font-weight:600; flex:1 }
+    table { width:100%; border-collapse:collapse }
+    thead th {
+      padding:9px 14px; text-align:left; font-size:10.5px;
+      font-weight:600; color:var(--text3); text-transform:uppercase;
+      letter-spacing:.8px; background:var(--bg3); border-bottom:1px solid var(--border); white-space:nowrap;
+    }
+    tbody td { padding:10px 14px; font-size:13px; border-bottom:1px solid var(--border); color:var(--text2) }
+    tbody tr:last-child td { border-bottom:none }
+    tbody tr:hover td { background:rgba(255,255,255,.02); color:var(--text) }
+    .td-id { font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--accent); font-weight:600 }
+
+    /* ── Formulário ───────────────────────── */
+    .form-card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; overflow:hidden }
+    .form-card-header { padding:14px 20px; border-bottom:1px solid var(--border) }
+    .form-card-header h3 { font-size:13px; font-weight:600 }
+    .form-card-body { padding:20px }
+    .form-group { display:flex; flex-direction:column; gap:4px; margin-bottom:14px }
+    .form-group label { font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.5px }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      background:var(--bg3); border:1px solid var(--border); color:var(--text);
+      border-radius:8px; padding:8px 11px; font-size:13px; font-family:inherit; outline:none; transition:border .15s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color:var(--accent) }
+    .form-group select option { background:var(--bg2) }
+    .form-group textarea { resize:vertical; min-height:100px }
+    .form-actions { display:flex; gap:10px; justify-content:flex-end; padding-top:8px; border-top:1px solid var(--border); margin-top:4px }
+
+    /* ── Badges de status ─────────────────── */
+    .badge {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:2px 8px; border-radius:5px; font-size:11px; font-weight:600;
+    }
+    .badge::before { content:'●'; font-size:7px }
+    .badge-ativo     { background:rgba(16,185,129,.12);  color:var(--green)  }
+    .badge-inativo   { background:rgba(148,163,184,.12); color:var(--text2)  }
+    .badge-manut     { background:rgba(245,158,11,.12);  color:var(--yellow) }
+    .badge-desc      { background:rgba(239,68,68,.12);   color:var(--red)    }
+    .badge-pendente  { background:rgba(249,115,22,.12);  color:var(--orange) }
+    .badge-em_analise{ background:rgba(99,102,241,.12);  color:#818cf8       }
+    .badge-aprovado  { background:rgba(16,185,129,.12);  color:var(--green)  }
+    .badge-recusado  { background:rgba(239,68,68,.12);   color:var(--red)    }
+    .badge-concluido { background:rgba(6,182,212,.12);   color:var(--cyan)   }
+    .badge-aberta    { background:rgba(245,158,11,.12);  color:var(--yellow) }
+    .badge-estoque   { background:rgba(6,182,212,.12);   color:var(--cyan)   }
+
+    /* ── Flash messages ───────────────────── */
+    .flash-container { margin-bottom:16px }
+    .flash {
+      display:flex; align-items:center; gap:9px; padding:10px 14px;
+      border-radius:8px; font-size:13px; margin-bottom:8px;
+      border:1px solid;
+    }
+    .flash-success { background:rgba(16,185,129,.1);  border-color:rgba(16,185,129,.3);  color:var(--green)  }
+    .flash-danger  { background:rgba(239,68,68,.1);   border-color:rgba(239,68,68,.3);   color:var(--red)    }
+    .flash-warning { background:rgba(245,158,11,.1);  border-color:rgba(245,158,11,.3);  color:var(--yellow) }
+    .flash-info    { background:rgba(59,130,246,.1);  border-color:rgba(59,130,246,.3);  color:var(--accent) }
+
+    /* ── Search / Filter ──────────────────── */
+    .filter-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+    .filter-bar input, .filter-bar select {
+      background:var(--bg3); border:1px solid var(--border); color:var(--text);
+      border-radius:8px; padding:6px 10px; font-size:13px; font-family:inherit; outline:none;
+    }
+    .filter-bar input:focus, .filter-bar select:focus { border-color:var(--accent) }
+
+    /* ── Timeline ─────────────────────────── */
+    .timeline { position:relative; padding-left:20px }
+    .timeline::before { content:''; position:absolute; left:6px; top:0; bottom:0; width:2px; background:var(--border) }
+    .timeline-item { position:relative; margin-bottom:18px }
+    .timeline-dot {
+      position:absolute; left:-17px; top:3px;
+      width:12px; height:12px; border-radius:50%; border:2px solid var(--bg2);
+    }
+    .timeline-dot-pendente  { background:var(--orange) }
+    .timeline-dot-em_analise{ background:#818cf8 }
+    .timeline-dot-aprovado  { background:var(--green) }
+    .timeline-dot-recusado  { background:var(--red) }
+    .timeline-dot-concluido { background:var(--cyan) }
+    .timeline-dot-default   { background:var(--text3) }
+    .timeline-content { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:10px 14px }
+    .timeline-meta { font-size:11px; color:var(--text3); margin-bottom:4px }
+    .timeline-obs  { font-size:12px; color:var(--text2); margin-top:4px; font-style:italic }
+
+    /* ── Stat mini cards ──────────────────── */
+    .stat-mini { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px }
+    .stat-mini-card {
+      background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+      padding:14px 18px; flex:1; min-width:140px;
+    }
+    .stat-mini-card .label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px }
+    .stat-mini-card .val   { font-size:22px; font-weight:700; font-family:'IBM Plex Mono',monospace }
+
+    /* ── Responsive ───────────────────────── */
+    @media (max-width: 768px) {
+      #sidebar { display:none }
+      .form-grid { grid-template-columns:1fr }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
+<div id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🖥️</div>
+    <h1>Inventário TI</h1>
+    <p>v3.0 · Portal Fazenda</p>
+  </div>
+
+  {% if session.usuario_nome %}
+  <div class="sidebar-user">
+    <div class="user-avatar">{{ session.usuario_nome[0] | upper }}</div>
+    <div class="user-info">
+      <div class="user-name">{{ session.usuario_nome }}</div>
+      <div class="user-role">{{ session.role }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <nav>
+    <div class="nav-label">Portal Fazenda</div>
+    <a href="{{ url_for('fazenda.listar_itens') }}"
+       class="nav-item {% if request.endpoint == 'fazenda.listar_itens' %}active{% endif %}">
+      <span class="icon">💻</span> Equipamentos
+    </a>
+    <a href="{{ url_for('fazenda.listar_estoque') }}"
+       class="nav-item {% if request.endpoint == 'fazenda.listar_estoque' %}active{% endif %}">
+      <span class="icon">📦</span> Estoque
+    </a>
+    <a href="{{ url_for('fazenda.listar_manutencoes') }}"
+       class="nav-item {% if request.endpoint == 'fazenda.listar_manutencoes' %}active{% endif %}">
+      <span class="icon">🔧</span> Manutenções
+    </a>
+    <a href="{{ url_for('fazenda.listar_pedidos') }}"
+       class="nav-item {% if request.endpoint in ['fazenda.listar_pedidos','fazenda.detalhe_pedido'] %}active{% endif %}">
+      <span class="icon">📋</span> Meus Pedidos
+    </a>
+
+    {% if session.role == 'admin' %}
+    <div class="nav-label" style="margin-top:8px">Administração</div>
+    <a href="{{ url_for('admin_pedidos.listar_pedidos_admin') }}"
+       class="nav-item {% if request.endpoint and 'admin_pedidos' in request.endpoint %}active{% endif %}">
+      <span class="icon">📊</span> Todos os Pedidos
+    </a>
+    <a href="{{ url_for('admin.listar_usuarios') }}"
+       class="nav-item {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}">
+      <span class="icon">👥</span> Usuários
+    </a>
+    <a href="/" class="nav-item">
+      <span class="icon">🏠</span> Painel Principal
+    </a>
+    {% endif %}
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="{{ url_for('auth.logout') }}">⏻ Sair</a>
+  </div>
+</div>
+
+<!-- ── Main Content ───────────────────────────────────────────────────────── -->
+<div id="main">
+  <div id="topbar">
+    <h2>{% block page_title %}{% endblock %}</h2>
+    {% block topbar_actions %}{% endblock %}
+  </div>
+
+  <div id="content">
+    {% if get_flashed_messages() %}
+    <div class="flash-container">
+      {% for category, message in get_flashed_messages(with_categories=true) %}
+      <div class="flash flash-{{ category }}">
+        {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'warning' %}⚠️{% else %}ℹ️{% endif %}
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+</body>
+</html>

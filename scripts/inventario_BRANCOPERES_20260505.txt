@@ -1,0 +1,13 @@
+﻿[hardware]
+tipo=Notebook
+marca=Positivo Bahia - VAIO
+modelo=VJFE52F11X-B1991H
+num_serie=87080330P
+processador=Intel(R) Core(TM) i7-10510U CPU @ 1.80GHz
+memoria_ram=7.9GB
+armazenamento=476GB
+sistema_operacional=Microsoft Windows 11 Home Single Language
+versao_so=10.0.26200 Build 26200
+ip_rede=192.168.1.146
+mac_address=50:A1:32:1C:D8:77
+usuario=Branco Peres

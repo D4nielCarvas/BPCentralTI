@@ -1,0 +1,80 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block title %}Manutenções — Inventário TI{% endblock %}
+{% block page_title %}Manutenções{% endblock %}
+
+{% block topbar_actions %}
+<form method="GET" action="{{ url_for('fazenda.listar_manutencoes') }}" style="display:contents">
+  <div class="filter-bar">
+    <input type="text" name="q" value="{{ busca }}" placeholder="ID, modelo, problema…" style="width:200px">
+    <select name="status" id="sel-status-man">
+      <option value="">Todos os status</option>
+      {% for s in ['Aberta','Em Andamento','Aguardando Peça','Concluída','Cancelada'] %}
+      <option value="{{ s }}" {% if filtro_status == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">🔍 Filtrar</button>
+    {% if busca or filtro_status %}
+    <a href="{{ url_for('fazenda.listar_manutencoes') }}" class="btn btn-ghost btn-sm">✖ Limpar</a>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="table-card">
+  <div class="table-header">
+    <h3>Ordens de Serviço</h3>
+    <span style="font-size:12px;color:var(--text3)">{{ manutencoes | length }} registro(s)</span>
+  </div>
+
+  {% if manutencoes %}
+  <table>
+    <thead>
+      <tr>
+        <th>#OS</th>
+        <th>Ativo</th>
+        <th>Tipo</th>
+        <th>Modelo</th>
+        <th>Problema</th>
+        <th>Recebimento</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in manutencoes %}
+      {% set s = (m.status or '') | lower %}
+      <tr>
+        <td style="color:var(--text3);font-size:11px">{{ m.id }}</td>
+        <td class="td-id">{{ m.id_ativo }}</td>
+        <td style="color:var(--text2);font-size:12px">{{ m.tipo_equipamento }}</td>
+        <td style="color:var(--text)">{{ m.modelo or '—' }}</td>
+        <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ m.problema_relatado }}">
+          {{ m.problema_relatado or '—' }}
+        </td>
+        <td style="font-size:12px;color:var(--text3)">
+          {% if m.data_recebimento %}
+            {{ m.data_recebimento.strftime('%d/%m/%Y') if m.data_recebimento is not string else m.data_recebimento[:10] }}
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          <span class="badge
+            {% if s == 'aberta' %}badge-aberta
+            {% elif 'andamento' in s %}badge-em_analise
+            {% elif 'conclu' in s %}badge-concluido
+            {% elif 'cancel' in s %}badge-desc
+            {% else %}badge-pendente{% endif %}">
+            {{ m.status }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:40px;text-align:center;color:var(--text3)">
+    Nenhuma manutenção encontrada para os filtros aplicados.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

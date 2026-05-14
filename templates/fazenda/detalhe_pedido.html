@@ -1,0 +1,118 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block title %}Pedido #{{ pedido.id }} — Inventário TI{% endblock %}
+{% block page_title %}Pedido #{{ pedido.id }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('fazenda.listar_pedidos') }}" class="btn btn-ghost btn-sm">← Voltar</a>
+{% if role == 'admin' %}
+<a href="{{ url_for('admin_pedidos.detalhe_pedido_admin', pedido_id=pedido.id) }}"
+   class="btn btn-primary btn-sm">⚙ Gerenciar</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start">
+
+  {# ── Coluna esquerda: detalhe do pedido ──────────────────────────────────── #}
+  <div>
+    <div class="form-card" style="margin-bottom:20px">
+      <div class="form-card-header" style="display:flex;align-items:center;gap:10px">
+        <h3>Detalhes do Pedido</h3>
+        {% set s = pedido.status | lower %}
+        <span class="badge badge-{{ s | replace(' ','_') }}">
+          {{ s | replace('_',' ') | title }}
+        </span>
+      </div>
+      <div class="form-card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Solicitante</div>
+            <div style="font-size:13px;color:var(--text)">{{ pedido.usuario_nome }}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Localidade</div>
+            <div style="font-size:13px;color:var(--text)">{{ pedido.localidade_nome }}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Criado em</div>
+            <div style="font-size:13px;color:var(--text2)">
+              {{ pedido.criado_em.strftime('%d/%m/%Y às %H:%M') if pedido.criado_em is not string
+                 else pedido.criado_em[:16] | replace('T',' ') }}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Última atualização</div>
+            <div style="font-size:13px;color:var(--text2)">
+              {{ pedido.atualizado_em.strftime('%d/%m/%Y às %H:%M') if pedido.atualizado_em is not string
+                 else pedido.atualizado_em[:16] | replace('T',' ') }}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Descrição</div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap">{{ pedido.descricao }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Coluna direita: timeline do histórico ───────────────────────────────── #}
+  <div>
+    <div class="form-card">
+      <div class="form-card-header">
+        <h3>🕒 Histórico de Status</h3>
+      </div>
+      <div class="form-card-body">
+        {% if historico %}
+        <div class="timeline">
+          {# Evento inicial — criação #}
+          <div class="timeline-item">
+            <div class="timeline-dot timeline-dot-pendente"></div>
+            <div class="timeline-content">
+              <div class="timeline-meta">Pedido criado · pendente</div>
+              <div style="font-size:12px;color:var(--text2)">Aguardando análise</div>
+            </div>
+          </div>
+
+          {% for h in historico %}
+          {% set dot_class = 'timeline-dot-' ~ (h.status_novo | lower | replace(' ','_')) if h.status_novo else 'timeline-dot-default' %}
+          <div class="timeline-item">
+            <div class="timeline-dot {{ dot_class }}"></div>
+            <div class="timeline-content">
+              <div class="timeline-meta">
+                {% if h.alterado_em is not string %}
+                  {{ h.alterado_em.strftime('%d/%m/%Y %H:%M') }}
+                {% else %}
+                  {{ h.alterado_em[:16] | replace('T',' ') }}
+                {% endif %}
+                {% if h.alterado_por_nome %} · {{ h.alterado_por_nome }}{% endif %}
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px">
+                <span class="badge badge-{{ (h.status_anterior or '') | lower | replace(' ','_') }}" style="font-size:10px">
+                  {{ (h.status_anterior or '—') | replace('_',' ') | title }}
+                </span>
+                <span style="color:var(--text3)">→</span>
+                <span class="badge badge-{{ (h.status_novo or '') | lower | replace(' ','_') }}" style="font-size:10px">
+                  {{ (h.status_novo or '—') | replace('_',' ') | title }}
+                </span>
+              </div>
+              {% if h.observacao %}
+              <div class="timeline-obs">{{ h.observacao }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:20px 0;text-align:center;color:var(--text3);font-size:13px">
+          Aguardando análise — nenhuma atualização ainda.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

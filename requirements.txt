@@ -13,5 +13,6 @@ psycopg2-binary==2.9.12
 # ── Variáveis de ambiente ─────────────────────────────────────
 python-dotenv==1.0.1
 
+
 # ── Empacotamento .exe (opcional, apenas para build) ──────────
 # pyinstaller==6.11.1

@@ -1,0 +1,79 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block title %}Novo Pedido — Inventário TI{% endblock %}
+{% block page_title %}Novo Pedido{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('fazenda.listar_pedidos') }}" class="btn btn-ghost btn-sm">← Voltar</a>
+{% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width:640px">
+  <div class="form-card-header">
+    <h3>📋 Abrir Novo Pedido</h3>
+    <p style="font-size:12px;color:var(--text3);margin-top:4px">
+      Descreva detalhadamente o que você precisa. O setor de TI analisará sua solicitação.
+    </p>
+  </div>
+  <div class="form-card-body">
+    <form method="POST" action="{{ url_for('fazenda.novo_pedido') }}" id="form-novo-pedido">
+
+      {# Admin pode escolher a localidade; viewer usa a da sessão #}
+      {% if session.role == 'admin' and localidades %}
+      <div class="form-group">
+        <label for="localidade_id">Localidade *</label>
+        <select name="localidade_id" id="localidade_id" required>
+          <option value="">Selecione a localidade…</option>
+          {% for loc in localidades %}
+          <option value="{{ loc.id }}"
+            {% if localidade_id_sessao == loc.id %}selected{% endif %}>
+            {{ loc.nome }} <span style="color:var(--text3)">({{ loc.tipo }})</span>
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% elif localidade_id_sessao %}
+      {# Viewer: localidade vinculada automaticamente — campo oculto #}
+      <input type="hidden" name="localidade_id" value="{{ localidade_id_sessao }}">
+      {% endif %}
+
+      <div class="form-group">
+        <label for="descricao">Descrição do Pedido *</label>
+        <textarea name="descricao" id="descricao" rows="6" maxlength="2000"
+                  placeholder="Descreva o item, quantidade, urgência e motivo da solicitação…"
+                  required>{{ descricao or '' }}</textarea>
+        <span id="char-count" style="font-size:11px;color:var(--text3);text-align:right">
+          0 / 2000 caracteres
+        </span>
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('fazenda.listar_pedidos') }}" class="btn btn-ghost">Cancelar</a>
+        <button type="submit" id="btn-enviar" class="btn btn-primary">
+          📤 Enviar Pedido
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const textarea  = document.getElementById('descricao');
+  const charCount = document.getElementById('char-count');
+  const btnEnviar = document.getElementById('btn-enviar');
+
+  function atualizarContador() {
+    const len = textarea.value.length;
+    charCount.textContent = `${len} / 2000 caracteres`;
+    charCount.style.color = len > 1900 ? 'var(--yellow)' : 'var(--text3)';
+  }
+
+  textarea.addEventListener('input', atualizarContador);
+  atualizarContador();
+
+  document.getElementById('form-novo-pedido').addEventListener('submit', function () {
+    btnEnviar.disabled = true;
+    btnEnviar.textContent = '⏳ Enviando…';
+  });
+</script>
+{% endblock %}

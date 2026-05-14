@@ -1,0 +1,103 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block title %}Meus Pedidos — Inventário TI{% endblock %}
+{% block page_title %}Meus Pedidos{% endblock %}
+
+{% block topbar_actions %}
+<form method="GET" action="{{ url_for('fazenda.listar_pedidos') }}" style="display:contents">
+  <div class="filter-bar">
+    <select name="status" id="sel-status-pedido" onchange="this.form.submit()">
+      <option value="">Todos os status</option>
+      {% for s in status_validos %}
+      <option value="{{ s }}" {% if filtro_status == s %}selected{% endif %}>
+        {{ s | replace('_',' ') | title }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+</form>
+<a href="{{ url_for('fazenda.novo_pedido') }}" class="btn btn-primary btn-sm">＋ Novo Pedido</a>
+{% endblock %}
+
+{% block content %}
+
+{# ── Sumário de status ─────────────────────────────────────────────────────── #}
+<div class="stat-mini">
+  {% set contagens = {'pendente': 0, 'em_analise': 0, 'aprovado': 0, 'recusado': 0, 'concluido': 0} %}
+  {% for p in pedidos %}{% set _ = contagens.update({p.status: contagens.get(p.status, 0) + 1}) %}{% endfor %}
+  {% for status_k, label_v, cor in [
+    ('pendente','Pendentes','var(--orange)'),
+    ('em_analise','Em Análise','#818cf8'),
+    ('aprovado','Aprovados','var(--green)'),
+    ('recusado','Recusados','var(--red)'),
+    ('concluido','Concluídos','var(--cyan)')
+  ] %}
+  <div class="stat-mini-card">
+    <div class="label" style="color:{{ cor }}">{{ label_v }}</div>
+    <div class="val" style="color:{{ cor }}">{{ contagens.get(status_k, 0) }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="table-card">
+  <div class="table-header">
+    <h3>Pedidos
+      {% if filtro_status %}<span style="color:var(--accent);font-weight:400"> — {{ filtro_status | replace('_',' ') | title }}</span>{% endif %}
+    </h3>
+    <span style="font-size:12px;color:var(--text3)">{{ pedidos | length }} pedido(s)</span>
+  </div>
+
+  {% if pedidos %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Localidade</th>
+        <th>Descrição</th>
+        <th>Status</th>
+        <th>Criado em</th>
+        <th>Atualizado em</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in pedidos %}
+      {% set s = p.status | lower %}
+      <tr>
+        <td style="color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:11px">#{{ p.id }}</td>
+        <td style="color:var(--text2)">{{ p.localidade_nome }}</td>
+        <td style="max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ p.descricao }}">
+          {{ p.descricao | truncate(80, True, '…') }}
+        </td>
+        <td>
+          <span class="badge badge-{{ s | replace(' ','_') }}">
+            {{ s | replace('_',' ') | title }}
+          </span>
+        </td>
+        <td style="font-size:12px;color:var(--text3)">
+          {{ p.criado_em.strftime('%d/%m/%Y %H:%M') if p.criado_em is not string
+             else p.criado_em[:16] | replace('T',' ') }}
+        </td>
+        <td style="font-size:12px;color:var(--text3)">
+          {{ p.atualizado_em.strftime('%d/%m/%Y %H:%M') if p.atualizado_em is not string
+             else p.atualizado_em[:16] | replace('T',' ') }}
+        </td>
+        <td>
+          <a href="{{ url_for('fazenda.detalhe_pedido', pedido_id=p.id) }}" class="btn btn-ghost btn-xs">
+            Ver →
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:40px;text-align:center;color:var(--text3)">
+    Nenhum pedido encontrado.
+    <div style="margin-top:12px">
+      <a href="{{ url_for('fazenda.novo_pedido') }}" class="btn btn-primary btn-sm">＋ Criar primeiro pedido</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

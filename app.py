@@ -18,7 +18,8 @@ from typing import Any, Optional
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, render_template, request, send_from_directory
+from flask import (Flask, Response, jsonify, redirect, render_template,
+                   request, send_from_directory, session, url_for)
 from werkzeug.utils import secure_filename
 
 # ── Camada de banco com pooling ───────────────────────────────────────────────
@@ -66,6 +67,11 @@ def resource_path(relative_path: str) -> str:
 
 app = Flask(__name__, template_folder=resource_path("templates"))
 
+# SECRET_KEY obrigatória para sessões Flask (cookies assinados).
+# Deve ser uma string aleatória longa em produção — lida do .env.
+# Gere com: python -c "import secrets; print(secrets.token_hex(32))"
+app.secret_key = os.environ.get("SECRET_KEY", "dev-inseguro-troque-em-producao")
+
 if getattr(sys, "frozen", False):
     application_path = os.path.dirname(sys.executable)
 else:
@@ -83,8 +89,19 @@ with app.app_context():
 import atexit
 atexit.register(close_pool)
 
+# Blueprints existentes
 from blueprints.celulares import celulares_bp
 app.register_blueprint(celulares_bp)
+
+# Blueprints do sistema multi-tenant (Tarefas 8-10)
+from blueprints.auth import auth_bp
+from blueprints.fazenda import fazenda_bp
+from blueprints.admin_pedidos import admin_pedidos_bp
+from blueprints.admin import admin_bp
+app.register_blueprint(auth_bp)
+app.register_blueprint(fazenda_bp)
+app.register_blueprint(admin_pedidos_bp)
+app.register_blueprint(admin_bp)
 
 
 # ── Conexão com banco de dados (delegado ao db_layer com pool) ───────────────
@@ -212,8 +229,18 @@ def _list_table(tabela: str, colunas_busca: list[str]) -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/")
-def index() -> str:
-    """Renderiza a interface principal do sistema."""
+def index():
+    """
+    Rota raiz — redireciona com base no estado de autenticação e role.
+
+    - Não autenticado → /login
+    - Admin           → renderiza o painel principal (index.html)
+    - Viewer          → /fazenda/itens (portal de fazenda)
+    """
+    if "usuario_id" not in session:
+        return redirect(url_for("auth.login"))
+    if session.get("role") == "viewer":
+        return redirect(url_for("fazenda.listar_itens"))
     return render_template("index.html")
 
 
