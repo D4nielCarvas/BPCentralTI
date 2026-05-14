@@ -1,0 +1,120 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block title %}Chamados — Inventário TI{% endblock %}
+{% block page_title %}Meus Chamados{% endblock %}
+
+{% block topbar_actions %}
+<form method="GET" action="{{ url_for('chamados.listar_chamados') }}" style="display:contents">
+  <div class="filter-bar">
+    <select name="status" onchange="this.form.submit()">
+      <option value="">Todos os status</option>
+      {% for s in status_validos %}
+      <option value="{{ s }}" {% if filtro_status == s %}selected{% endif %}>
+        {{ s | replace('_',' ') | title }}
+      </option>
+      {% endfor %}
+    </select>
+    {% if filtro_status %}
+    <a href="{{ url_for('chamados.listar_chamados') }}" class="btn btn-ghost btn-sm">✖</a>
+    {% endif %}
+  </div>
+</form>
+<a href="{{ url_for('chamados.novo_chamado') }}" class="btn btn-primary btn-sm">＋ Novo Chamado</a>
+{% endblock %}
+
+{% block content %}
+
+{# Stats #}
+<div class="stat-mini" style="margin-bottom:20px">
+  {% set total     = chamados | length %}
+  {% set abertos   = chamados | selectattr('status','equalto','aberto')        | list | length %}
+  {% set andamento = chamados | selectattr('status','in',['em_atendimento'])   | list | length %}
+  {% set pendentes = chamados | selectattr('status','equalto','pendente_usuario')| list | length %}
+  {% set resolvidos= chamados | selectattr('status','equalto','resolvido')     | list | length %}
+  <div class="stat-mini-card">
+    <div class="label">Total</div>
+    <div class="val">{{ total }}</div>
+  </div>
+  <div class="stat-mini-card">
+    <div class="label" style="color:var(--orange)">Abertos</div>
+    <div class="val" style="color:var(--orange)">{{ abertos }}</div>
+  </div>
+  <div class="stat-mini-card">
+    <div class="label" style="color:#818cf8">Em Atendimento</div>
+    <div class="val" style="color:#818cf8">{{ andamento }}</div>
+  </div>
+  <div class="stat-mini-card">
+    <div class="label" style="color:var(--yellow)">Aguardando você</div>
+    <div class="val" style="color:var(--yellow)">{{ pendentes }}</div>
+  </div>
+  <div class="stat-mini-card">
+    <div class="label" style="color:var(--green)">Resolvidos</div>
+    <div class="val" style="color:var(--green)">{{ resolvidos }}</div>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-header">
+    <h3>🎫 Lista de Chamados</h3>
+    <span style="font-size:12px;color:var(--text3)">{{ chamados | length }} chamado(s)</span>
+  </div>
+
+  {% if chamados %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Título</th>
+        <th>Prioridade</th>
+        <th>Status</th>
+        <th>Técnico</th>
+        <th>Aberto em</th>
+        <th>Atualizado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in chamados %}
+      {% set prioridade_cor = {'urgente':'var(--red)','alta':'var(--orange)','media':'#818cf8','baixa':'var(--text3)'}[c.prioridade] %}
+      <tr>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">#{{ c.id }}</td>
+        <td style="font-weight:500;color:var(--text);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          {{ c.titulo }}
+        </td>
+        <td>
+          <span style="font-size:11px;font-weight:700;color:{{ prioridade_cor }}">
+            {{ c.prioridade | upper }}
+          </span>
+        </td>
+        <td>
+          {% set s = c.status | lower | replace(' ','_') %}
+          <span class="badge badge-{{ s }}">{{ c.status | replace('_',' ') | title }}</span>
+        </td>
+        <td style="font-size:12px;color:var(--text2)">{{ c.tecnico_nome or '—' }}</td>
+        <td style="font-size:11px;color:var(--text3)">
+          {{ c.criado_em.strftime('%d/%m/%y %H:%M') if c.criado_em is not string
+             else c.criado_em[:16] | replace('T',' ') }}
+        </td>
+        <td style="font-size:11px;color:var(--text3)">
+          {{ c.atualizado_em.strftime('%d/%m/%y %H:%M') if c.atualizado_em is not string
+             else c.atualizado_em[:16] | replace('T',' ') }}
+        </td>
+        <td>
+          <a href="{{ url_for('chamados.detalhe_chamado', chamado_id=c.id) }}"
+             class="btn btn-primary btn-xs">Abrir →</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:50px;text-align:center;color:var(--text3)">
+    <div style="font-size:32px;margin-bottom:10px">🎫</div>
+    <div style="font-size:14px">Nenhum chamado encontrado.</div>
+    <a href="{{ url_for('chamados.novo_chamado') }}" class="btn btn-primary btn-sm" style="margin-top:14px">
+      Abrir Primeiro Chamado
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

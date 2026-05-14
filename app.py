@@ -98,10 +98,15 @@ from blueprints.auth import auth_bp
 from blueprints.fazenda import fazenda_bp
 from blueprints.admin_pedidos import admin_pedidos_bp
 from blueprints.admin import admin_bp
+from blueprints.chamados import chamados_bp
+from blueprints.admin_chamados import admin_chamados_bp
+
 app.register_blueprint(auth_bp)
 app.register_blueprint(fazenda_bp)
 app.register_blueprint(admin_pedidos_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(chamados_bp)
+app.register_blueprint(admin_chamados_bp)
 
 
 # ── Conexão com banco de dados (delegado ao db_layer com pool) ───────────────

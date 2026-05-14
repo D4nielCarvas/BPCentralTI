@@ -292,6 +292,7 @@ def novo_pedido():
 
     if request.method == "POST":
         descricao = (request.form.get("descricao") or "").strip()
+        etiqueta_ids = request.form.getlist("etiqueta_ids")  # lista de IDs selecionados
 
         if not descricao:
             flash("A descrição do pedido é obrigatória.", "warning")
@@ -322,11 +323,13 @@ def novo_pedido():
         flash("Pedido enviado com sucesso!", "success")
         return redirect(url_for("fazenda.detalhe_pedido", pedido_id=novo_id))
 
-    # GET — exibe formulário; admin pode selecionar localidade
+    # GET — busca etiquetas disponíveis e localidades (para admin)
+    etiquetas: list[dict] = []
     localidades: list[dict] = []
-    if session.get("role") == "admin":
-        with acquire_conn() as conn:
-            with conn.cursor() as cur:
+    with acquire_conn() as conn:
+        with conn.cursor() as cur:
+            etiquetas = fetch_all(cur, "SELECT id, nome, cor_hex FROM chamado_etiquetas ORDER BY nome ASC")
+            if session.get("role") == "admin":
                 localidades = fetch_all(
                     cur, "SELECT id, nome, tipo FROM localidades ORDER BY nome ASC"
                 )
@@ -335,6 +338,7 @@ def novo_pedido():
         "fazenda/novo_pedido.html",
         localidades=localidades,
         localidade_id_sessao=localidade_id,
+        etiquetas=etiquetas,
     )
 
 

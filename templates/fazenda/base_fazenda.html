@@ -235,12 +235,20 @@
        class="nav-item {% if request.endpoint in ['fazenda.listar_pedidos','fazenda.detalhe_pedido'] %}active{% endif %}">
       <span class="icon">📋</span> Meus Pedidos
     </a>
+    <a href="{{ url_for('chamados.listar_chamados') }}"
+       class="nav-item {% if request.endpoint and 'chamados' in request.endpoint and not request.endpoint.startswith('admin') %}active{% endif %}">
+      <span class="icon">🎫</span> Suporte TI
+    </a>
 
     {% if session.role == 'admin' %}
     <div class="nav-label" style="margin-top:8px">Administração</div>
     <a href="{{ url_for('admin_pedidos.listar_pedidos_admin') }}"
        class="nav-item {% if request.endpoint and 'admin_pedidos' in request.endpoint %}active{% endif %}">
       <span class="icon">📊</span> Todos os Pedidos
+    </a>
+    <a href="{{ url_for('admin_chamados.dashboard_chamados') }}"
+       class="nav-item {% if request.endpoint and 'admin_chamados' in request.endpoint %}active{% endif %}">
+      <span class="icon">🛠️</span> Painel de Chamados
     </a>
     <a href="{{ url_for('admin.listar_usuarios') }}"
        class="nav-item {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}">

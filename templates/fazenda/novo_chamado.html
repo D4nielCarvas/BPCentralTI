@@ -1,0 +1,120 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block title %}Novo Chamado — Inventário TI{% endblock %}
+{% block page_title %}Abrir Novo Chamado{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('chamados.listar_chamados') }}" class="btn btn-ghost btn-sm">← Voltar</a>
+{% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width:680px">
+  <div class="form-card-header">
+    <h3>🎫 Relatar Problema</h3>
+    <p style="font-size:12px;color:var(--text3);margin-top:4px">
+      Descreva o problema com o máximo de detalhes. A equipe de TI será notificada imediatamente.
+    </p>
+  </div>
+  <div class="form-card-body">
+    <form method="POST" action="{{ url_for('chamados.novo_chamado') }}" id="form-novo-chamado">
+
+      {# Admin: seleciona a localidade #}
+      {% if session.role == 'admin' and localidades %}
+      <div class="form-group">
+        <label for="localidade_id">Localidade *</label>
+        <select name="localidade_id" id="localidade_id" required>
+          <option value="">Selecione…</option>
+          {% for loc in localidades %}
+          <option value="{{ loc.id }}" {% if localidade_id_sessao == loc.id %}selected{% endif %}>
+            {{ loc.nome }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% elif localidade_id_sessao %}
+      <input type="hidden" name="localidade_id" value="{{ localidade_id_sessao }}">
+      {% endif %}
+
+      <div class="form-group">
+        <label for="titulo">Título do Problema *</label>
+        <input type="text" name="titulo" id="titulo" maxlength="150" required
+               placeholder="Ex: Impressora não imprime, PC não liga, Internet lenta…">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="form-group">
+          <label for="prioridade">Prioridade *</label>
+          <select name="prioridade" id="prioridade" required>
+            {% for p in prioridades %}
+            <option value="{{ p }}" {% if p == 'media' %}selected{% endif %}>
+              {{ p | title }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="id_ativo">Equipamento Relacionado</label>
+          <select name="id_ativo" id="id_ativo">
+            <option value="">Nenhum / Não sei</option>
+            {% for ativo in itens_ativos %}
+            <option value="{{ ativo }}">{{ ativo }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      {# ── Painel Opcional de Etiquetas ──────────────────────────────────────── #}
+      {% if todas_etiquetas %}
+      <div class="form-group">
+        <label>Categorias / Etiquetas (Opcional)</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;background:var(--bg3);padding:12px;border-radius:8px;border:1px solid var(--border)">
+          {% for et in todas_etiquetas %}
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
+            <input type="checkbox" name="etiqueta_ids" value="{{ et.id }}" style="width:auto;accent-color:{{ et.cor_hex }}">
+            <span style="padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;background:{{ et.cor_hex }}20;color:{{ et.cor_hex }}">
+              {{ et.nome }}
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {# ──────────────────────────────────────────────────────────────────────── #}
+
+      <div class="form-group">
+        <label for="descricao">Descrição Detalhada *</label>
+        <textarea name="descricao" id="descricao" rows="7" maxlength="3000" required
+                  placeholder="Descreva o problema: quando começou, o que aparece na tela, o que você já tentou fazer…"></textarea>
+        <span id="char-count" style="font-size:11px;color:var(--text3);text-align:right">0 / 3000</span>
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('chamados.listar_chamados') }}" class="btn btn-ghost">Cancelar</a>
+        <button type="submit" id="btn-enviar" class="btn btn-primary">
+          📤 Abrir Chamado
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const textarea  = document.getElementById('descricao');
+  const charCount = document.getElementById('char-count');
+  const btnEnviar = document.getElementById('btn-enviar');
+
+  function update() {
+    const len = textarea.value.length;
+    charCount.textContent = `${len} / 3000`;
+    charCount.style.color = len > 2700 ? 'var(--yellow)' : 'var(--text3)';
+  }
+  textarea.addEventListener('input', update);
+  update();
+
+  document.getElementById('form-novo-chamado').addEventListener('submit', function() {
+    btnEnviar.disabled = true;
+    btnEnviar.textContent = '⏳ Enviando…';
+  });
+</script>
+{% endblock %}

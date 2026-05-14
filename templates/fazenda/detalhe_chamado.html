@@ -1,0 +1,133 @@
+{% extends "fazenda/base_fazenda.html" %}
+{% block title %}Chamado #{{ chamado.id }} — Inventário TI{% endblock %}
+{% block page_title %}Chamado #{{ chamado.id }}{% endblock %}
+{% block topbar_actions %}
+<a href="{{ url_for('chamados.listar_chamados') }}" class="btn btn-ghost btn-sm">← Meus Chamados</a>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
+
+  <div>
+    {# Cabeçalho #}
+    <div class="form-card" style="margin-bottom:20px">
+      <div class="form-card-header" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h3 style="flex:1">{{ chamado.titulo }}</h3>
+        {% set s = chamado.status | lower | replace(' ','_') %}
+        <span class="badge badge-{{ s }}">{{ chamado.status | replace('_',' ') | title }}</span>
+        {% set cor_p = {'urgente':'var(--red)','alta':'var(--orange)','media':'#818cf8','baixa':'var(--text3)'}[chamado.prioridade] %}
+        <span style="font-size:11px;font-weight:700;color:{{ cor_p }}">{{ chamado.prioridade | upper }}</span>
+      </div>
+      <div class="form-card-body">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Aberto por</div>
+            <div style="font-size:13px">{{ chamado.criado_por_nome }}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Técnico</div>
+            <div style="font-size:13px">{{ chamado.tecnico_nome or 'Aguardando' }}</div>
+          </div>
+          {% if chamado.id_ativo %}
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Equipamento</div>
+            <div style="font-size:13px;font-family:'IBM Plex Mono',monospace;color:var(--accent)">{{ chamado.id_ativo }}</div>
+          </div>
+          {% endif %}
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Descrição</div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.6">{{ chamado.descricao }}</div>
+        </div>
+      </div>
+    </div>
+
+    {# Chat #}
+    <div class="form-card">
+      <div class="form-card-header"><h3>💬 Histórico de Atendimento</h3></div>
+      <div class="form-card-body">
+        {% if mensagens %}
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+          {% for msg in mensagens %}
+            {% set e_meu = (msg.autor_id == usuario_id) %}
+            {% if msg.is_sistema %}
+            <div style="text-align:center">
+              <span style="font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 12px">
+                ⚙ {{ msg.mensagem }}
+              </span>
+            </div>
+            {% elif e_meu %}
+            <div style="display:flex;flex-direction:column;align-items:flex-end">
+              <div style="max-width:75%;background:var(--accent);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:13px;line-height:1.5">{{ msg.mensagem }}</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px">
+                {{ msg.autor_nome }} · {{ msg.criado_em.strftime('%d/%m/%y %H:%M') if msg.criado_em is not string else msg.criado_em[:16] | replace('T',' ') }}
+              </div>
+            </div>
+            {% else %}
+            <div style="display:flex;flex-direction:column;align-items:flex-start">
+              <div style="max-width:75%;background:var(--bg3);border:1px solid var(--border);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:13px;line-height:1.5;color:var(--text)">{{ msg.mensagem }}</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px">
+                🔧 {{ msg.autor_nome }} · {{ msg.criado_em.strftime('%d/%m/%y %H:%M') if msg.criado_em is not string else msg.criado_em[:16] | replace('T',' ') }}
+              </div>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;color:var(--text3);padding:24px 0;font-size:13px">Nenhuma mensagem ainda. A equipe de TI responderá em breve.</div>
+        {% endif %}
+
+        {% if chamado.status not in ['resolvido', 'fechado'] %}
+        <form method="POST" action="{{ url_for('chamados.detalhe_chamado', chamado_id=chamado.id) }}" id="form-msg" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+          <div class="form-group" style="margin-bottom:10px">
+            <textarea name="mensagem" rows="3" maxlength="2000" placeholder="Escreva para a equipe de TI…" style="resize:none" required></textarea>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button type="submit" id="btn-send" class="btn btn-primary">📨 Enviar Mensagem</button>
+          </div>
+        </form>
+        {% else %}
+        <div style="text-align:center;padding:14px 0;font-size:13px;color:var(--text3);border-top:1px solid var(--border);margin-top:12px">
+          Chamado <strong>{{ chamado.status | replace('_',' ') }}</strong>. Não é possível enviar mensagens.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Informações</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <div style="font-size:10px;color:var(--text3)">Status</div>
+          {% set s = chamado.status | lower | replace(' ','_') %}
+          <span class="badge badge-{{ s }}" style="margin-top:3px">{{ chamado.status | replace('_',' ') | title }}</span>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3)">Prioridade</div>
+          {% set cor_p = {'urgente':'var(--red)','alta':'var(--orange)','media':'#818cf8','baixa':'var(--text3)'}[chamado.prioridade] %}
+          <div style="font-size:13px;font-weight:700;color:{{ cor_p }};margin-top:3px">{{ chamado.prioridade | title }}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3)">Aberto em</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px">{{ chamado.criado_em.strftime('%d/%m/%Y %H:%M') if chamado.criado_em is not string else chamado.criado_em[:16] | replace('T',' ') }}</div>
+        </div>
+      </div>
+    </div>
+    {% if chamado.status == 'pendente_usuario' %}
+    <div style="margin-top:12px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:14px;font-size:12px;color:var(--yellow)">
+      ⚠️ A TI aguarda sua resposta para retomar o atendimento.
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+  document.getElementById('form-msg') && document.getElementById('form-msg').addEventListener('submit', function() {
+    const b = document.getElementById('btn-send');
+    if (b) { b.disabled = true; b.textContent = '⏳ Enviando…'; }
+  });
+</script>
+{% endblock %}

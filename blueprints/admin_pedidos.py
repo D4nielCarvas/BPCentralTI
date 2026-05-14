@@ -38,10 +38,12 @@ def listar_pedidos_admin():
     Query params:
         status      — Filtra por status do pedido.
         localidade  — Filtra por localidade_id.
+        etiqueta    — Filtra por etiqueta_id.
         q           — Busca textual na descrição.
     """
     filtro_status = request.args.get("status", "").strip()
     filtro_local = request.args.get("localidade", "").strip()
+    filtro_etiqueta = request.args.get("etiqueta", "").strip()
     busca = request.args.get("q", "").strip()
 
     params: list = []
@@ -99,7 +101,7 @@ def listar_pedidos_admin():
 @admin_pedidos_bp.route("/pedidos/<int:pedido_id>")
 @admin_required
 def detalhe_pedido_admin(pedido_id: int):
-    """Exibe o detalhe de um pedido com histórico completo e formulário de status."""
+    """Exibe o detalhe de um pedido com histórico completo, etiquetas e formulário de status."""
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             pedido = fetch_one(
@@ -198,3 +200,4 @@ def atualizar_status_pedido(pedido_id: int):
 
     flash(f"Status atualizado para '{novo_status}' com sucesso.", "success")
     return redirect(url_for("admin_pedidos.detalhe_pedido_admin", pedido_id=pedido_id))
+

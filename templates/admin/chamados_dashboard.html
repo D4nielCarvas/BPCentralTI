@@ -1,0 +1,134 @@
+{% extends "fazenda/base_fazenda.html" %}
+{% block title %}Painel de Chamados — TI{% endblock %}
+{% block page_title %}Painel de Chamados{% endblock %}
+
+{% block topbar_actions %}
+<form method="GET" action="{{ url_for('admin_chamados.dashboard_chamados') }}" style="display:contents">
+  <div class="filter-bar">
+    <select name="localidade" onchange="this.form.submit()">
+      <option value="">Todas as localidades</option>
+      {% for loc in localidades %}
+      <option value="{{ loc.id }}" {% if filtro_local | string == loc.id | string %}selected{% endif %}>
+        {{ loc.nome }}
+      </option>
+      {% endfor %}
+    </select>
+    <select name="prioridade" onchange="this.form.submit()">
+      <option value="">Todas as prioridades</option>
+      {% for p in prioridades %}
+      <option value="{{ p }}" {% if filtro_prioridade == p %}selected{% endif %}>{{ p | title }}</option>
+      {% endfor %}
+    </select>
+    {% if filtro_local or filtro_prioridade %}
+    <a href="{{ url_for('admin_chamados.dashboard_chamados') }}" class="btn btn-ghost btn-sm">✖</a>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}
+
+{% block content %}
+
+{# Stats rápidos #}
+<div class="stat-mini" style="margin-bottom:24px">
+  <div class="stat-mini-card">
+    <div class="label" style="color:var(--orange)">Fila de Abertos</div>
+    <div class="val" style="color:var(--orange)">{{ fila_abertos | length }}</div>
+  </div>
+  <div class="stat-mini-card">
+    <div class="label" style="color:#818cf8">Meus em Andamento</div>
+    <div class="val" style="color:#818cf8">{{ meus_chamados | length }}</div>
+  </div>
+  <div class="stat-mini-card">
+    <div class="label" style="color:var(--red)">Urgentes na Fila</div>
+    <div class="val" style="color:var(--red)">
+      {{ fila_abertos | selectattr('prioridade','equalto','urgente') | list | length }}
+    </div>
+  </div>
+</div>
+
+{% macro prioridade_badge(p) %}
+  {% set cor = {'urgente':'var(--red)','alta':'var(--orange)','media':'#818cf8','baixa':'var(--text3)'}[p] %}
+  <span style="font-size:10px;font-weight:800;color:{{ cor }};letter-spacing:.5px">{{ p | upper }}</span>
+{% endmacro %}
+
+{% macro chamado_row(c, show_assumir=False) %}
+{% set s = c.status | lower | replace(' ','_') %}
+<tr>
+  <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">#{{ c.id }}</td>
+  <td>{{ prioridade_badge(c.prioridade) }}</td>
+  <td style="font-weight:500;color:var(--text);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+    {{ c.titulo }}
+  </td>
+  <td style="font-size:12px;color:var(--text2)">{{ c.localidade_nome }}</td>
+  <td style="font-size:12px;color:var(--text2)">{{ c.criado_por_nome }}</td>
+  <td><span class="badge badge-{{ s }}">{{ c.status | replace('_',' ') | title }}</span></td>
+  <td style="font-size:11px;color:var(--text3)">
+    {{ c.criado_em.strftime('%d/%m/%y %H:%M') if c.criado_em is not string
+       else c.criado_em[:16] | replace('T',' ') }}
+  </td>
+  <td>
+    <div style="display:flex;gap:5px">
+      {% if show_assumir %}
+      <form method="POST" action="{{ url_for('admin_chamados.assumir_chamado', chamado_id=c.id) }}" style="margin:0">
+        <button type="submit" class="btn btn-success btn-xs">✋ Assumir</button>
+      </form>
+      {% endif %}
+      <a href="{{ url_for('admin_chamados.detalhe_chamado_admin', chamado_id=c.id) }}"
+         class="btn btn-primary btn-xs">Abrir →</a>
+    </div>
+  </td>
+</tr>
+{% endmacro %}
+
+{# ── Fila de Abertos (sem técnico) #}
+<div class="table-card" style="margin-bottom:24px">
+  <div class="table-header">
+    <h3>📥 Fila de Chamados Abertos</h3>
+    <span style="font-size:12px;color:var(--text3)">{{ fila_abertos | length }} aguardando atribuição</span>
+  </div>
+  {% if fila_abertos %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Prioridade</th><th>Título</th><th>Localidade</th>
+        <th>Solicitante</th><th>Status</th><th>Aberto em</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in fila_abertos %}{{ chamado_row(c, show_assumir=True) }}{% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:40px;text-align:center;color:var(--text3)">
+    <div style="font-size:28px;margin-bottom:8px">✅</div>
+    <div style="font-size:13px">Fila vazia — nenhum chamado aguardando atribuição.</div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── Meus Chamados em Andamento #}
+<div class="table-card">
+  <div class="table-header">
+    <h3>🔧 Meus Chamados em Andamento</h3>
+    <span style="font-size:12px;color:var(--text3)">{{ meus_chamados | length }} em andamento</span>
+  </div>
+  {% if meus_chamados %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Prioridade</th><th>Título</th><th>Localidade</th>
+        <th>Solicitante</th><th>Status</th><th>Aberto em</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in meus_chamados %}{{ chamado_row(c) }}{% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:30px;text-align:center;color:var(--text3);font-size:13px">
+    Nenhum chamado atribuído a você no momento.
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

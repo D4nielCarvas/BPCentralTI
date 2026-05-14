@@ -1,0 +1,248 @@
+{% extends "fazenda/base_fazenda.html" %}
+{% block title %}Chamado #{{ chamado.id }} — TI{% endblock %}
+{% block page_title %}Chamado #{{ chamado.id }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('admin_chamados.dashboard_chamados') }}" class="btn btn-ghost btn-sm">← Painel de Chamados</a>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+
+  {# ── Coluna esquerda: cabeçalho + chat ─────────────────────────────────── #}
+  <div>
+    {# Dados do chamado #}
+    <div class="form-card" style="margin-bottom:20px">
+      <div class="form-card-header" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h3 style="flex:1">{{ chamado.titulo }}</h3>
+        {% set s = chamado.status | lower | replace(' ','_') %}
+        <span class="badge badge-{{ s }}">{{ chamado.status | replace('_',' ') | title }}</span>
+        {% set cor_p = {'urgente':'var(--red)','alta':'var(--orange)','media':'#818cf8','baixa':'var(--text3)'}[chamado.prioridade] %}
+        <span style="font-size:11px;font-weight:800;color:{{ cor_p }}">{{ chamado.prioridade | upper }}</span>
+      </div>
+      <div class="form-card-body">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px">
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Solicitante</div>
+            <div style="font-size:13px">{{ chamado.criado_por_nome }}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Localidade</div>
+            <div style="font-size:13px">{{ chamado.localidade_nome }}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Técnico</div>
+            <div style="font-size:13px">{{ chamado.tecnico_nome or '—' }}</div>
+          </div>
+          {% if chamado.id_ativo %}
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Equipamento</div>
+            <div style="font-size:13px;font-family:'IBM Plex Mono',monospace;color:var(--accent)">{{ chamado.id_ativo }}</div>
+          </div>
+          {% endif %}
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Descrição do Problema</div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.6">{{ chamado.descricao }}</div>
+        </div>
+      </div>
+    </div>
+
+    {# Chat de mensagens #}
+    <div class="form-card">
+      <div class="form-card-header"><h3>💬 Histórico de Atendimento</h3></div>
+      <div class="form-card-body">
+        {% if mensagens %}
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+          {% for msg in mensagens %}
+            {% set e_meu = (msg.autor_id == usuario_id) %}
+            {% if msg.is_sistema %}
+            <div style="text-align:center">
+              <span style="font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 12px">
+                ⚙ {{ msg.mensagem }}
+              </span>
+            </div>
+            {% elif e_meu %}
+            <div style="display:flex;flex-direction:column;align-items:flex-end">
+              <div style="max-width:75%;background:var(--accent);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:13px;line-height:1.5">{{ msg.mensagem }}</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px">🔧 {{ msg.autor_nome }} · {{ msg.criado_em.strftime('%d/%m/%y %H:%M') if msg.criado_em is not string else msg.criado_em[:16] | replace('T',' ') }}</div>
+            </div>
+            {% else %}
+            <div style="display:flex;flex-direction:column;align-items:flex-start">
+              <div style="max-width:75%;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:13px;line-height:1.5;color:var(--text)">{{ msg.mensagem }}</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px">👤 {{ msg.autor_nome }} · {{ msg.criado_em.strftime('%d/%m/%y %H:%M') if msg.criado_em is not string else msg.criado_em[:16] | replace('T',' ') }}</div>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;color:var(--text3);padding:24px 0;font-size:13px">Sem mensagens ainda.</div>
+        {% endif %}
+
+        {# Form de resposta + mudança de status #}
+        {% if chamado.status not in ['resolvido', 'fechado'] %}
+        <form method="POST" action="{{ url_for('admin_chamados.detalhe_chamado_admin', chamado_id=chamado.id) }}"
+              id="form-resp" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+          <div class="form-group" style="margin-bottom:10px">
+            <textarea name="mensagem" rows="3" maxlength="2000" placeholder="Resposta ao solicitante…" style="resize:none" required></textarea>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div style="flex:1">
+              <select name="novo_status" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;outline:none">
+                <option value="">Manter status atual</option>
+                {% for s in status_validos %}
+                <option value="{{ s }}" {% if s == chamado.status %}disabled{% endif %}>
+                  {{ s | replace('_',' ') | title }}{% if s == chamado.status %} (atual){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="submit" id="btn-resp" class="btn btn-primary">📨 Responder</button>
+          </div>
+        </form>
+        {% else %}
+        <div style="text-align:center;padding:14px 0;font-size:13px;color:var(--text3);border-top:1px solid var(--border);margin-top:12px">
+          Chamado <strong>{{ chamado.status | replace('_',' ') }}</strong>.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# ── Coluna direita: painel de ações ──────────────────────────────────── #}
+  <div style="display:flex;flex-direction:column;gap:14px">
+
+    {# Info #}
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Informações</div>
+      <div style="display:flex;flex-direction:column;gap:9px;font-size:12px">
+        <div>
+          <span style="color:var(--text3)">Aberto em: </span>
+          <span style="color:var(--text2)">{{ chamado.criado_em.strftime('%d/%m/%Y %H:%M') if chamado.criado_em is not string else chamado.criado_em[:16] | replace('T',' ') }}</span>
+        </div>
+        <div>
+          <span style="color:var(--text3)">Atualizado: </span>
+          <span style="color:var(--text2)">{{ chamado.atualizado_em.strftime('%d/%m/%Y %H:%M') if chamado.atualizado_em is not string else chamado.atualizado_em[:16] | replace('T',' ') }}</span>
+        </div>
+        {% if chamado.id_ativo %}
+        <div>
+          <span style="color:var(--text3)">Equipamento: </span>
+          <span style="font-family:'IBM Plex Mono',monospace;color:var(--accent)">{{ chamado.id_ativo }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Assumir (se não estiver atribuído ao técnico atual) #}
+    {% if not chamado.tecnico_id or chamado.tecnico_id != usuario_id %}
+    <form method="POST" action="{{ url_for('admin_chamados.assumir_chamado', chamado_id=chamado.id) }}" style="margin:0">
+      <button type="submit" class="btn btn-success btn-sm" style="width:100%;justify-content:center">
+        ✋ Assumir Este Chamado
+      </button>
+    </form>
+    {% endif %}
+
+    {# Atalhos de status rápido #}
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Atalhos de Status</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        {% for s_val, label, cls in [
+          ('pendente_usuario','⏳ Aguardar Usuário','btn-warn'),
+          ('resolvido','✅ Marcar Resolvido','btn-success'),
+          ('fechado','🔒 Fechar Chamado','btn-ghost')
+        ] %}
+        {% if s_val != chamado.status %}
+        <form method="POST" action="{{ url_for('admin_chamados.detalhe_chamado_admin', chamado_id=chamado.id) }}" style="margin:0">
+          <input type="hidden" name="mensagem" value="Status alterado para: {{ s_val | replace('_',' ') | title }}.">
+          <input type="hidden" name="novo_status" value="{{ s_val }}">
+          <button type="submit" class="btn {{ cls }} btn-sm" style="width:100%;justify-content:center">{{ label }}</button>
+        </form>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Painel de Etiquetas #}
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">🏷️ Etiquetas</div>
+      {% if etiquetas_chamado %}
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
+        {% for et in etiquetas_chamado %}
+        <span style="padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;background:{{ et.cor_hex }}20;color:{{ et.cor_hex }}">
+          {{ et.nome }}
+        </span>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Nenhuma etiqueta vinculada.</p>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('admin_chamados.gerenciar_etiquetas_chamado', chamado_id=chamado.id) }}" style="margin:0">
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
+          {% for et in todas_etiquetas %}
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:400">
+            <input type="checkbox" name="etiqueta_ids" value="{{ et.id }}"
+                   {% if et.id in ids_vinculados %}checked{% endif %}
+                   style="width:auto;accent-color:{{ et.cor_hex }}">
+            <span style="padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600;background:{{ et.cor_hex }}20;color:{{ et.cor_hex }}">
+              {{ et.nome }}
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center">
+          💾 Salvar Etiquetas
+        </button>
+      </form>
+    </div>
+
+    {# Gerar Manutenção #}
+    {% if chamado.id_ativo %}
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">🔧 Manutenção</div>
+      <form method="POST" action="{{ url_for('admin_chamados.gerar_manutencao', chamado_id=chamado.id) }}" style="margin:0">
+        <button type="submit" class="btn btn-warn btn-sm" style="width:100%;justify-content:center">
+          🔧 Gerar O.S. de Manutenção
+        </button>
+      </form>
+      <p style="font-size:11px;color:var(--text3);margin-top:8px">
+        Cria uma entrada em Manutenções para o equipamento <strong>{{ chamado.id_ativo }}</strong>.
+      </p>
+    </div>
+    {% else %}
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;opacity:.5">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">🔧 Manutenção</div>
+      <p style="font-size:11px;color:var(--text3)">Nenhum equipamento vinculado a este chamado.</p>
+    </div>
+    {% endif %}
+
+    {# Transferir/Atribuir para outro técnico #}
+    {% if outros_admins %}
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">👥 Atribuir / Transferir</div>
+      <form method="POST" action="{{ url_for('admin_chamados.transferir_chamado', chamado_id=chamado.id) }}" style="margin:0">
+        <div class="form-group" style="margin-bottom:8px">
+          <select name="novo_tecnico_id" required style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;outline:none;width:100%">
+            <option value="">Selecione o responsável…</option>
+            {% for admin in outros_admins %}
+            <option value="{{ admin.id }}">{{ admin.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center">
+          Atribuir Responsável
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+  document.getElementById('form-resp') && document.getElementById('form-resp').addEventListener('submit', function() {
+    const b = document.getElementById('btn-resp');
+    if (b) { b.disabled = true; b.textContent = '⏳ Enviando…'; }
+  });
+</script>
+{% endblock %}
