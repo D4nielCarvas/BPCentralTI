@@ -234,16 +234,16 @@ def listar_pedidos():
 
     params: list[Any] = []
 
-    # Viewer: filtra pelos próprios pedidos
+    # Viewer: filtra pelos pedidos da sua própria localidade (fazenda)
     # Admin: filtra por localidade (ou tudo, se sem localidade_id)
     if session.get("role") == "viewer":
         query = """
             SELECT pv.*, l.nome AS localidade_nome
             FROM pedidos_viewer pv
             JOIN localidades l ON l.id = pv.localidade_id
-            WHERE pv.usuario_id = %s
+            WHERE pv.localidade_id = %s
         """
-        params.append(usuario_id)
+        params.append(localidade_id)
     else:
         query = """
             SELECT pv.*, l.nome AS localidade_nome
