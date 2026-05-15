@@ -56,7 +56,7 @@ def save_anexo(arquivo, chamado_id, mensagem_id, usuario_id, cur):
 # ── Helper: query base de chamados com etiquetas ──────────────────────────────
 _QUERY_CHAMADOS = """
     SELECT
-        c.id, c.titulo, c.prioridade, c.status,
+        c.id, c.titulo, c.descricao, c.prioridade, c.status,
         c.criado_em, c.atualizado_em, c.id_ativo,
         l.nome  AS localidade_nome,
         uc.nome AS criado_por_nome,
