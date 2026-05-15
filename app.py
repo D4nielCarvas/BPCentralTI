@@ -2140,14 +2140,18 @@ import traceback
 
 @app.errorhandler(Exception)
 def handle_exception(e):
-    # Log to a file on Desktop to catch .exe errors!
-    desktop_dir = os.path.join(os.path.expanduser("~"), "Desktop")
-    crash_file = os.path.join(desktop_dir, "inventario_crash.log")
-    with open(crash_file, "a", encoding="utf-8") as f:
-        f.write(f"\n--- {datetime.now().isoformat()} ---\n")
-        f.write(traceback.format_exc())
-        f.write(f"\nURL: {request.url}\n")
-    return "Internal Server Error. Verifique o arquivo inventario_crash.log no Desktop.", 500
+    # Log safely to the current application directory instead of hardcoded Desktop
+    crash_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "inventario_crash.log")
+    try:
+        with open(crash_file, "a", encoding="utf-8") as f:
+            f.write(f"\n--- {datetime.now().isoformat()} ---\n")
+            f.write(traceback.format_exc())
+            f.write(f"\nURL: {request.url}\n")
+    except Exception as log_err:
+        print(f"Failed to write crash log: {log_err}")
+        print(traceback.format_exc())
+    
+    return "Internal Server Error. Verifique o arquivo inventario_crash.log na raiz do projeto.", 500
 
 if __name__ == "__main__":
     print("\n" + "=" * 55)
