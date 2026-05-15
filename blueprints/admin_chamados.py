@@ -208,6 +208,18 @@ def detalhe_chamado_admin(chamado_id: int):
                 (usuario_id,),
             )
 
+            # --- Anexos originais do chamado ---
+            anexos_chamado = fetch_all(
+                cur,
+                """
+                SELECT id, nome_arquivo, caminho_arquivo
+                FROM chamado_anexos
+                WHERE chamado_id = %s AND (mensagem_id IS NULL OR mensagem_id = 0)
+                ORDER BY id ASC
+                """,
+                (chamado_id,)
+            )
+
             # --- Etiquetas ---
             todas_etiquetas = fetch_all(cur, "SELECT id, nome, cor_hex FROM chamado_etiquetas ORDER BY nome ASC")
             etiquetas_vinculadas = fetch_all(
