@@ -2140,7 +2140,7 @@ import traceback
 
 @app.errorhandler(Exception)
 def handle_exception(e):
-    # Log safely to the current application directory instead of hardcoded Desktop
+    # Log safely to the current application directory
     crash_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "inventario_crash.log")
     try:
         with open(crash_file, "a", encoding="utf-8") as f:
@@ -2149,9 +2149,11 @@ def handle_exception(e):
             f.write(f"\nURL: {request.url}\n")
     except Exception as log_err:
         print(f"Failed to write crash log: {log_err}")
-        print(traceback.format_exc())
     
-    return "Internal Server Error. Verifique o arquivo inventario_crash.log na raiz do projeto.", 500
+    # RETURN TRACEBACK DIRECTLY FOR DEBUGGING ON RENDER
+    tb = traceback.format_exc()
+    html = f"<h3>Internal Server Error</h3><pre style='background:#f4f4f4;padding:15px;border-radius:8px;overflow-x:auto;'>{tb}</pre>"
+    return html, 500
 
 if __name__ == "__main__":
     print("\n" + "=" * 55)

@@ -101,7 +101,7 @@
                 {{ msg.mensagem }}
                 {% if msg.caminho_arquivo %}
                 <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">
-                  {% set ext = msg.nome_arquivo.split('.')[-1] | lower if '.' in msg.nome_arquivo else '' %}
+                  {% set ext = (msg.nome_arquivo or msg.caminho_arquivo).split('.')[-1] | lower if (msg.nome_arquivo or msg.caminho_arquivo) and '.' in (msg.nome_arquivo or msg.caminho_arquivo) else '' %}
                   {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
                   <a href="{{ msg.caminho_arquivo }}" target="_blank" style="display:block">
                     <img src="{{ msg.caminho_arquivo }}" alt="{{ msg.nome_arquivo }}" style="max-width:100%;max-height:250px;border-radius:4px;margin-top:4px">
