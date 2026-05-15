@@ -12,6 +12,9 @@ Complexidade: O(n) para listagem; O(1) para criação e envio de mensagem.
 from __future__ import annotations
 
 from typing import Any
+import os
+import uuid
+from werkzeug.utils import secure_filename
 
 from flask import (
     Blueprint, abort, flash, redirect,
@@ -31,6 +34,29 @@ _TABELAS_EQUIPAMENTOS = [
     "celulares", "computadores", "impressoras",
     "estabilizadores", "starlink", "celulares_ponto",
 ]
+
+UPLOAD_FOLDER = os.path.join('static', 'uploads', 'chamados')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'zip', 'rar', 'txt', 'csv'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def save_anexo(arquivo, chamado_id, mensagem_id, usuario_id, cur):
+    if arquivo and arquivo.filename and allowed_file(arquivo.filename):
+        filename = secure_filename(arquivo.filename)
+        # prefixa com uuid para evitar colisao
+        unique_name = f"{uuid.uuid4().hex[:8]}_{filename}"
+        caminho = os.path.join(UPLOAD_FOLDER, unique_name)
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        arquivo.save(caminho)
+        caminho_db = f"/{UPLOAD_FOLDER.replace(os.sep, '/')}/{unique_name}"
+        cur.execute(
+            """
+            INSERT INTO chamado_anexos (chamado_id, mensagem_id, usuario_id, nome_arquivo, caminho_arquivo)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (chamado_id, mensagem_id, usuario_id, filename, caminho_db)
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -140,6 +166,11 @@ def novo_chamado():
                                 (novo_id, et_id),
                             )
 
+                # Salvar anexo opcional
+                arquivo = request.files.get("anexo")
+                if arquivo:
+                    save_anexo(arquivo, novo_id, None, usuario_id, cur)
+
         flash("Chamado aberto com sucesso! A equipe de TI entrará em contato.", "success")
         return redirect(url_for("chamados.detalhe_chamado", chamado_id=novo_id))
 
@@ -147,10 +178,12 @@ def novo_chamado():
     itens_ativos: list[str] = []
     localidades: list[dict] = []
     todas_etiquetas: list[dict] = []
+    modelos_prontos: list[dict] = []
 
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             todas_etiquetas = fetch_all(cur, "SELECT id, nome, cor_hex FROM chamado_etiquetas ORDER BY nome ASC")
+            modelos_prontos = fetch_all(cur, "SELECT id, nome_modelo, titulo_padrao, descricao_padrao, prioridade_padrao FROM chamado_modelos WHERE ativo = TRUE ORDER BY nome_modelo ASC")
             loc_query = localidade_id
 
             if session.get("role") == "admin":
@@ -178,6 +211,7 @@ def novo_chamado():
         localidades=localidades,
         localidade_id_sessao=localidade_id,
         todas_etiquetas=todas_etiquetas,
+        modelos_prontos=modelos_prontos,
     )
 
 
@@ -230,13 +264,25 @@ def detalhe_chamado(chamado_id: int):
                 cur,
                 """
                 SELECT cm.id, cm.mensagem, cm.criado_em, cm.is_sistema,
-                       u.nome AS autor_nome, u.role AS autor_role, u.id AS autor_id
+                       u.nome AS autor_nome, u.role AS autor_role, u.id AS autor_id,
+                       ca.caminho_arquivo, ca.nome_arquivo
                 FROM chamado_mensagens cm
                 JOIN usuarios u ON u.id = cm.usuario_id
+                LEFT JOIN chamado_anexos ca ON ca.mensagem_id = cm.id
                 WHERE cm.chamado_id = %s
                 ORDER BY cm.criado_em ASC
                 """,
                 (chamado_id,),
+            )
+            
+            anexos_chamado = fetch_all(
+                cur,
+                """
+                SELECT caminho_arquivo, nome_arquivo 
+                FROM chamado_anexos 
+                WHERE chamado_id = %s AND mensagem_id IS NULL
+                """,
+                (chamado_id,)
             )
 
     if request.method == "POST":
@@ -248,9 +294,16 @@ def detalhe_chamado(chamado_id: int):
         with acquire_conn() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "INSERT INTO chamado_mensagens (chamado_id, usuario_id, mensagem) VALUES (%s, %s, %s)",
+                    "INSERT INTO chamado_mensagens (chamado_id, usuario_id, mensagem) VALUES (%s, %s, %s) RETURNING id",
                     (chamado_id, usuario_id, mensagem),
                 )
+                nova_msg_id = cur.fetchone()["id"]
+
+                # Salvar anexo opcional
+                arquivo = request.files.get("anexo")
+                if arquivo:
+                    save_anexo(arquivo, chamado_id, nova_msg_id, usuario_id, cur)
+
                 # Viewer respondeu → volta de 'pendente_usuario' para 'em_atendimento'
                 if chamado["status"] == "pendente_usuario":
                     cur.execute(
@@ -264,6 +317,7 @@ def detalhe_chamado(chamado_id: int):
         "fazenda/detalhe_chamado.html",
         chamado=chamado,
         mensagens=mensagens,
+        anexos_chamado=anexos_chamado,
         usuario_id=usuario_id,
         status_validos=sorted(_STATUS_VALIDOS),
     )

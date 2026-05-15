@@ -150,6 +150,9 @@ def listar_estoque():
     params: list[Any] = []
     query = "SELECT * FROM estoque WHERE 1=1"
 
+    if localidade_id:
+        query += " AND (localidade_id IS NULL OR localidade_id = %s)"
+        params.append(localidade_id)
 
     if not mostrar_zerado:
         query += " AND quantidade > 0"
@@ -323,7 +326,6 @@ def novo_pedido():
         flash("Pedido enviado com sucesso!", "success")
         return redirect(url_for("fazenda.detalhe_pedido", pedido_id=novo_id))
 
-    # GET — busca etiquetas disponíveis e localidades (para admin)
     etiquetas: list[dict] = []
     localidades: list[dict] = []
     with acquire_conn() as conn:
@@ -334,11 +336,15 @@ def novo_pedido():
                     cur, "SELECT id, nome, tipo FROM localidades ORDER BY nome ASC"
                 )
 
+    item_pre_selecionado = request.args.get("item", "").strip()
+    descricao_inicial = f"Solicito o item do estoque: {item_pre_selecionado}\nQuantidade: " if item_pre_selecionado else ""
+
     return render_template(
         "fazenda/novo_pedido.html",
         localidades=localidades,
         localidade_id_sessao=localidade_id,
         etiquetas=etiquetas,
+        descricao=descricao_inicial,
     )
 
 

@@ -52,6 +52,24 @@
     <div class="form-card">
       <div class="form-card-header"><h3>💬 Histórico de Atendimento</h3></div>
       <div class="form-card-body">
+        {% if anexos_chamado %}
+        <div style="margin-bottom:15px;background:var(--bg2);padding:10px;border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:5px;font-weight:600;text-transform:uppercase">📎 Anexos Originais do Chamado</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;flex-direction:column">
+            {% for ax in anexos_chamado %}
+              {% set ext = ax.nome_arquivo.split('.')[-1] | lower if '.' in ax.nome_arquivo else '' %}
+              {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
+              <a href="{{ ax.caminho_arquivo }}" target="_blank" style="display:inline-block;max-width:100%">
+                <img src="{{ ax.caminho_arquivo }}" alt="{{ ax.nome_arquivo }}" style="max-width:100%;max-height:300px;border-radius:6px;border:1px solid var(--border);object-fit:contain;background:var(--bg3)">
+              </a>
+              {% else %}
+              <a href="{{ ax.caminho_arquivo }}" target="_blank" style="align-self:flex-start;font-size:12px;color:var(--accent);text-decoration:underline;background:var(--bg3);padding:4px 8px;border-radius:4px">📎 {{ ax.nome_arquivo }}</a>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
         {% if mensagens %}
         <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
           {% for msg in mensagens %}
@@ -64,12 +82,40 @@
             </div>
             {% elif e_meu %}
             <div style="display:flex;flex-direction:column;align-items:flex-end">
-              <div style="max-width:75%;background:var(--accent);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:13px;line-height:1.5">{{ msg.mensagem }}</div>
+              <div style="max-width:75%;background:var(--accent);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:13px;line-height:1.5">
+                {{ msg.mensagem }}
+                {% if msg.caminho_arquivo %}
+                <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.2)">
+                  {% set ext = msg.nome_arquivo.split('.')[-1] | lower if '.' in msg.nome_arquivo else '' %}
+                  {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
+                  <a href="{{ msg.caminho_arquivo }}" target="_blank" style="display:block">
+                    <img src="{{ msg.caminho_arquivo }}" alt="{{ msg.nome_arquivo }}" style="max-width:100%;max-height:250px;border-radius:4px;margin-top:4px">
+                  </a>
+                  {% else %}
+                  <a href="{{ msg.caminho_arquivo }}" target="_blank" style="color:#fff;font-size:11px;text-decoration:underline">📎 {{ msg.nome_arquivo }}</a>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
               <div style="font-size:10px;color:var(--text3);margin-top:3px">🔧 {{ msg.autor_nome }} · {{ msg.criado_em.strftime('%d/%m/%y %H:%M') if msg.criado_em is not string else msg.criado_em[:16] | replace('T',' ') }}</div>
             </div>
             {% else %}
             <div style="display:flex;flex-direction:column;align-items:flex-start">
-              <div style="max-width:75%;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:13px;line-height:1.5;color:var(--text)">{{ msg.mensagem }}</div>
+              <div style="max-width:75%;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:13px;line-height:1.5;color:var(--text)">
+                {{ msg.mensagem }}
+                {% if msg.caminho_arquivo %}
+                <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(16,185,129,.2)">
+                  {% set ext = msg.nome_arquivo.split('.')[-1] | lower if '.' in msg.nome_arquivo else '' %}
+                  {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
+                  <a href="{{ msg.caminho_arquivo }}" target="_blank" style="display:block">
+                    <img src="{{ msg.caminho_arquivo }}" alt="{{ msg.nome_arquivo }}" style="max-width:100%;max-height:250px;border-radius:4px;margin-top:4px">
+                  </a>
+                  {% else %}
+                  <a href="{{ msg.caminho_arquivo }}" target="_blank" style="color:var(--green);font-size:11px;text-decoration:underline">📎 {{ msg.nome_arquivo }}</a>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
               <div style="font-size:10px;color:var(--text3);margin-top:3px">👤 {{ msg.autor_nome }} · {{ msg.criado_em.strftime('%d/%m/%y %H:%M') if msg.criado_em is not string else msg.criado_em[:16] | replace('T',' ') }}</div>
             </div>
             {% endif %}
@@ -82,11 +128,14 @@
         {# Form de resposta + mudança de status #}
         {% if chamado.status not in ['resolvido', 'fechado'] %}
         <form method="POST" action="{{ url_for('admin_chamados.detalhe_chamado_admin', chamado_id=chamado.id) }}"
-              id="form-resp" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+              id="form-resp" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px" enctype="multipart/form-data">
           <div class="form-group" style="margin-bottom:10px">
             <textarea name="mensagem" rows="3" maxlength="2000" placeholder="Resposta ao solicitante…" style="resize:none" required></textarea>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div style="flex:1">
+              <input type="file" name="anexo" accept=".png,.jpg,.jpeg,.gif,.pdf,.zip,.rar,.txt,.csv" style="font-size:11px;color:var(--text3);width:100%">
+            </div>
             <div style="flex:1">
               <select name="novo_status" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;outline:none">
                 <option value="">Manter status atual</option>

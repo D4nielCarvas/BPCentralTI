@@ -1,0 +1,81 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block title %}Modelos de Chamados — TI{% endblock %}
+{% block page_title %}Modelos de Chamados{% endblock %}
+
+{% block content %}
+<div style="display:flex;gap:20px;align-items:flex-start">
+  
+  {# ── COLUNA ESQUERDA: LISTA DE MODELOS ─────────────────────────── #}
+  <div style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px">
+    <h3 style="font-size:14px;color:var(--text);margin-bottom:15px;font-weight:600">Modelos Cadastrados</h3>
+    
+    {% if modelos %}
+    <div style="display:flex;flex-direction:column;gap:10px">
+      {% for m in modelos %}
+      <div style="padding:15px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:4px">
+            {{ m.nome_modelo }}
+            {% if not m.ativo %}
+            <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--red)20;color:var(--red);margin-left:6px">Inativo</span>
+            {% else %}
+            <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--green)20;color:var(--green);margin-left:6px">Ativo</span>
+            {% endif %}
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:2px"><strong>Título Padrão:</strong> {{ m.titulo_padrao }}</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:4px"><strong>Prioridade:</strong> {{ m.prioridade_padrao | title }}</div>
+          <div style="font-size:11px;color:var(--text3);background:var(--bg);padding:8px;border-radius:5px;margin-top:6px;border:1px dashed var(--border2)">
+            {{ m.descricao_padrao | truncate(150, True, '...') }}
+          </div>
+        </div>
+        
+        <form method="POST" action="{{ url_for('admin_chamados.toggle_modelo', modelo_id=m.id) }}">
+          {% if m.ativo %}
+          <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red)">Desativar</button>
+          {% else %}
+          <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--green)">Ativar</button>
+          {% endif %}
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="font-size:13px;color:var(--text3)">Nenhum modelo cadastrado.</p>
+    {% endif %}
+  </div>
+
+  {# ── COLUNA DIREITA: NOVO MODELO ───────────────────────────────── #}
+  <div style="width:340px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;position:sticky;top:20px">
+    <h3 style="font-size:14px;color:var(--text);margin-bottom:15px;font-weight:600">Criar Novo Modelo</h3>
+    
+    <form method="POST" action="{{ url_for('admin_chamados.gerenciar_modelos') }}">
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Nome do Modelo (Ex: Erro de Impressão)</label>
+        <input type="text" name="nome_modelo" required class="form-control" style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px">
+      </div>
+      
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Título do Chamado (Auto-preenchido)</label>
+        <input type="text" name="titulo_padrao" required class="form-control" style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px">
+      </div>
+      
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Prioridade Padrão</label>
+        <select name="prioridade_padrao" required class="form-control" style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px">
+          {% for p in prioridades %}
+          <option value="{{ p }}" {% if p == 'media' %}selected{% endif %}>{{ p | title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Descrição Base (Template)</label>
+        <textarea name="descricao_padrao" required rows="6" class="form-control" style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px" placeholder="Descreva os passos ou perguntas que o usuário deve responder..."></textarea>
+      </div>
+      
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Salvar Modelo</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

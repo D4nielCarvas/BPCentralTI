@@ -12,6 +12,9 @@ Segurança: admin_required em todas as rotas. Nunca confia em IDs do body.
 from __future__ import annotations
 
 from typing import Any
+import os
+import uuid
+from werkzeug.utils import secure_filename
 
 from flask import (
     Blueprint, abort, flash, redirect,
@@ -27,6 +30,28 @@ _STATUS_VALIDOS = frozenset({
     "aberto", "em_atendimento", "pendente_usuario", "resolvido", "fechado"
 })
 _PRIORIDADES = ["baixa", "media", "alta", "urgente"]
+
+UPLOAD_FOLDER = os.path.join('static', 'uploads', 'chamados')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'zip', 'rar', 'txt', 'csv'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def save_anexo(arquivo, chamado_id, mensagem_id, usuario_id, cur):
+    if arquivo and arquivo.filename and allowed_file(arquivo.filename):
+        filename = secure_filename(arquivo.filename)
+        unique_name = f"{uuid.uuid4().hex[:8]}_{filename}"
+        caminho = os.path.join(UPLOAD_FOLDER, unique_name)
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        arquivo.save(caminho)
+        caminho_db = f"/{UPLOAD_FOLDER.replace(os.sep, '/')}/{unique_name}"
+        cur.execute(
+            """
+            INSERT INTO chamado_anexos (chamado_id, mensagem_id, usuario_id, nome_arquivo, caminho_arquivo)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (chamado_id, mensagem_id, usuario_id, filename, caminho_db)
+        )
 
 # ── Helper: query base de chamados com etiquetas ──────────────────────────────
 _QUERY_CHAMADOS = """
@@ -209,9 +234,15 @@ def detalhe_chamado_admin(chamado_id: int):
         with acquire_conn() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "INSERT INTO chamado_mensagens (chamado_id, usuario_id, mensagem) VALUES (%s, %s, %s)",
+                    "INSERT INTO chamado_mensagens (chamado_id, usuario_id, mensagem) VALUES (%s, %s, %s) RETURNING id",
                     (chamado_id, usuario_id, mensagem),
                 )
+                nova_msg_id = cur.fetchone()["id"]
+
+                arquivo = request.files.get("anexo")
+                if arquivo:
+                    save_anexo(arquivo, chamado_id, nova_msg_id, usuario_id, cur)
+
                 if novo_status and novo_status in _STATUS_VALIDOS:
                     cur.execute(
                         "UPDATE chamados SET status = %s WHERE id = %s",
@@ -224,6 +255,7 @@ def detalhe_chamado_admin(chamado_id: int):
         "admin/detalhe_chamado_admin.html",
         chamado=chamado,
         mensagens=mensagens,
+        anexos_chamado=anexos_chamado,
         outros_admins=outros_admins,
         usuario_id=usuario_id,
         status_validos=sorted(_STATUS_VALIDOS),
@@ -363,3 +395,50 @@ def gerar_manutencao(chamado_id: int):
 
     flash(f"Manutenção criada com sucesso (OS #{manutencao_id})!", "success")
     return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODELOS PRE-PRONTOS DE CHAMADOS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@admin_chamados_bp.route("/modelos", methods=["GET", "POST"])
+@admin_required
+def gerenciar_modelos():
+    """Gerencia modelos de chamados (criação e listagem)."""
+    if request.method == "POST":
+        nome_modelo = (request.form.get("nome_modelo") or "").strip()
+        titulo_padrao = (request.form.get("titulo_padrao") or "").strip()
+        descricao_padrao = (request.form.get("descricao_padrao") or "").strip()
+        prioridade_padrao = request.form.get("prioridade_padrao")
+
+        if not nome_modelo or not titulo_padrao or not descricao_padrao:
+            flash("Preencha todos os campos obrigatórios.", "warning")
+            return redirect(url_for("admin_chamados.gerenciar_modelos"))
+
+        with acquire_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO chamado_modelos (nome_modelo, titulo_padrao, descricao_padrao, prioridade_padrao)
+                    VALUES (%s, %s, %s, %s)
+                    """,
+                    (nome_modelo, titulo_padrao, descricao_padrao, prioridade_padrao)
+                )
+        flash("Modelo de chamado adicionado com sucesso!", "success")
+        return redirect(url_for("admin_chamados.gerenciar_modelos"))
+
+    with acquire_conn() as conn:
+        with conn.cursor() as cur:
+            modelos = fetch_all(cur, "SELECT * FROM chamado_modelos ORDER BY nome_modelo ASC")
+
+    return render_template("admin/chamados_modelos.html", modelos=modelos, prioridades=_PRIORIDADES)
+
+@admin_chamados_bp.route("/modelos/<int:modelo_id>/toggle", methods=["POST"])
+@admin_required
+def toggle_modelo(modelo_id: int):
+    """Ativa ou desativa um modelo de chamado."""
+    with acquire_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE chamado_modelos SET ativo = NOT ativo WHERE id = %s", (modelo_id,))
+    flash("Status do modelo atualizado.", "success")
+    return redirect(url_for("admin_chamados.gerenciar_modelos"))

@@ -2482,13 +2482,26 @@
       }
     }
 
-    function openEstoqueModal(d) {
+    let cachedLocalidades = null;
+    async function getLocalidades() {
+      if (!cachedLocalidades) {
+        cachedLocalidades = await api('/api/localidades');
+      }
+      return cachedLocalidades || [];
+    }
+
+    async function openEstoqueModal(d) {
+      const locs = await getLocalidades();
+      const locsHtml = `<option value="">Todas (Global)</option>` + 
+        locs.map(l => `<option value="${l.id}" ${(d && d.localidade_id == l.id) ? 'selected' : ''}>${l.nome}</option>`).join('');
+
       const html = `<form id="modal-form"><div class="form-grid">
     <div class="form-group full">${fld('Item *', `<input name="item" value="${d?.item || ''}" required placeholder="Nome do item">`)}</div>
     ${fld('Cód. Pedido', `<input name="cod_pedido" value="${d?.cod_pedido || ''}" placeholder="PED-001">`)}
-    ${fld('Quantidade inicial', `<input type="number" name="quantidade" value="${d?.quantidade || 0}" min="0">`)}
+    ${fld('Quantidade inicial', `<input type="number" name="quantidade" value="${d?.quantidade || 0}" min="0" ${d ? 'readonly title="Para alterar use Entrada/Saída"' : ''}>`)}
     ${fld('Unidade', `<input name="unidade" value="${d?.unidade || 'un'}" placeholder="un, cx, pç...">`)}
-    ${fld('Localização', `<input name="localizacao" value="${d?.localizacao || ''}" placeholder="Armário A1, Prateleira 3...">`)}
+    ${fld('Permissão de Visibilidade', `<select name="localidade_id">${locsHtml}</select>`)}
+    ${fld('Detalhe de Loc.', `<input name="localizacao" value="${d?.localizacao || ''}" placeholder="Armário A1, Gaveta 2">`)}
     <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${d?.observacoes || ''}</textarea>`)}</div>
   </div></form>`;
       openModal(d ? `Editar Item — ${d.item}` : 'Novo Item de Estoque', html, { type: 'estoque', mode: d ? 'edit' : 'new', id: d?.id });

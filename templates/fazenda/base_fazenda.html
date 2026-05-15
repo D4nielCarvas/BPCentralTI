@@ -248,8 +248,12 @@
       <span class="icon">📊</span> Todos os Pedidos
     </a>
     <a href="{{ url_for('admin_chamados.dashboard_chamados') }}"
-       class="nav-item {% if request.endpoint and 'admin_chamados' in request.endpoint %}active{% endif %}">
+       class="nav-item {% if request.endpoint and 'admin_chamados.dashboard' in request.endpoint %}active{% endif %}">
       <span class="icon">🛠️</span> Painel de Chamados
+    </a>
+    <a href="{{ url_for('admin_chamados.gerenciar_modelos') }}"
+       class="nav-item {% if request.endpoint and 'admin_chamados.gerenciar_modelos' in request.endpoint %}active{% endif %}">
+      <span class="icon">📝</span> Modelos de Chamados
     </a>
     <a href="{{ url_for('admin.listar_usuarios') }}"
        class="nav-item {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}">

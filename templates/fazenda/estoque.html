@@ -36,6 +36,7 @@
         <th>Unidade</th>
         <th>Localização</th>
         <th>Observações</th>
+        <th style="text-align:right">Ações</th>
       </tr>
     </thead>
     <tbody>
@@ -56,6 +57,11 @@
         <td style="color:var(--text3)">{{ it.unidade or 'un' }}</td>
         <td>{{ it.localizacao or '—' }}</td>
         <td style="color:var(--text3);font-size:12px">{{ it.observacoes or '—' }}</td>
+        <td style="text-align:right">
+          <a href="{{ url_for('fazenda.novo_pedido', item=it.item) }}" class="btn btn-ghost btn-sm" style="font-size:11px;padding:4px 8px;border:1px solid var(--border)">
+            ➕ Criar Pedido
+          </a>
+        </td>
       </tr>
       {% endfor %}
     </tbody>

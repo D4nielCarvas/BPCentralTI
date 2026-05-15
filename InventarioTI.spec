@@ -8,6 +8,7 @@ a = Analysis(
     binaries=[],
     datas=[
         ('templates', 'templates'),   # Jinja2 templates
+        ('static', 'static'),         # Arquivos estáticos (CSS, JS, imagens, uploads)
         ('blueprints', 'blueprints'), # Pacote de blueprints Flask
         ('.env', '.'),                # Variáveis de ambiente (Supabase URL)
     ],
@@ -23,6 +24,8 @@ a = Analysis(
         'blueprints.fazenda',
         'blueprints.admin_pedidos',
         'blueprints.admin',
+        'blueprints.chamados',
+        'blueprints.admin_chamados',
         # ── PostgreSQL / psycopg2 ─────────────────────────────────
         'psycopg2',
         'psycopg2.extras',

@@ -842,18 +842,29 @@ def listar_estoque_equipamentos() -> Response:
     return jsonify(rows)
 
 
+@app.route("/api/localidades", methods=["GET"])
+def api_listar_localidades() -> Response:
+    """Retorna todas as localidades para selects."""
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            rows = _fetch_all(cur, "SELECT id, nome FROM localidades ORDER BY nome ASC")
+    return jsonify(rows)
+
+
 @app.route("/api/estoque", methods=["POST"])
 def criar_estoque() -> Response:
     """Cadastra um novo item no estoque geral."""
     d = request.json
+    localidade_id = d.get("localidade_id") or None
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO estoque (item,cod_pedido,quantidade,unidade,localizacao,observacoes) "
-                "VALUES (%s,%s,%s,%s,%s,%s)",
+                "INSERT INTO estoque (item,cod_pedido,quantidade,unidade,localizacao,observacoes,localidade_id) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s)",
                 (
                     d["item"], d.get("cod_pedido"), d.get("quantidade", 0),
                     d.get("unidade", "un"), d.get("localizacao"), d.get("observacoes"),
+                    localidade_id
                 ),
             )
     return jsonify({"ok": True, "msg": "Item cadastrado!"})
@@ -872,13 +883,14 @@ def get_estoque(eid: int) -> Response:
 def atualizar_estoque(eid: int) -> Response:
     """Atualiza dados cadastrais de um item de estoque (não altera quantidade)."""
     d = request.json
+    localidade_id = d.get("localidade_id") or None
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """UPDATE estoque SET item=%s,cod_pedido=%s,unidade=%s,localizacao=%s,
-                   observacoes=%s,updated_at=NOW() WHERE id=%s""",
+                   observacoes=%s,localidade_id=%s,updated_at=NOW() WHERE id=%s""",
                 (d.get("item"), d.get("cod_pedido"), d.get("unidade"), d.get("localizacao"),
-                 d.get("observacoes"), eid),
+                 d.get("observacoes"), localidade_id, eid),
             )
     return jsonify({"ok": True, "msg": "Item atualizado!"})
 
@@ -2123,6 +2135,19 @@ def parse_coleta() -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 # INICIALIZAÇÃO
 # ═══════════════════════════════════════════════════════════════════════════════
+
+import traceback
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Log to a file on Desktop to catch .exe errors!
+    desktop_dir = os.path.join(os.path.expanduser("~"), "Desktop")
+    crash_file = os.path.join(desktop_dir, "inventario_crash.log")
+    with open(crash_file, "a", encoding="utf-8") as f:
+        f.write(f"\n--- {datetime.now().isoformat()} ---\n")
+        f.write(traceback.format_exc())
+        f.write(f"\nURL: {request.url}\n")
+    return "Internal Server Error. Verifique o arquivo inventario_crash.log no Desktop.", 500
 
 if __name__ == "__main__":
     print("\n" + "=" * 55)

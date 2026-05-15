@@ -16,7 +16,21 @@
     </p>
   </div>
   <div class="form-card-body">
-    <form method="POST" action="{{ url_for('chamados.novo_chamado') }}" id="form-novo-chamado">
+    <form method="POST" action="{{ url_for('chamados.novo_chamado') }}" id="form-novo-chamado" enctype="multipart/form-data">
+
+      {% if modelos_prontos %}
+      <div class="form-group" style="margin-bottom:15px;background:var(--bg3);padding:12px;border-radius:8px;border:1px solid var(--accent)50">
+        <label for="modelo_select" style="color:var(--accent)">🚀 Usar Modelo Pre-Pronto</label>
+        <select id="modelo_select" style="margin-top:5px;font-size:13px;padding:8px 12px">
+          <option value="">-- Selecione um modelo para auto-preencher --</option>
+          {% for m in modelos_prontos %}
+          <option value="{{ m.id }}" data-titulo="{{ m.titulo_padrao }}" data-prioridade="{{ m.prioridade_padrao }}" data-descricao="{{ m.descricao_padrao }}">
+            {{ m.nome_modelo }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
 
       {# Admin: seleciona a localidade #}
       {% if session.role == 'admin' and localidades %}
@@ -89,6 +103,11 @@
         <span id="char-count" style="font-size:11px;color:var(--text3);text-align:right">0 / 3000</span>
       </div>
 
+      <div class="form-group">
+        <label for="anexo">📎 Anexar Arquivo (Imagem, PDF, ZIP - Opcional)</label>
+        <input type="file" name="anexo" id="anexo" accept=".png,.jpg,.jpeg,.gif,.pdf,.zip,.rar,.txt,.csv" style="font-size:13px;color:var(--text2);padding:10px 0;">
+      </div>
+
       <div class="form-actions">
         <a href="{{ url_for('chamados.listar_chamados') }}" class="btn btn-ghost">Cancelar</a>
         <button type="submit" id="btn-enviar" class="btn btn-primary">
@@ -111,6 +130,29 @@
   }
   textarea.addEventListener('input', update);
   update();
+
+  // Lógica dos Modelos
+  const modeloSelect = document.getElementById('modelo_select');
+  if(modeloSelect) {
+    modeloSelect.addEventListener('change', function() {
+      const option = this.options[this.selectedIndex];
+      if(!option.value) return;
+      
+      const tituloInput = document.getElementById('titulo');
+      const prioridadeSelect = document.getElementById('prioridade');
+      
+      if(tituloInput && option.dataset.titulo) {
+        tituloInput.value = option.dataset.titulo;
+      }
+      if(prioridadeSelect && option.dataset.prioridade) {
+        prioridadeSelect.value = option.dataset.prioridade;
+      }
+      if(textarea && option.dataset.descricao) {
+        textarea.value = option.dataset.descricao;
+        update();
+      }
+    });
+  }
 
   document.getElementById('form-novo-chamado').addEventListener('submit', function() {
     btnEnviar.disabled = true;
