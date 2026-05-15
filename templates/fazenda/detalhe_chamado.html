@@ -65,7 +65,7 @@
         {% endif %}
 
         {% if mensagens %}
-        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+        <div id="chat-msgs" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
           {% for msg in mensagens %}
             {% set e_meu = (msg.autor_id == usuario_id) %}
             {% if msg.is_sistema %}
@@ -92,7 +92,7 @@
                 {% endif %}
               </div>
               <div style="font-size:10px;color:var(--text3);margin-top:3px">
-                {{ msg.autor_nome }} · {{ msg.criado_em.strftime('%d/%m/%y %H:%M') if msg.criado_em is not string else msg.criado_em[:16] | replace('T',' ') }}
+                {{ msg.autor_nome }} · {{ msg.criado_em | fdt }}
               </div>
             </div>
             {% else %}
@@ -113,7 +113,7 @@
                 {% endif %}
               </div>
               <div style="font-size:10px;color:var(--text3);margin-top:3px">
-                🔧 {{ msg.autor_nome }} · {{ msg.criado_em.strftime('%d/%m/%y %H:%M') if msg.criado_em is not string else msg.criado_em[:16] | replace('T',' ') }}
+                🔧 {{ msg.autor_nome }} · {{ msg.criado_em | fdt }}
               </div>
             </div>
             {% endif %}
@@ -158,7 +158,7 @@
         </div>
         <div>
           <div style="font-size:10px;color:var(--text3)">Aberto em</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:3px">{{ chamado.criado_em.strftime('%d/%m/%Y %H:%M') if chamado.criado_em is not string else chamado.criado_em[:16] | replace('T',' ') }}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px">{{ chamado.criado_em | fdt }}</div>
         </div>
       </div>
     </div>
@@ -176,5 +176,62 @@
     const b = document.getElementById('btn-send');
     if (b) { b.disabled = true; b.textContent = '⏳ Enviando…'; }
   });
+
+  // ── Polling de mensagens a cada 5 segundos ──────────────────────────────────
+  const CHAMADO_ID = {{ chamado.id }};
+  const MEU_ID = {{ usuario_id }};
+  let ultimoId = {{ mensagens[-1].id if mensagens else 0 }};
+
+  function buildMsg(m) {
+    const img_exts = ['jpg','jpeg','png','gif','webp'];
+    let anexoHtml = '';
+    if (m.caminho_arquivo) {
+      const ext = (m.nome_arquivo || m.caminho_arquivo).split('.').pop().toLowerCase();
+      if (img_exts.includes(ext)) {
+        anexoHtml = `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.15)">
+          <a href="${m.caminho_arquivo}" target="_blank" style="display:block">
+            <img src="${m.caminho_arquivo}" alt="${m.nome_arquivo}" style="max-width:100%;max-height:250px;border-radius:4px;margin-top:4px">
+          </a></div>`;
+      } else {
+        anexoHtml = `<div style="margin-top:6px"><a href="${m.caminho_arquivo}" target="_blank" style="font-size:11px;text-decoration:underline">📎 ${m.nome_arquivo}</a></div>`;
+      }
+    }
+    if (m.is_sistema) {
+      return `<div style="text-align:center">
+        <span style="font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 12px">⚙ ${m.mensagem}</span></div>`;
+    }
+    const eMeu = (m.autor_id == MEU_ID);
+    if (eMeu) {
+      return `<div style="display:flex;flex-direction:column;align-items:flex-end">
+        <div style="max-width:75%;background:var(--accent);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:13px;line-height:1.5">
+          ${m.mensagem}${anexoHtml}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">${m.autor_nome} · ${m.criado_em}</div></div>`;
+    } else {
+      return `<div style="display:flex;flex-direction:column;align-items:flex-start">
+        <div style="max-width:75%;background:var(--bg3);border:1px solid var(--border);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:13px;line-height:1.5;color:var(--text)">
+          ${m.mensagem}${anexoHtml}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">🔧 ${m.autor_nome} · ${m.criado_em}</div></div>`;
+    }
+  }
+
+  async function pollMensagens() {
+    try {
+      const res = await fetch(`/chamados/${CHAMADO_ID}/poll`);
+      if (!res.ok) return;
+      const msgs = await res.json();
+      if (!Array.isArray(msgs) || msgs.length === 0) return;
+      const novas = msgs.filter(m => m.id > ultimoId);
+      if (novas.length === 0) return;
+      const container = document.getElementById('chat-msgs');
+      if (!container) return;
+      novas.forEach(m => {
+        container.insertAdjacentHTML('beforeend', buildMsg(m));
+        ultimoId = Math.max(ultimoId, m.id);
+      });
+      container.lastElementChild && container.lastElementChild.scrollIntoView({ behavior: 'smooth' });
+    } catch(e) { /* silencioso */ }
+  }
+
+  setInterval(pollMensagens, 5000);
 </script>
 {% endblock %}
