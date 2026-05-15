@@ -173,6 +173,8 @@ def login():
 
         if usuario["role"] == "viewer":
             return redirect(url_for("fazenda.listar_itens"))
+        if usuario["role"] == "apoio":
+            return redirect(url_for("apoio.celulares_inspecao"))
         return redirect(url_for("index"))
 
     return render_template("auth/login.html")

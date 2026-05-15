@@ -57,6 +57,9 @@
           <option value="viewer" {% if form.get('role') == 'viewer' %}selected{% endif %}>
             👁 Viewer — acesso restrito à localidade
           </option>
+          <option value="apoio" {% if form.get('role') == 'apoio' %}selected{% endif %}>
+            🔑 Apoio — acesso celulares de inspeção
+          </option>
         </select>
       </div>
 

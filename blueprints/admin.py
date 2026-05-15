@@ -113,7 +113,7 @@ def novo_usuario():
             errors.append("O campo 'Nome' é obrigatório.")
         if len(senha) < 6:
             errors.append("A senha deve ter no mínimo 6 caracteres.")
-        if role not in ("admin", "viewer"):
+        if role not in ("admin", "viewer", "apoio"):
             errors.append("Role inválido.")
         if role == "viewer" and not localidade_id_raw:
             errors.append("Viewers devem ter uma localidade vinculada.")
@@ -127,8 +127,8 @@ def novo_usuario():
                 form=request.form,
             )
 
-        # ── Força localidade_id = NULL para admins ────────────────────────────
-        localidade_id = None if role == "admin" else int(localidade_id_raw)
+        # Força localidade_id = NULL para admins e apoio
+        localidade_id = None if role in ("admin", "apoio") else int(localidade_id_raw)
 
         # ── Hash da senha (werkzeug — pbkdf2:sha256 por padrão) ──────────────
         senha_hash = generate_password_hash(senha)
@@ -249,7 +249,7 @@ def editar_usuario(usuario_id: int):
     role = (request.form.get("role") or "").strip()
     localidade_id_raw = request.form.get("localidade_id") or None
 
-    if role not in ("admin", "viewer"):
+    if role not in ("admin", "viewer", "apoio"):
         flash("Perfil de acesso inválido.", "danger")
         return redirect(url_for("admin.listar_usuarios"))
 
@@ -257,7 +257,7 @@ def editar_usuario(usuario_id: int):
         flash("Viewers devem ter uma localidade vinculada.", "danger")
         return redirect(url_for("admin.listar_usuarios"))
 
-    localidade_id = None if role == "admin" else int(localidade_id_raw)
+    localidade_id = None if role in ("admin", "apoio") else int(localidade_id_raw)
 
     with acquire_conn() as conn:
         with conn.cursor() as cur:

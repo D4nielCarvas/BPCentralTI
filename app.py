@@ -100,6 +100,7 @@ from blueprints.admin_pedidos import admin_pedidos_bp
 from blueprints.admin import admin_bp
 from blueprints.chamados import chamados_bp
 from blueprints.admin_chamados import admin_chamados_bp
+from blueprints.apoio import apoio_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(fazenda_bp)
@@ -107,6 +108,7 @@ app.register_blueprint(admin_pedidos_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(chamados_bp)
 app.register_blueprint(admin_chamados_bp)
+app.register_blueprint(apoio_bp)
 
 
 # ── Filtro Jinja2: formata data em horário de Brasília (UTC-3) ────────────────

@@ -1,0 +1,146 @@
+{% extends "fazenda/base_fazenda.html" %}
+{% block title %}Celulares de Inspeção — Apoio — Inventário TI{% endblock %}
+{% block page_title %}📱 Celulares de Inspeção{% endblock %}
+
+{% block topbar_actions %}
+<span style="font-size:12px;color:var(--text3)">Visualização somente leitura · {{ total }} registro(s)</span>
+{% endblock %}
+
+{% block content %}
+
+{# ── Barra de filtros ─────────────────────────────────────────────────────── #}
+<form method="GET" action="{{ url_for('apoio.celulares_inspecao') }}"
+      style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:flex-end">
+
+  <div style="flex:1;min-width:180px">
+    <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:5px">
+      Fazenda
+    </label>
+    <select name="fazenda" id="filtro-fazenda"
+            style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);
+                   border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;outline:none">
+      <option value="">Todas as fazendas</option>
+      {% for f in fazendas %}
+      <option value="{{ f.fazenda }}" {{ 'selected' if f.fazenda == filtro_fazenda }}>
+        {{ f.fazenda }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="flex:2;min-width:220px">
+    <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:5px">
+      Busca (ID, responsável, modelo…)
+    </label>
+    <input type="text" name="q" value="{{ busca }}" placeholder="Digite para filtrar…"
+           style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);
+                  border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box">
+  </div>
+
+  <div style="display:flex;gap:8px">
+    <button type="submit" class="btn btn-primary btn-sm">🔍 Filtrar</button>
+    {% if filtro_fazenda or busca %}
+    <a href="{{ url_for('apoio.celulares_inspecao') }}" class="btn btn-ghost btn-sm">✕ Limpar</a>
+    {% endif %}
+  </div>
+</form>
+
+{# ── Tabela ───────────────────────────────────────────────────────────────── #}
+<div class="table-card">
+  <div class="table-header">
+    <h3>Celulares de Inspeção</h3>
+    <span style="font-size:12px;color:var(--text3)">{{ total }} registro(s)</span>
+  </div>
+
+  {% if celulares %}
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>ID Ativo</th>
+        <th>ID Sistema</th>
+        <th>Fazenda</th>
+        <th>Setor</th>
+        <th>Responsável</th>
+        <th>Modelo</th>
+        <th>Número</th>
+        <th>Status</th>
+        <th>Gmail</th>
+        <th>🔒 Senha</th>
+        <th>Observações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in celulares %}
+      <tr>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);white-space:nowrap">
+          {{ c.id_ativo }}
+        </td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cyan)">
+          {{ c.id_sistema or '—' }}
+        </td>
+        <td style="color:var(--text2)">{{ c.fazenda or '—' }}</td>
+        <td style="color:var(--text2)">{{ c.setor or '—' }}</td>
+        <td style="color:var(--text);font-weight:500">{{ c.responsavel or '—' }}</td>
+        <td style="color:var(--text2)">{{ c.modelo or '—' }}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:12px">{{ c.numero or '—' }}</td>
+        <td>
+          {% set s = (c.status or 'desconhecido') | lower | replace(' ','_') %}
+          <span class="badge badge-{{ 'ativo' if c.status == 'Ativo' else 'inativo' }}">
+            {{ c.status or '—' }}
+          </span>
+        </td>
+        <td style="font-size:12px;color:var(--text2)">{{ c.gmail or '—' }}</td>
+        <td>
+          {% if c.senha %}
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="pw-{{ loop.index }}" style="font-family:'IBM Plex Mono',monospace;font-size:12px;
+                  background:var(--bg3);padding:3px 8px;border-radius:4px;border:1px solid var(--border);
+                  letter-spacing:3px;color:var(--text3)" data-pw="{{ c.senha }}">••••••</span>
+            <button onclick="toggleSenha('pw-{{ loop.index }}')"
+                    style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;
+                           padding:2px 4px;border-radius:4px;transition:color .2s"
+                    title="Mostrar/ocultar senha">👁</button>
+          </div>
+          {% else %}
+          <span style="color:var(--text3);font-size:12px">—</span>
+          {% endif %}
+        </td>
+        <td style="font-size:12px;color:var(--text3);max-width:180px;white-space:normal">
+          {{ c.observacoes or '—' }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  {% else %}
+  <div style="padding:48px;text-align:center;color:var(--text3)">
+    <div style="font-size:40px;margin-bottom:12px">📱</div>
+    <div style="font-size:14px">Nenhum celular de inspeção encontrado com os filtros aplicados.</div>
+    {% if filtro_fazenda or busca %}
+    <a href="{{ url_for('apoio.celulares_inspecao') }}" class="btn btn-ghost btn-sm" style="margin-top:12px">
+      Limpar filtros
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  function toggleSenha(id) {
+    const el = document.getElementById(id);
+    const pw = el.getAttribute('data-pw');
+    if (el.textContent.includes('•')) {
+      el.textContent = pw;
+      el.style.color = 'var(--text)';
+      el.style.letterSpacing = 'normal';
+    } else {
+      el.textContent = '••••••';
+      el.style.color = 'var(--text3)';
+      el.style.letterSpacing = '3px';
+    }
+  }
+</script>
+{% endblock %}
