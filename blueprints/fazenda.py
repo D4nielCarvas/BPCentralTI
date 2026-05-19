@@ -11,6 +11,7 @@ Segurança:
       pedidos são sempre filtrados por usuario_id OU localidade_id da sessão —
       nunca confiar em IDs recebidos sem validação adicional.
     - O campo localidade_id gravado no pedido vem SEMPRE da sessão, nunca do body.
+    - Role 'apoio': manutenções e pedidos filtrados por usuario_id (visão própria).
 Complexidade: O(n) listagem, O(1) CRUD por id primário.
 """
 
@@ -18,6 +19,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import psycopg2
 from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 
 from auth_utils import get_localidade_filter, get_usuario_id, viewer_required
@@ -185,15 +187,30 @@ def listar_manutencoes():
     """
     Lista manutenções vinculadas à localidade do viewer.
 
+    Regras de visibilidade:
+        - viewer: filtra por localidade_id da sessão.
+        - apoio:  filtra apenas por usuario_id (vê somente as suas).
+        - admin:  sem filtro (vê todas).
+
     Query params: status (filtro de status), q (busca textual).
     """
+    role = session.get("role", "")
     localidade_id = get_localidade_filter()
+    usuario_id = get_usuario_id()
     filtro_status = request.args.get("status", "").strip()
     busca = request.args.get("q", "").strip()
 
     params: list[Any] = []
     query = "SELECT * FROM manutencoes WHERE 1=1"
-    query += _build_localidade_clause(localidade_id, params)
+
+    if role == "apoio":
+        # Apoio vê apenas manutenções vinculadas ao próprio usuario_id.
+        # REQUER migration 009_manutencoes_usuario_id.sql aplicada no banco.
+        # Se a coluna ainda não existir, retorna lista vazia com aviso.
+        query += " AND usuario_id = %s"
+        params.append(usuario_id)
+    else:
+        query += _build_localidade_clause(localidade_id, params)
 
     if filtro_status:
         query += " AND status = %s"
@@ -205,9 +222,19 @@ def listar_manutencoes():
 
     query += " ORDER BY id DESC"
 
-    with acquire_conn() as conn:
-        with conn.cursor() as cur:
-            manutencoes = fetch_all(cur, query, tuple(params))
+    try:
+        with acquire_conn() as conn:
+            with conn.cursor() as cur:
+                manutencoes = fetch_all(cur, query, tuple(params))
+    except psycopg2.errors.UndefinedColumn:
+        # Coluna usuario_id ainda não existe — migration pendente.
+        # Fallback seguro: lista vazia para não expor dados de outras fazendas.
+        manutencoes = []
+        flash(
+            "A coluna 'usuario_id' não foi encontrada em 'manutencoes'. "
+            "Execute a migration 009_manutencoes_usuario_id.sql no banco.",
+            "warning",
+        )
 
     return render_template(
         "fazenda/manutencoes.html",
@@ -227,19 +254,22 @@ def listar_pedidos():
     """
     Lista pedidos criados pelo usuário logado.
 
-    Viewers veem apenas seus próprios pedidos.
-    Admins veem todos os pedidos de sua localidade (ou de todas, se admin global).
+    Regras de visibilidade:
+        - viewer: filtra por localidade_id (pedidos da fazenda).
+        - apoio:  filtra apenas por usuario_id (vê somente os seus).
+        - admin:  sem filtro (vê todos).
+
     Query params: status (filtro).
     """
+    role = session.get("role", "")
     usuario_id = get_usuario_id()
     localidade_id = get_localidade_filter()
     filtro_status = request.args.get("status", "").strip()
 
     params: list[Any] = []
 
-    # Viewer: filtra pelos pedidos da sua própria localidade (fazenda)
-    # Admin: filtra por localidade (ou tudo, se sem localidade_id)
-    if session.get("role") == "viewer":
+    if role == "viewer":
+        # Viewer: todos os pedidos da sua fazenda/localidade
         query = """
             SELECT pv.*, l.nome AS localidade_nome
             FROM pedidos_viewer pv
@@ -247,7 +277,17 @@ def listar_pedidos():
             WHERE pv.localidade_id = %s
         """
         params.append(localidade_id)
+    elif role == "apoio":
+        # Apoio: somente pedidos criados pelo próprio usuário
+        query = """
+            SELECT pv.*, l.nome AS localidade_nome
+            FROM pedidos_viewer pv
+            JOIN localidades l ON l.id = pv.localidade_id
+            WHERE pv.usuario_id = %s
+        """
+        params.append(usuario_id)
     else:
+        # Admin: visão global
         query = """
             SELECT pv.*, l.nome AS localidade_nome
             FROM pedidos_viewer pv
@@ -378,8 +418,8 @@ def detalhe_pedido(pedido_id: int):
             if not pedido:
                 abort(404)
 
-            # Anti-IDOR: viewer só acessa seus próprios pedidos
-            if role == "viewer" and pedido["usuario_id"] != usuario_id:
+            # Anti-IDOR: viewer e apoio só acessam seus próprios pedidos
+            if role in ("viewer", "apoio") and pedido["usuario_id"] != usuario_id:
                 abort(403)
 
             historico = fetch_all(

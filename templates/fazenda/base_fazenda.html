@@ -241,6 +241,15 @@
       <span class="icon">🎫</span> Suporte TI
     </a>
 
+    {% if session.role == 'apoio' %}
+    <div class="nav-label" style="margin-top:8px">Administração</div>
+    <a href="{{ url_for('apoio.celulares_inspecao') }}"
+       class="nav-item {% if request.endpoint == 'apoio.celulares_inspecao' %}active{% endif %}"
+       style="color:var(--cyan)">
+      <span class="icon">📱</span> Celulares de Inspeção
+    </a>
+    {% endif %}
+
     {% if session.role == 'admin' %}
     <div class="nav-label" style="margin-top:8px">Administração</div>
     <a href="{{ url_for('admin_pedidos.listar_pedidos_admin') }}"
