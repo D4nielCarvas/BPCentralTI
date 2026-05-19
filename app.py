@@ -272,9 +272,20 @@ def index():
 
 
 @app.route("/termos/<filename>")
-def serve_termo(filename: str) -> Response:
-    """Serve arquivos PDF de termos de responsabilidade."""
-    return send_from_directory(UPLOAD_FOLDER, filename)
+def serve_termo(filename: str) -> tuple[str, int] | Response:
+    """Serve arquivos PDF de termos de responsabilidade com tratamento de erro seguro."""
+    file_path = os.path.join(UPLOAD_FOLDER, filename)
+    if not os.path.exists(file_path):
+        return (
+            f"<h3>Arquivo não encontrado</h3>"
+            f"<p>O PDF do termo de responsabilidade ({filename}) não está disponível no servidor no momento.</p>"
+            f"<p>Isso pode ocorrer se o sistema foi reiniciado e o arquivo estava em armazenamento temporário.</p>",
+            404,
+        )
+    try:
+        return send_from_directory(UPLOAD_FOLDER, filename)
+    except Exception:
+        return "<h3>Erro ao acessar o arquivo PDF.</h3>", 404
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
