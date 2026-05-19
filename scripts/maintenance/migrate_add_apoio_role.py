@@ -1,11 +1,10 @@
-"""
-migrate_add_apoio_role.py
-Adiciona a role 'apoio' ao CHECK constraint da tabela usuarios no Supabase.
-
-Executar UMA VEZ com:
-    python migrate_add_apoio_role.py
-"""
+# [Linguagem: Python]
 import os
+import sys
+
+# Garante que os módulos da raiz do projeto sejam encontrados
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
 from dotenv import load_dotenv
 import psycopg2
 

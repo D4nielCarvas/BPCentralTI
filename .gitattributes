@@ -1,0 +1,34 @@
+# ==============================================================================
+# .gitattributes - Enforce consistent line endings across environments (Windows/Linux)
+# ==============================================================================
+
+# Set default behavior to automatically normalize line endings to LF on commit
+* text=auto eol=lf
+
+# Explicitly ensure all source code and documentation uses LF (Linux/Docker ready)
+*.py text eol=lf
+*.sql text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.ini text eol=lf
+*.example text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Treat binary files explicitly (never normalize line endings)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.ico binary
+*.zip binary
+*.tar.gz binary
+
+# Windows-specific files (e.g. PyInstaller spec) can use CRLF explicitly
+*.spec text eol=crlf
+*.bat text eol=crlf

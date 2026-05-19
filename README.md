@@ -87,24 +87,44 @@ O **Inventário TI v3** é uma aplicação web local (desktop-like) que centrali
 ```text
 inventario-ti-v3/
 │
-├── app.py                  # Backend Flask — toda a lógica de negócio e API REST
-├── id_generator.py         # Módulo de geração de IDs padronizados (TIPO-LOCAL-SETOR-ID)
-├── build_exe.py            # Script de empacotamento com PyInstaller
-├── check_db.py             # Utilitário de diagnóstico de conexão com banco
-├── debug_schema.py         # Utilitário para inspecionar schema do banco
-├── test.py                 # Testes unitários básicos
-├── test_inventario.py      # Suite completa de testes de integração
+├── app.py                  # Backend Flask — inicialização e rotas gerais do frontend
+├── db_layer.py             # Camada de banco de dados e pool de conexões PostgreSQL
+├── id_generator.py         # Geração de IDs padronizados (TIPO-LOCAL-SETOR-ID)
+├── auth_utils.py           # Segurança, criptografia e controle de acesso multi-tenant
+├── requirements.txt        # Dependências Python do projeto
+├── pytest.ini              # Configuração do framework Pytest
+├── .env.example            # Modelo de configuração de variáveis de ambiente
+├── .gitignore              # Arquivos e pastas ignorados pelo Git
+├── InventarioTI.spec       # Spec do PyInstaller para geração do executável (.exe)
 │
-├── supabase_migration.sql  # Script SQL para criação de todas as tabelas no Supabase
-├── requirements.txt        # Dependências Python
-├── .env.example            # Modelo de variáveis de ambiente
-├── .gitignore              # Arquivos ignorados pelo Git
-├── InventarioTI.spec       # Spec do PyInstaller para geração do .exe
-├── COLETAR_PC.bat          # Script Windows para coleta automática de dados de hardware
+├── blueprints/             # Módulos de controle separados por funcionalidade (Flask Blueprints)
+│   ├── auth.py             # Login, logout e controle de permissões
+│   ├── admin.py            # Dashboard e administração geral do sistema
+│   ├── celulares.py        # Gestão de smartphones corporativos e de ponto
+│   └── ...                 # Demais módulos segmentados (fazendas, chamados, pedidos)
 │
-└── templates/
-    └── index.html          # Interface web completa (frontend single-page)
+├── templates/              # Arquivos HTML da interface (Jinja2 Templates por módulo)
+│   ├── admin/              # Telas administrativas
+│   ├── fazenda/            # Telas operacionais das fazendas (estoque, pedidos, etc.)
+│   └── ...                 # Telas de suporte, apoio e autenticação
+│
+├── static/                 # Recursos estáticos do frontend (CSS, JS, uploads de imagens)
+│
+├── database/               # Armazenamento de termos PDF e dados locais do sistema
+│
+├── migrations/             # Histórico de alterações e scripts DDL do banco (PostgreSQL)
+│
+├── scripts/                # Scripts utilitários de automação e carga de dados
+│   ├── COLETAR_PC.bat      # Script Windows para inventário automático de hardware
+│   ├── build_exe.py        # Script para empacotamento em arquivo executável (.exe)
+│   ├── seed_localidades.py # Popular base de dados com localidades oficiais e primeiro admin
+│   └── maintenance/        # Scripts de diagnóstico e manutenção periódica do banco
+│
+└── tests/                  # Suíte de testes automatizados e interativos
+    ├── test_inventario.py  # Testes de integração de lógica de negócio e regras
+    └── scratch/            # Rascunhos de testes interativos e diagnósticos pontuais
 ```
+
 
 ---
 

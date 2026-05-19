@@ -55,3 +55,6 @@ coverage.xml
 
 # Uploads (termos de responsabilidade — dados sensíveis)
 database/termos/*.pdf
+
+# Uploads de chamados e anexos estáticos (dados dinâmicos de usuários)
+static/uploads/

@@ -1,6 +1,14 @@
+# [Linguagem: Python]
+import os
+import sys
 import subprocess
 import time
 import requests
+
+# Garante que os módulos da raiz do projeto sejam encontrados
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, root_dir)
+os.chdir(root_dir)
 
 # Start the app
 print("Iniciando app...")

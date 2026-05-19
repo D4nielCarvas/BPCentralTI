@@ -1,3 +1,10 @@
+# [Linguagem: Python]
+import os
+import sys
+
+# Garante que os módulos da raiz do projeto sejam encontrados
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
 from app import app
 from flask import session
 
@@ -24,6 +31,3 @@ with app.test_client() as client:
         'localidade_id': '1'
     })
     print('Chamado POST Status:', response_chamado.status_code)
-
-
-

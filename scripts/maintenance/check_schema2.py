@@ -1,4 +1,10 @@
-import sys; sys.path.insert(0, '.')
+# [Linguagem: Python]
+import os
+import sys
+
+# Garante que os módulos da raiz do projeto sejam encontrados
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
 from db_layer import acquire_conn
 from app import app
 
