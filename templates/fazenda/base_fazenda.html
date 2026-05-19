@@ -220,6 +220,7 @@
 
   <nav>
     <div class="nav-label">Portal Fazenda</div>
+    {% if session.role != 'apoio' %}
     <a href="{{ url_for('fazenda.listar_itens') }}"
        class="nav-item {% if request.endpoint == 'fazenda.listar_itens' %}active{% endif %}">
       <span class="icon">💻</span> Equipamentos
@@ -228,6 +229,7 @@
        class="nav-item {% if request.endpoint == 'fazenda.listar_estoque' %}active{% endif %}">
       <span class="icon">📦</span> Estoque
     </a>
+    {% endif %}
     <a href="{{ url_for('fazenda.listar_manutencoes') }}"
        class="nav-item {% if request.endpoint == 'fazenda.listar_manutencoes' %}active{% endif %}">
       <span class="icon">🔧</span> Manutenções

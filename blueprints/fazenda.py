@@ -79,8 +79,13 @@ def listar_itens():
     Lista todos os equipamentos ativos vinculados à localidade do viewer.
 
     Para admins (localidade_id = None), retorna equipamentos de todas as localidades.
+    Role 'apoio': acesso negado — redirecionado para Celulares de Inspeção.
     Query params: q (busca textual), tipo (filtrar por tipo de equipamento).
     """
+    if session.get("role") == "apoio":
+        flash("Acesso restrito. Use o painel de Celulares de Inspeção.", "info")
+        return redirect(url_for("apoio.celulares_inspecao"))
+
     localidade_id = get_localidade_filter()
     busca = request.args.get("q", "").strip()
     tipo_filtro = request.args.get("tipo", "").strip()
@@ -143,8 +148,13 @@ def listar_estoque():
     Lista itens de estoque vinculados à localidade do viewer.
 
     Exibe apenas itens com quantidade > 0 por padrão.
+    Role 'apoio': acesso negado — redirecionado para Celulares de Inspeção.
     Query params: q (busca textual), mostrar_zerado (bool).
     """
+    if session.get("role") == "apoio":
+        flash("Acesso restrito. Use o painel de Celulares de Inspeção.", "info")
+        return redirect(url_for("apoio.celulares_inspecao"))
+
     localidade_id = get_localidade_filter()
     busca = request.args.get("q", "").strip()
     mostrar_zerado = request.args.get("mostrar_zerado", "0") == "1"
