@@ -3,7 +3,7 @@
 {% block page_title %}📱 Celulares de Inspeção{% endblock %}
 
 {% block topbar_actions %}
-<span style="font-size:12px;color:var(--text3)">Visualização somente leitura · {{ total }} registro(s)</span>
+<span style="font-size:12px;color:var(--text3)">Administrador · {{ total }} registro(s)</span>
 {% endblock %}
 
 {% block content %}
@@ -30,7 +30,7 @@
 
   <div style="flex:2;min-width:220px">
     <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:5px">
-      Busca (ID, responsável, modelo…)
+      Busca (ID, responsável, modelo, usuário MIP…)
     </label>
     <input type="text" name="q" value="{{ busca }}" placeholder="Digite para filtrar…"
            style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);
@@ -63,11 +63,13 @@
         <th>Setor</th>
         <th>Responsável</th>
         <th>Modelo</th>
-        <th>Número</th>
         <th>Status</th>
         <th>Gmail</th>
-        <th>🔒 Senha</th>
+        <th>🔒 Senha Gmail</th>
+        <th style="color:var(--cyan)">Usuário MIP</th>
+        <th style="color:var(--cyan)">🔒 Senha MIP</th>
         <th>Observações</th>
+        <th style="text-align:center">Ações</th>
       </tr>
     </thead>
     <tbody>
@@ -83,31 +85,68 @@
         <td style="color:var(--text2)">{{ c.setor or '—' }}</td>
         <td style="color:var(--text);font-weight:500">{{ c.responsavel or '—' }}</td>
         <td style="color:var(--text2)">{{ c.modelo or '—' }}</td>
-        <td style="font-family:'IBM Plex Mono',monospace;font-size:12px">{{ c.numero or '—' }}</td>
         <td>
-          {% set s = (c.status or 'desconhecido') | lower | replace(' ','_') %}
           <span class="badge badge-{{ 'ativo' if c.status == 'Ativo' else 'inativo' }}">
             {{ c.status or '—' }}
           </span>
         </td>
+
+        {# Gmail #}
         <td style="font-size:12px;color:var(--text2)">{{ c.gmail or '—' }}</td>
+
+        {# Senha Gmail #}
         <td>
           {% if c.senha %}
           <div style="display:flex;align-items:center;gap:6px">
-            <span id="pw-{{ loop.index }}" style="font-family:'IBM Plex Mono',monospace;font-size:12px;
-                  background:var(--bg3);padding:3px 8px;border-radius:4px;border:1px solid var(--border);
-                  letter-spacing:3px;color:var(--text3)" data-pw="{{ c.senha }}">••••••</span>
+            <span id="pw-{{ loop.index }}"
+                  style="font-family:'IBM Plex Mono',monospace;font-size:12px;
+                         background:var(--bg3);padding:3px 8px;border-radius:4px;
+                         border:1px solid var(--border);letter-spacing:3px;color:var(--text3)"
+                  data-pw="{{ c.senha }}">••••••</span>
             <button onclick="toggleSenha('pw-{{ loop.index }}')"
-                    style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;
-                           padding:2px 4px;border-radius:4px;transition:color .2s"
+                    style="background:none;border:none;cursor:pointer;color:var(--text3);
+                           font-size:14px;padding:2px 4px;border-radius:4px;transition:color .2s"
                     title="Mostrar/ocultar senha">👁</button>
           </div>
           {% else %}
           <span style="color:var(--text3);font-size:12px">—</span>
           {% endif %}
         </td>
-        <td style="font-size:12px;color:var(--text3);max-width:180px;white-space:normal">
+
+        {# Usuário MIP #}
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cyan)">
+          {{ c.usuario_mip or '—' }}
+        </td>
+
+        {# Senha MIP #}
+        <td>
+          {% if c.senha_mip %}
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="pw-mip-{{ loop.index }}"
+                  style="font-family:'IBM Plex Mono',monospace;font-size:12px;
+                         background:var(--bg3);padding:3px 8px;border-radius:4px;
+                         border:1px solid rgba(6,182,212,.3);letter-spacing:3px;color:var(--text3)"
+                  data-pw="{{ c.senha_mip }}">••••••</span>
+            <button onclick="toggleSenha('pw-mip-{{ loop.index }}')"
+                    style="background:none;border:none;cursor:pointer;color:var(--cyan);
+                           font-size:14px;padding:2px 4px;border-radius:4px;transition:color .2s"
+                    title="Mostrar/ocultar senha MIP">👁</button>
+          </div>
+          {% else %}
+          <span style="color:var(--text3);font-size:12px">—</span>
+          {% endif %}
+        </td>
+
+        {# Observações #}
+        <td style="font-size:12px;color:var(--text3);max-width:160px;white-space:normal">
           {{ c.observacoes or '—' }}
+        </td>
+
+        {# Ações #}
+        <td style="text-align:center;white-space:nowrap">
+          <a href="{{ url_for('apoio.editar_celular_inspecao', id_ativo=c.id_ativo) }}"
+             class="btn btn-ghost btn-xs"
+             title="Editar cadastro">✏️ Editar</a>
         </td>
       </tr>
       {% endfor %}

@@ -250,7 +250,7 @@ def listar_celulares_inspecao() -> Response:
     """Lista celulares de inspeção com filtros e paginação."""
     return _list_paginado(
         "celulares_inspecao",
-        ["id_ativo", "responsavel", "modelo", "numero", "id_sistema"],
+        ["id_ativo", "responsavel", "modelo", "usuario_mip", "id_sistema"],
     )
 
 
@@ -266,18 +266,20 @@ def criar_celular_inspecao() -> tuple[Response, int] | Response:
             try:
                 cur.execute(
                     """INSERT INTO celulares_inspecao
-                       (id_ativo,id_sistema,fazenda,setor,responsavel,cargo,tipo,modelo,numero,
+                       (id_ativo,id_sistema,fazenda,setor,responsavel,cargo,tipo,modelo,
                         status,uso_celular,carregador,termo_assinado,data_entrega,data_devolucao,
-                        gmail,senha,usuario_anterior,imei_1,imei_2,num_serie,armazenamento,observacoes)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                        gmail,senha,usuario_anterior,imei_1,imei_2,num_serie,armazenamento,observacoes,
+                        usuario_mip,senha_mip)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                     (
                         d["id_ativo"], d.get("id_sistema"), d.get("fazenda"), d.get("setor"),
                         d.get("responsavel"), d.get("cargo"), d.get("tipo"), d.get("modelo"),
-                        d.get("numero"), d.get("status", "Ativo"), d.get("uso_celular"),
-                        d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
-                        d.get("data_devolucao"), d.get("gmail"), d.get("senha"),
-                        d.get("usuario_anterior"), d.get("imei_1"), d.get("imei_2"),
-                        d.get("num_serie"), d.get("armazenamento"), d.get("observacoes"),
+                        d.get("status", "Ativo"), d.get("uso_celular"), d.get("carregador"),
+                        d.get("termo_assinado"), d.get("data_entrega"), d.get("data_devolucao"),
+                        d.get("gmail"), d.get("senha"), d.get("usuario_anterior"),
+                        d.get("imei_1"), d.get("imei_2"), d.get("num_serie"),
+                        d.get("armazenamento"), d.get("observacoes"),
+                        d.get("usuario_mip"), d.get("senha_mip"),
                     ),
                 )
                 _log(cur, d["id_ativo"], "Celular Inspeção", "Cadastro")
@@ -309,18 +311,20 @@ def atualizar_celular_inspecao(id_ativo: str) -> tuple[Response, int] | Response
             cur.execute(
                 """UPDATE celulares_inspecao SET
                    id_sistema=%s,fazenda=%s,setor=%s,responsavel=%s,cargo=%s,tipo=%s,modelo=%s,
-                   numero=%s,status=%s,uso_celular=%s,carregador=%s,termo_assinado=%s,
+                   status=%s,uso_celular=%s,carregador=%s,termo_assinado=%s,
                    data_entrega=%s,data_devolucao=%s,gmail=%s,senha=%s,usuario_anterior=%s,
-                   imei_1=%s,imei_2=%s,num_serie=%s,armazenamento=%s,observacoes=%s,updated_at=NOW()
+                   imei_1=%s,imei_2=%s,num_serie=%s,armazenamento=%s,observacoes=%s,
+                   usuario_mip=%s,senha_mip=%s,updated_at=NOW()
                    WHERE id_ativo=%s""",
                 (
                     d.get("id_sistema"), d.get("fazenda"), d.get("setor"), d.get("responsavel"),
-                    d.get("cargo"), d.get("tipo"), d.get("modelo"), d.get("numero"),
+                    d.get("cargo"), d.get("tipo"), d.get("modelo"),
                     d.get("status"), d.get("uso_celular"), d.get("carregador"),
                     d.get("termo_assinado"), d.get("data_entrega"), d.get("data_devolucao"),
                     d.get("gmail"), d.get("senha"), d.get("usuario_anterior"),
                     d.get("imei_1"), d.get("imei_2"), d.get("num_serie"),
-                    d.get("armazenamento"), d.get("observacoes"), id_ativo,
+                    d.get("armazenamento"), d.get("observacoes"),
+                    d.get("usuario_mip"), d.get("senha_mip"), id_ativo,
                 ),
             )
             _log(cur, id_ativo, "Celular Inspeção", "Edição")

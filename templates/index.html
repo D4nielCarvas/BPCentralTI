@@ -1181,7 +1181,7 @@
                   <th>Fazenda</th>
                   <th>Responsável</th>
                   <th>Modelo</th>
-                  <th>Número</th>
+                  <th style="color:var(--cyan)">Usuário MIP</th>
                   <th>Status</th>
                   <th>Termo</th>
                   <th>Ações</th>
@@ -1894,7 +1894,8 @@
     <td><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--purple)">${r.id_sistema || '—'}</span></td>
     <td>${r.fazenda || '—'}</td>
     <td class="td-bold">${r.responsavel || '—'}</td>
-    <td>${r.modelo || '—'}</td><td>${r.numero || '—'}</td>
+    <td>${r.modelo || '—'}</td>
+    <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--cyan)">${r.usuario_mip || '—'}</td>
     <td>${statusBadge(r.status)}</td><td>${pdfLink(r.termo_pdf)}</td>
     <td><div class="tbl-actions">
       <button class="btn btn-ghost btn-xs" onclick="editItem('celulares_inspecao','${r.id_ativo}')">✏️</button>
@@ -2330,7 +2331,6 @@
       ${setorSelect(d)}
       ${fld('Tipo', `<input name="tipo" value="${d?.tipo || ''}" placeholder="Smartphone" oninput="triggerIdSuggestion()">`)}
       ${fld('Modelo', `<input name="modelo" value="${d?.modelo || ''}" placeholder="Samsung A14">`)}
-      ${fld('Número', `<input name="numero" value="${d?.numero || ''}" oninput="formatPhone(this)" placeholder="(16) 99999-1234">`)}
       ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel || ''}">`)}
       ${fld('Cargo', `<input name="cargo" value="${d?.cargo || ''}">`)}
       ${fld('IMEI 1', `<input name="imei_1" value="${d?.imei_1 || ''}">`)}
@@ -2339,7 +2339,9 @@
       ${fld('Armazenamento', `<input name="armazenamento" value="${d?.armazenamento || ''}" placeholder="128GB">`)}
       ${fld('Carregador', st('carregador', d, ['Sim', 'Não']))}
       ${fld('Gmail', `<input name="gmail" value="${d?.gmail || ''}">`)}
-      ${pwdField('senha', d, 'Senha', 'cel-inp-senha')}
+      ${pwdField('senha', d, 'Senha Gmail', 'cel-inp-senha-g')}
+      ${fld('Usuário MIP', `<input name="usuario_mip" value="${d?.usuario_mip || ''}">`)}
+      ${pwdField('senha_mip', d, 'Senha MIP', 'cel-inp-senha-m')}
       ${fld('Termo Assinado', st('termo_assinado', d, ['Sim', 'Não']))}
       ${fld('Data Entrega', `<input type="date" name="data_entrega" value="${d?.data_entrega || ''}">`)}
       ${fld('Usuário Anterior', `<input name="usuario_anterior" value="${d?.usuario_anterior || ''}">`)}

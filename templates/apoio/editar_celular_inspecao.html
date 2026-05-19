@@ -1,0 +1,148 @@
+{% extends "fazenda/base_fazenda.html" %}
+{% block title %}Editar Celular de Inspeção — Apoio — Inventário TI{% endblock %}
+{% block page_title %}📱 Editar Celular: {{ celular.id_ativo }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('apoio.celulares_inspecao') }}" class="btn btn-ghost btn-sm">← Voltar à lista</a>
+{% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width:860px;margin:0 auto">
+  <div class="form-card-header">
+    <h3>Editar Cadastro — <span style="color:var(--accent);font-family:'IBM Plex Mono',monospace">{{ celular.id_ativo }}</span></h3>
+  </div>
+  <div class="form-card-body">
+
+    <form method="POST" action="{{ url_for('apoio.editar_celular_inspecao', id_ativo=celular.id_ativo) }}">
+
+      {# ── Identificação ──────────────────────────────────────── #}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
+        <div class="form-group">
+          <label>ID Ativo</label>
+          <input type="text" value="{{ celular.id_ativo }}" disabled
+                 style="opacity:.5;cursor:not-allowed">
+        </div>
+
+        <div class="form-group">
+          <label>ID Sistema</label>
+          <input type="text" name="id_sistema" value="{{ celular.id_sistema or '' }}"
+                 placeholder="ID no sistema de inspeção">
+        </div>
+
+        <div class="form-group">
+          <label>Fazenda</label>
+          <input type="text" name="fazenda" value="{{ celular.fazenda or '' }}"
+                 placeholder="Nome da fazenda">
+        </div>
+
+        <div class="form-group">
+          <label>Setor</label>
+          <input type="text" name="setor" value="{{ celular.setor or '' }}"
+                 placeholder="Setor ou área">
+        </div>
+
+        <div class="form-group">
+          <label>Responsável</label>
+          <input type="text" name="responsavel" value="{{ celular.responsavel or '' }}"
+                 placeholder="Nome do responsável">
+        </div>
+
+        <div class="form-group">
+          <label>Cargo</label>
+          <input type="text" name="cargo" value="{{ celular.cargo or '' }}"
+                 placeholder="Cargo do responsável">
+        </div>
+
+        <div class="form-group">
+          <label>Modelo</label>
+          <input type="text" name="modelo" value="{{ celular.modelo or '' }}"
+                 placeholder="Ex: Samsung A32">
+        </div>
+
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            {% for s in ['Ativo','Inativo','Manutenção','Descartado'] %}
+            <option value="{{ s }}" {% if celular.status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+      </div>
+
+      {# ── Credenciais Google ─────────────────────────────────── #}
+      <div style="margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
+          🔑 Credenciais Google
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="form-group">
+            <label>Gmail</label>
+            <input type="text" name="gmail" value="{{ celular.gmail or '' }}"
+                   placeholder="conta@gmail.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Gmail</label>
+            <input type="text" name="senha" value="{{ celular.senha or '' }}"
+                   placeholder="Senha do Gmail">
+          </div>
+        </div>
+      </div>
+
+      {# ── Credenciais MIP ────────────────────────────────────── #}
+      <div style="margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:700;color:var(--cyan);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
+          🖥️ Credenciais MIP
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="form-group">
+            <label>Usuário MIP</label>
+            <input type="text" name="usuario_mip" value="{{ celular.usuario_mip or '' }}"
+                   placeholder="Usuário do sistema MIP">
+          </div>
+          <div class="form-group">
+            <label>Senha MIP</label>
+            <input type="text" name="senha_mip" value="{{ celular.senha_mip or '' }}"
+                   placeholder="Senha do sistema MIP">
+          </div>
+        </div>
+      </div>
+
+      {# ── Datas ──────────────────────────────────────────────── #}
+      <div style="margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
+          📅 Datas
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="form-group">
+            <label>Data de Entrega</label>
+            <input type="date" name="data_entrega"
+                   value="{{ celular.data_entrega.strftime('%Y-%m-%d') if celular.data_entrega and celular.data_entrega is not string else (celular.data_entrega or '') }}">
+          </div>
+          <div class="form-group">
+            <label>Data de Devolução</label>
+            <input type="date" name="data_devolucao"
+                   value="{{ celular.data_devolucao.strftime('%Y-%m-%d') if celular.data_devolucao and celular.data_devolucao is not string else (celular.data_devolucao or '') }}">
+          </div>
+        </div>
+      </div>
+
+      {# ── Observações ────────────────────────────────────────── #}
+      <div style="padding-top:14px;border-top:1px solid var(--border);margin-top:4px">
+        <div class="form-group">
+          <label>Observações</label>
+          <textarea name="observacoes" rows="3"
+                    placeholder="Observações adicionais…">{{ celular.observacoes or '' }}</textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('apoio.celulares_inspecao') }}" class="btn btn-ghost">Cancelar</a>
+        <button type="submit" class="btn btn-primary">💾 Salvar Alterações</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}
