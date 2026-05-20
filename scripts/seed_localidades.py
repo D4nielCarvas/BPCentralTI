@@ -138,6 +138,6 @@ def seed() -> None:
 
 if __name__ == "__main__":
     print("\n" + "=" * 50)
-    print("  Seed Inicial - Inventario TI v3")
+    print("  Seed Inicial - BP Central TI")
     print("=" * 50)
     seed()

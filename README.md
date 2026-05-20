@@ -1,4 +1,4 @@
-# 🖥️ Inventário TI — v3.0
+# 🖥️ BP Central TI — v3.0
 
 > Sistema de gerenciamento e inventário de ativos de TI para empresas agrícolas, desenvolvido com **Flask + Supabase (PostgreSQL)** e interface web integrada.
 
@@ -26,7 +26,7 @@
 
 ## 🎯 Visão Geral
 
-O **Inventário TI v3** é uma aplicação web local (desktop-like) que centraliza o controle de todos os equipamentos de TI distribuídos entre fazendas e setores. O sistema roda como um servidor Flask local, abrindo automaticamente o navegador, e persiste os dados no **Supabase (PostgreSQL)** na nuvem.
+O **BP Central TI v3** é uma aplicação web local (desktop-like) que centraliza o controle de todos os equipamentos de TI distribuídos entre fazendas e setores. O sistema roda como um servidor Flask local, abrindo automaticamente o navegador, e persiste os dados no **Supabase (PostgreSQL)** na nuvem.
 
 ### Funcionalidades principais
 
@@ -362,4 +362,4 @@ python -m pytest test_inventario.py -v
 
 ---
 
-*Documentação atualizada em Abril/2026 — Inventário TI v3.0*
+*Documentação atualizada em Abril/2026 — BP Central TI v3.0*

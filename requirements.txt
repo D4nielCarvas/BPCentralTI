@@ -1,5 +1,5 @@
 # ============================================================
-#  requirements.txt — Sistema de Inventário TI v3.0
+#  requirements.txt — Sistema de BP Central TI v3.0
 #  Instalar: pip install -r requirements.txt
 # ============================================================
 

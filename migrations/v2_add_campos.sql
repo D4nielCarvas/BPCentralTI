@@ -1,5 +1,5 @@
 -- ============================================================
--- Inventário TI v3 — Migration v2
+-- BP Central TI v3 — Migration v2
 -- Execute este script no Supabase SQL Editor
 -- ============================================================
 

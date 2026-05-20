@@ -1,7 +1,7 @@
 -- =================================================================================
 -- MIGRATION V4: 9 Melhorias (Abril 2026)
 -- Data: 2026-04-15
--- Alvo: Banco principal do Inventário TI (Supabase)
+-- Alvo: Banco principal do BP Central TI (Supabase)
 -- Executar no SQL Editor do Supabase antes de reiniciar o sistema
 -- =================================================================================
 

@@ -4,7 +4,7 @@ setlocal
 chcp 65001 > nul 2>&1
 echo.
 echo  ============================================================
-echo   COLETA AUTOMATICA DE INVENTARIO TI
+echo   COLETA AUTOMATICA DE BP Central TI
 echo  ============================================================
 echo.
 echo  Coletando dados do sistema...
@@ -105,7 +105,7 @@ try {
     Write-Host "  Local: $OutFile"
     Write-Host " ============================================================"
     Write-Host ""
-    Write-Host "  Importe no Sistema de Inventario TI:"
+    Write-Host "  Importe no Sistema de BP Central TI:"
     Write-Host "  Aba 'Notebooks / PCs' -> botao 'Importar Coleta'"
     Write-Host ""
 } catch {

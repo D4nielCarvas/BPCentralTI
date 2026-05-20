@@ -1,5 +1,5 @@
 """
-test_inventario.py — Testes unitários do Sistema de Inventário TI v3.0
+test_inventario.py — Testes unitários do Sistema de BP Central TI v3.0
 
 Execução:
     python -m pytest test_inventario.py -v
@@ -230,7 +230,7 @@ class TestParseColeta(unittest.TestCase):
     def test_parse_arquivo_valido(self) -> None:
         """Arquivo INI bem formado deve ser parseado corretamente."""
         conteudo = (
-            "# Inventario TI\n"
+            "# BP Central TI\n"
             "[hardware]\n"
             "hostname=DESKTOP-TI01\n"
             "marca=Dell\n"

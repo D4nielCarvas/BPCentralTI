@@ -1,7 +1,7 @@
 -- =================================================================================
 -- MIGRATION V3: Adições para Refinamentos (Abril 2026)
 -- Data: 2026-04-14
--- Alvo: Banco principal do Inventário TI
+-- Alvo: Banco principal do BP Central TI
 -- Executar no SQL Editor do Supabase antes de testar as novas funcionalidades
 -- =================================================================================
 

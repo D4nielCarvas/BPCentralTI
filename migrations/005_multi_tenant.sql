@@ -1,7 +1,7 @@
 -- =================================================================================
 -- MIGRATION 005: Sistema Multi-Tenant por Localidade
 -- Data: 2026-05-12
--- Alvo: Banco principal do Inventário TI (Supabase)
+-- Alvo: Banco principal do BP Central TI (Supabase)
 --
 -- CONTEXTO:
 --   - Não existe tabela `usuarios` no schema atual — criada aqui do zero.

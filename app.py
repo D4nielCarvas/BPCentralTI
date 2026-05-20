@@ -1,7 +1,7 @@
 """
-Inventário TI — Backend Flask v3.0
+BP Central TI — Backend Flask v3.0
 Banco: Supabase (PostgreSQL) via psycopg2-binary
-Autor: Sistema Inventário TI
+Autor: Sistema BP Central TI
 """
 
 from __future__ import annotations
@@ -2259,7 +2259,7 @@ def poll_chamado(chamado_id: int):
 
 if __name__ == "__main__":
     print("\n" + "=" * 55)
-    print("  SISTEMA DE INVENTARIO TI  v3.0.1-HOTFIX")
+    print("  SISTEMA DE BP Central TI.0.1-HOTFIX")
     print("  Banco: Supabase (PostgreSQL)")
     print("  Acesse: http://localhost:5000")
     print("=" * 55 + "\n")

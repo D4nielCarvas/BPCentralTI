@@ -1,7 +1,7 @@
 -- =================================================================================
 -- MIGRATION 007: Sistema de Etiquetas (Tags) para Pedidos
 -- Data: 2026-05-14
--- Alvo: Banco principal do Inventário TI (Supabase)
+-- Alvo: Banco principal do BP Central TI (Supabase)
 -- Executar no SQL Editor do Supabase antes de reiniciar o sistema
 -- =================================================================================
 

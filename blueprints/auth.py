@@ -76,7 +76,7 @@ def enviar_email_recuperacao(email_destino: str, token: str, base_url: str = "")
     <html><body style="font-family:Arial,sans-serif;background:#0d0f14;color:#e2e8f0;padding:30px">
       <div style="max-width:480px;margin:auto;background:#13161e;border-radius:12px;padding:30px;border:1px solid #252b3b">
         <h2 style="color:#3b82f6;margin-top:0">Recuperacao de Senha</h2>
-        <p>Recebemos uma solicitacao de recuperacao de senha para sua conta no <strong>Inventario TI</strong>.</p>
+        <p>Recebemos uma solicitacao de recuperacao de senha para sua conta no <strong>BP Central TI</strong>.</p>
         <p>Clique no botao abaixo para redefinir sua senha. O link expira em <strong>1 hora</strong>.</p>
         <div style="text-align:center;margin:24px 0">
           <a href="{link}" style="background:#3b82f6;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600">
@@ -91,10 +91,10 @@ def enviar_email_recuperacao(email_destino: str, token: str, base_url: str = "")
     """
 
     # Corpo texto puro (fallback)
-    texto = f"Recuperacao de Senha - Inventario TI\n\nLink: {link}\n\nExpira em 1 hora."
+    texto = f"Recuperacao de Senha - BP Central TI\n\nLink: {link}\n\nExpira em 1 hora."
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = "Recuperacao de Senha — Inventario TI"
+    msg["Subject"] = "Recuperacao de Senha — BP Central TI"
     msg["From"]    = smtp_user
     msg["To"]      = email_destino
     msg.attach(MIMEText(texto, "plain", "utf-8"))

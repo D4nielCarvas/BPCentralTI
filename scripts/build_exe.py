@@ -80,7 +80,7 @@ def main() -> None:
     ]
 
     print("=" * 60)
-    print(f"  BUILD: Inventário TI v3.0  (cwd: {root})")
+    print(f"  BUILD: BP Central TI v3.0  (cwd: {root})")
     print("=" * 60)
     print(f"\nComando:\n  {' '.join(cmd)}\n")
 
