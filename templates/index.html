@@ -1700,6 +1700,24 @@
       'Santa Luzia': 'SLZ', 'Santa Adelina': 'SAD', 'CD': 'CD'
     };
 
+    // ─── INIT ──────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      // Auto-open edit modal if query param is present
+      const urlParams = new URLSearchParams(window.location.search);
+      const editModal = urlParams.get('edit_modal');
+      const editId = urlParams.get('id');
+      
+      showPage('dashboard');
+      
+      if (editModal && editId) {
+        setTimeout(() => {
+          const navItem = document.querySelector(`.nav-item[data-page="${editModal}"]`);
+          if (navItem) navItem.click();
+          editItem(editModal, editId);
+        }, 300);
+      }
+    });
+
     const SIGLAS_SETOR_JS = {
       'FT': 'Fito', 'ALP': 'Almoxarifado Peças', 'ALI': 'Almoxarifado Insumos',
       'COO': 'Coordenador', 'ADM': 'Administrativo', 'APO': 'Apoio', 'COL': 'Colheita',
@@ -2014,6 +2032,7 @@
     <td class="td-bold">${r.responsavel || '—'}</td>
     <td>${r.modelo || '—'}</td>
     <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--cyan)">${r.usuario_mip || '—'}</td>
+    <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">${r.senha_mip || '—'}</td>
     <td>${statusBadge(r.status)}</td><td>${pdfLink(r.termo_pdf)}</td>
     <td><div class="tbl-actions">
       <button class="btn btn-ghost btn-xs" onclick="editItem('celulares_inspecao','${r.id_ativo}')">✏️</button>

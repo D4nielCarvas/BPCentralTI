@@ -169,6 +169,12 @@
           {% if tipo != 'Estabilizador' %}<th>Responsável</th>{% endif %}
           {% if tipo == 'Celular Ponto' %}
             <th>Função</th>
+          {% elif tipo == 'Celular Inspeção' %}
+            <th>ID Sis.</th>
+            <th>MIP</th>
+            <th>Senha</th>
+          {% elif tipo == 'Celular Turma' %}
+            <th>Nº Turma</th>
           {% elif tipo != 'Estabilizador' %}
             <th>Setor</th>
           {% endif %}
@@ -194,6 +200,12 @@
 
           {% if tipo == 'Celular Ponto' %}
             <td>{{ item.setor or '—' }}</td>
+          {% elif tipo == 'Celular Inspeção' %}
+            <td style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--purple)">{{ item.id_sistema or '—' }}</td>
+            <td style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--cyan)">{{ item.usuario_mip or '—' }}</td>
+            <td style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text3)">{{ item.senha_mip or '—' }}</td>
+          {% elif tipo == 'Celular Turma' %}
+            <td>{{ item.num_turma or '—' }}</td>
           {% elif tipo != 'Estabilizador' %}
             <td style="color:var(--text3)">{{ item.setor or '—' }}</td>
           {% endif %}
@@ -227,6 +239,12 @@
                   class="btn btn-ghost btn-xs"
                   onclick="uploadPDF('{{ tipo_api }}', '{{ item.id_ativo }}')"
                   title="Anexar Termo">📎</button>
+              {% endif %}
+              {% if has_permission('editar_equipamentos') %}
+                <button
+                  class="btn btn-ghost btn-xs"
+                  onclick="window.location.href='/?edit_modal={{ tipo_api }}&id={{ item.id_ativo }}'"
+                  title="Editar">✏️</button>
               {% endif %}
             </div>
           </td>
