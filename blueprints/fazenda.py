@@ -22,7 +22,7 @@ from typing import Any
 import psycopg2
 from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 
-from auth_utils import get_localidade_filter, get_usuario_id, viewer_required
+from auth_utils import get_localidade_filter, get_usuario_id, has_permission, viewer_required
 from db_layer import acquire_conn, fetch_all, fetch_one
 
 fazenda_bp = Blueprint("fazenda", __name__, url_prefix="/fazenda")
@@ -41,6 +41,37 @@ _TABELAS_EQUIPAMENTOS: list[tuple[str, str]] = [
     ("estabilizadores",    "Estabilizador"),
     ("starlink",           "Starlink"),
 ]
+
+# Ícones por tipo de equipamento
+_TIPO_ICONES: dict[str, str] = {
+    "Celular":          "📱",
+    "Celular Ponto":    "🕐",
+    "Celular Inspeção": "🔍",
+    "Celular Turma":    "🎓",
+    "Computador":       "💻",
+    "Impressora":       "🖨️",
+    "Estabilizador":    "🔌",
+    "Starlink":         "🛰️",
+}
+
+# Permissão necessária por tabela (apenas as que têm restrição específica)
+_PERM_POR_TABELA: dict[str, str] = {
+    "celulares_ponto":    "ver_celulares_ponto",
+    "celulares_turma":    "ver_celulares_turma",
+    "celulares_inspecao": "ver_celulares_inspecao",
+}
+
+# Campos especiais por tabela
+_TABELA_CONFIG: dict[str, dict] = {
+    "celulares":      {"setor": "setor",           "responsavel": "responsavel", "numero": "numero",      "termo": "termo_pdf"},
+    "celulares_ponto":{"setor": "funcao AS setor", "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf"},
+    "celulares_inspecao":{"setor": "setor",        "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf"},
+    "celulares_turma":{"setor": "setor",           "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf"},
+    "computadores":   {"setor": "setor",           "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "termo_pdf"},
+    "impressoras":    {"setor": "setor",           "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf"},
+    "estabilizadores":{"setor": "setor",           "responsavel": "NULL AS responsavel","numero": "NULL::text AS numero","termo": "NULL::text AS termo_pdf"},
+    "starlink":       {"setor": "setor",           "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf"},
+}
 
 
 # ── Helper interno ────────────────────────────────────────────────────────────
@@ -72,88 +103,64 @@ def _build_localidade_clause(
 # ITENS / EQUIPAMENTOS ATIVOS DA FAZENDA
 # ═══════════════════════════════════════════════════════════════════════════════
 
-from auth_utils import has_permission
-
 @fazenda_bp.route("/itens")
 @viewer_required
 def listar_itens():
     """
-    Lista todos os equipamentos ativos vinculados à localidade do viewer.
+    Lista equipamentos ativos da localidade do viewer, organizados por tipo/aba.
 
-    Para admins (localidade_id = None), retorna equipamentos de todas as localidades.
-    Role 'apoio': acesso negado — redirecionado para Celulares de Inspeção.
-    Query params: q (busca textual), tipo (filtrar por tipo de equipamento).
+    Retorna um dict {tipo_nome: [itens]} para renderização em abas no template.
+    Tipos restritos (Ponto, Turma, Inspeção) só aparecem se o perfil tiver a
+    permissão correspondente (ver_celulares_ponto / ver_celulares_turma /
+    ver_celulares_inspecao).
+
+    Admins (role='admin' ou is_admin_master) veem todos os tipos.
+    Role 'apoio' é redirecionado para o painel de Celulares de Inspeção.
     """
     if session.get("role") == "apoio":
         flash("Acesso restrito. Use o painel de Celulares de Inspeção.", "info")
         return redirect(url_for("apoio.celulares_inspecao"))
 
     localidade_id = get_localidade_filter()
-    busca = request.args.get("q", "").strip()
-    tipo_filtro = request.args.get("tipo", "").strip()
 
-    todos_itens: list[dict] = []
-    
-    # Filtrar tabelas de acordo com permissões
-    tabelas_permitidas = []
-    for tab, nome in _TABELAS_EQUIPAMENTOS:
-        if tab == "celulares_ponto" and not has_permission("ver_celulares_ponto"):
+    # Filtrar tabelas de acordo com permissões do perfil
+    tabelas_permitidas: list[tuple[str, str]] = []
+    for tabela, tipo_nome in _TABELAS_EQUIPAMENTOS:
+        perm = _PERM_POR_TABELA.get(tabela)
+        if perm and not has_permission(perm):
             continue
-        if tab == "celulares_turma" and not has_permission("ver_celulares_turma"):
-            continue
-        if tab == "celulares_inspecao" and not has_permission("ver_celulares_inspecao"):
-            continue
-        tabelas_permitidas.append((tab, nome))
+        tabelas_permitidas.append((tabela, tipo_nome))
+
+    itens_por_tipo: dict[str, list[dict]] = {}
 
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             for tabela, tipo_nome in tabelas_permitidas:
-                if tipo_filtro and tipo_filtro != tipo_nome:
-                    continue
-
+                cfg = _TABELA_CONFIG.get(tabela, {
+                    "setor": "setor",
+                    "responsavel": "responsavel",
+                    "numero": "NULL::text AS numero",
+                    "termo": "NULL::text AS termo_pdf",
+                })
                 params: list[Any] = ["Ativo"]
-                col_setor = "setor"
-                col_responsavel = "responsavel"
-                col_numero = "NULL AS numero"
-
-                if tabela == "celulares_ponto":
-                    col_setor = "funcao AS setor"
-                elif tabela == "estabilizadores":
-                    col_responsavel = "NULL AS responsavel"
-                elif tabela == "celulares":
-                    col_numero = "numero"
-
-                query = f"SELECT id_ativo, fazenda, {col_setor}, {col_responsavel}, modelo, status, {col_numero} FROM {tabela} WHERE status = %s"
+                query = (
+                    f"SELECT id_ativo, fazenda, {cfg['setor']}, {cfg['responsavel']}, "
+                    f"modelo, status, {cfg['numero']}, {cfg['termo']} "
+                    f"FROM {tabela} WHERE status = %s"
+                )
                 query += _build_localidade_clause(localidade_id, params)
+                query += " ORDER BY id_ativo LIMIT 300"
+                itens_por_tipo[tipo_nome] = fetch_all(cur, query, tuple(params))
 
-                if busca:
-                    busca_conds = ["id_ativo ILIKE %s", "modelo ILIKE %s"]
-                    params_busca = [f"%{busca}%"] * 2
-
-                    if tabela != "estabilizadores":
-                        busca_conds.append("responsavel ILIKE %s")
-                        params_busca.append(f"%{busca}%")
-                        
-                    if tabela == "celulares":
-                        busca_conds.append("numero ILIKE %s")
-                        params_busca.append(f"%{busca}%")
-
-                    query += " AND (" + " OR ".join(busca_conds) + ")"
-                    params += params_busca
-
-                query += " ORDER BY id_ativo LIMIT 200"
-                rows = fetch_all(cur, query, tuple(params))
-                for r in rows:
-                    todos_itens.append({**r, "tipo": tipo_nome})
-
-    tipos_disponiveis = [t for _, t in tabelas_permitidas]
+    tipos_habilitados = [nome for _, nome in tabelas_permitidas]
+    total = sum(len(v) for v in itens_por_tipo.values())
 
     return render_template(
         "fazenda/itens.html",
-        itens=todos_itens,
-        busca=busca,
-        tipo_filtro=tipo_filtro,
-        tipos=tipos_disponiveis,
+        itens_por_tipo=itens_por_tipo,
+        tipos_habilitados=tipos_habilitados,
+        tipo_icones=_TIPO_ICONES,
+        total=total,
     )
 
 

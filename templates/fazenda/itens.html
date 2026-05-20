@@ -3,126 +3,297 @@
 {% block title %}Equipamentos — BP Central TI{% endblock %}
 {% block page_title %}Equipamentos Ativos{% endblock %}
 
+{% block head %}
+<style>
+  /* ── Tabs ── */
+  .tabs-wrap {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover {
+    background: var(--bg3);
+    color: var(--text);
+    border-color: var(--border2);
+  }
+  .tab-btn.active {
+    background: rgba(59,130,246,.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .tab-count {
+    background: var(--bg3);
+    color: var(--text3);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+  }
+  .tab-btn.active .tab-count {
+    background: rgba(59,130,246,.25);
+    color: var(--accent);
+  }
+  /* ── Panels ── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Search inline ── */
+  .tab-search-wrap {
+    position: relative;
+  }
+  .tab-search {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 6px 10px 6px 30px;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    width: 210px;
+    transition: border .15s;
+  }
+  .tab-search:focus { border-color: var(--accent); }
+  .tab-search-icon {
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 11px;
+    pointer-events: none;
+  }
+</style>
+{% endblock %}
+
 {% block topbar_actions %}
-<form id="form-busca-itens" method="GET" action="{{ url_for('fazenda.listar_itens') }}" style="display:contents">
-  <div class="filter-bar">
-    <input type="text" name="q" value="{{ busca }}" placeholder="Buscar por ID, modelo, responsável…" style="width:220px">
-    <select name="tipo" id="sel-tipo-item">
-      <option value="">Todos os tipos</option>
-      {% for t in tipos %}
-      <option value="{{ t }}" {% if tipo_filtro == t %}selected{% endif %}>{{ t }}</option>
-      {% endfor %}
-    </select>
-    <button type="submit" class="btn btn-primary btn-sm">🔍 Buscar</button>
-    {% if busca or tipo_filtro %}
-    <a href="{{ url_for('fazenda.listar_itens') }}" class="btn btn-ghost btn-sm">✖ Limpar</a>
-    {% endif %}
-  </div>
-</form>
+<span style="font-size:12px; color:var(--text3)">{{ total }} equipamento(s) ativo(s)</span>
 {% endblock %}
 
 {% block content %}
 
-<!-- Totalizadores rápidos -->
-<div class="stat-mini">
+{% if not tipos_habilitados %}
+<div style="padding:60px 20px; text-align:center; color:var(--text3);">
+  <div style="font-size:48px; margin-bottom:14px; opacity:.25">🔒</div>
+  <p style="font-size:14px; font-weight:600; color:var(--text2); margin-bottom:6px">Sem equipamentos para exibir</p>
+  <p style="font-size:13px">Nenhum tipo de equipamento está habilitado no seu perfil de acesso.</p>
+</div>
+{% else %}
+
+{# ── Totalizadores rápidos ────────────────────────────────── #}
+<div class="stat-mini" style="margin-bottom:22px">
   <div class="stat-mini-card">
-    <div class="label">Total exibido</div>
-    <div class="val">{{ itens | length }}</div>
+    <div class="label">Total Geral</div>
+    <div class="val">{{ total }}</div>
   </div>
-  {% set tipos_count = itens | groupby('tipo') | list %}
-  {% for tipo_g, grupo in tipos_count %}
+  {% for tipo in tipos_habilitados %}
   <div class="stat-mini-card">
-    <div class="label">{{ tipo_g }}</div>
-    <div class="val">{{ grupo | list | length }}</div>
+    <div class="label">{{ tipo_icones.get(tipo, '📋') }} {{ tipo }}</div>
+    <div class="val">{{ itens_por_tipo[tipo] | length }}</div>
   </div>
   {% endfor %}
 </div>
 
-<div class="table-card">
-  <div class="table-header">
-    <h3>Equipamentos
-      {% if tipo_filtro %}<span style="color:var(--accent);font-weight:400"> — {{ tipo_filtro }}</span>{% endif %}
-    </h3>
-    <span style="font-size:12px;color:var(--text3)">{{ itens | length }} registro(s)</span>
-  </div>
-
-  {% if itens %}
-  <table>
-    <thead>
-      <tr>
-        <th>ID Ativo</th>
-        <th>Tipo</th>
-        <th>Modelo</th>
-        <th>Responsável</th>
-        {% if has_permission('ver_telefones') %}
-        <th>Número</th>
-        {% endif %}
-        <th>Fazenda / Setor</th>
-        <th>Status</th>
-        <th>Termo</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in itens %}
-      {% set tipo_api = "celular" if item.tipo == "Celular" else "celular_ponto" if item.tipo == "Celular Ponto" else "celular_inspecao" if item.tipo == "Celular Inspeção" else "celular_turma" if item.tipo == "Celular Turma" else "computador" if item.tipo == "Computador" else "impressora" if item.tipo == "Impressora" else "estabilizador" if item.tipo == "Estabilizador" else "starlink" if item.tipo == "Starlink" else item.tipo | lower %}
-      <tr>
-        <td class="td-id">{{ item.id_ativo }}</td>
-        <td style="color:var(--text2)">{{ item.tipo }}</td>
-        <td style="color:var(--text)">{{ item.modelo or '—' }}</td>
-        <td>{{ item.responsavel or '—' }}</td>
-        {% if has_permission('ver_telefones') %}
-        <td>{{ item.numero or '—' }}</td>
-        {% endif %}
-        <td>
-          {{ item.fazenda or '—' }}
-          {% if item.setor %}<span style="color:var(--text3)"> / {{ item.setor }}</span>{% endif %}
-        </td>
-        <td>
-          {% set s = (item.status or '') | lower %}
-          <span class="badge badge-{{ 'ativo' if s == 'ativo' else 'estoque' if s == 'estoque' else 'manut' if 'manut' in s else 'desc' if 'descart' in s else 'inativo' }}">
-            {{ item.status }}
-          </span>
-        </td>
-        <td>
-          <div style="display:flex; gap:6px; align-items:center;">
-            {% if has_permission('ver_termos') %}
-              {% if item.termo_pdf %}
-                <a class="pdf-link" href="/termos/{{ item.termo_pdf }}" target="_blank" style="font-size:11px">📄 Ver PDF</a>
-              {% else %}
-                <span style="color:var(--text3);font-size:11px">—</span>
-              {% endif %}
-            {% endif %}
-            {% if has_permission('anexar_termos') %}
-            <button class="btn btn-ghost btn-xs" onclick="uploadPDF('{{ tipo_api }}', '{{ item.id_ativo }}')" title="Anexar Termo">📎</button>
-            {% endif %}
-          </div>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  <script>
-    function uploadPDF(tipo, id_ativo) {
-      const input = document.createElement('input');
-      input.type = 'file'; input.accept = 'application/pdf';
-      input.onchange = async e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const form = new FormData(); form.append('file', file);
-        try {
-          const r = await fetch(`/api/upload_termo/${tipo}/${encodeURIComponent(id_ativo)}`, { method: 'POST', body: form });
-          const res = await r.json();
-          if (res.ok) { alert('Termo anexado!'); location.reload(); }
-          else alert('Erro: ' + res.msg);
-        } catch (err) { alert('Erro na requisição'); }
-      };
-      input.click();
-    }
-  </script>
-  {% else %}
-  <div style="padding:40px;text-align:center;color:var(--text3)">
-    Nenhum equipamento ativo encontrado para a sua localidade.
-  </div>
-  {% endif %}
+{# ── Tab Bar ──────────────────────────────────────────────── #}
+<div class="tabs-wrap" id="tabs-bar">
+  {% for tipo in tipos_habilitados %}
+  {% set tid = loop.index %}
+  <button
+    class="tab-btn {% if loop.first %}active{% endif %}"
+    data-tab="tab-{{ tid }}"
+    onclick="switchTab('tab-{{ tid }}')"
+  >
+    {{ tipo_icones.get(tipo, '📋') }} {{ tipo }}
+    <span class="tab-count">{{ itens_por_tipo[tipo] | length }}</span>
+  </button>
+  {% endfor %}
 </div>
+
+{# ── Tab Panels ───────────────────────────────────────────── #}
+{% for tipo in tipos_habilitados %}
+{% set tid = loop.index %}
+{% set itens = itens_por_tipo[tipo] %}
+{% set tipo_api = "celular" if tipo == "Celular"
+              else "celular_ponto" if tipo == "Celular Ponto"
+              else "celular_inspecao" if tipo == "Celular Inspeção"
+              else "celular_turma" if tipo == "Celular Turma"
+              else "computador" if tipo == "Computador"
+              else "impressora" if tipo == "Impressora"
+              else "estabilizador" if tipo == "Estabilizador"
+              else "starlink" %}
+
+<div class="tab-panel {% if loop.first %}active{% endif %}" id="tab-{{ tid }}">
+  <div class="table-card">
+
+    {# Header com busca inline #}
+    <div class="table-header">
+      <h3>{{ tipo_icones.get(tipo, '📋') }} {{ tipo }}</h3>
+      <span style="font-size:12px; color:var(--text3)">{{ itens | length }} registro(s)</span>
+      <div class="tab-search-wrap" style="margin-left:auto">
+        <span class="tab-search-icon">🔍</span>
+        <input
+          class="tab-search"
+          type="text"
+          placeholder="Buscar…"
+          oninput="filtrarTabela(this, 'tbl-{{ tid }}')"
+        >
+      </div>
+    </div>
+
+    {% if itens %}
+    <table id="tbl-{{ tid }}">
+      <thead>
+        <tr>
+          <th>ID Ativo</th>
+          <th>Modelo</th>
+          {% if tipo != 'Estabilizador' %}<th>Responsável</th>{% endif %}
+          {% if tipo == 'Celular Ponto' %}
+            <th>Função</th>
+          {% elif tipo != 'Estabilizador' %}
+            <th>Setor</th>
+          {% endif %}
+          {% if has_permission('ver_telefones') and tipo == 'Celular' %}
+            <th>Número</th>
+          {% endif %}
+          <th>Fazenda</th>
+          <th>Status</th>
+          {% if has_permission('ver_termos') or has_permission('anexar_termos') %}
+            <th>Termo</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in itens %}
+        <tr>
+          <td class="td-id">{{ item.id_ativo }}</td>
+          <td style="color:var(--text)">{{ item.modelo or '—' }}</td>
+
+          {% if tipo != 'Estabilizador' %}
+          <td>{{ item.responsavel or '—' }}</td>
+          {% endif %}
+
+          {% if tipo == 'Celular Ponto' %}
+            <td>{{ item.setor or '—' }}</td>
+          {% elif tipo != 'Estabilizador' %}
+            <td style="color:var(--text3)">{{ item.setor or '—' }}</td>
+          {% endif %}
+
+          {% if has_permission('ver_telefones') and tipo == 'Celular' %}
+          <td style="font-family:'IBM Plex Mono',monospace; font-size:12px">{{ item.numero or '—' }}</td>
+          {% endif %}
+
+          <td>{{ item.fazenda or '—' }}</td>
+
+          <td>
+            {% set s = (item.status or '') | lower %}
+            <span class="badge badge-{{ 'ativo' if s == 'ativo' else 'estoque' if s == 'estoque' else 'manut' if 'manut' in s else 'desc' if 'descart' in s else 'inativo' }}">
+              {{ item.status }}
+            </span>
+          </td>
+
+          {% if has_permission('ver_termos') or has_permission('anexar_termos') %}
+          <td>
+            <div style="display:flex; gap:6px; align-items:center; white-space:nowrap;">
+              {% if has_permission('ver_termos') %}
+                {% if item.termo_pdf %}
+                  <a href="/termos/{{ item.termo_pdf }}" target="_blank"
+                     style="font-size:11px; color:var(--accent)">📄 PDF</a>
+                {% else %}
+                  <span style="color:var(--text3); font-size:11px">—</span>
+                {% endif %}
+              {% endif %}
+              {% if has_permission('anexar_termos') %}
+                <button
+                  class="btn btn-ghost btn-xs"
+                  onclick="uploadPDF('{{ tipo_api }}', '{{ item.id_ativo }}')"
+                  title="Anexar Termo">📎</button>
+              {% endif %}
+            </div>
+          </td>
+          {% endif %}
+
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% else %}
+    <div style="padding:44px; text-align:center; color:var(--text3);">
+      <div style="font-size:36px; margin-bottom:10px; opacity:.25">{{ tipo_icones.get(tipo, '📋') }}</div>
+      <p style="font-size:13px">Nenhum equipamento ativo de <strong style="color:var(--text2)">{{ tipo }}</strong> na sua localidade.</p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endfor %}
+
+{# ── Scripts ──────────────────────────────────────────────── #}
+<script>
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tabId);
+    });
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+      panel.classList.toggle('active', panel.id === tabId);
+    });
+    // Limpa busca ao trocar de aba
+    document.querySelectorAll('.tab-search').forEach(inp => inp.value = '');
+    document.querySelectorAll('tbody tr').forEach(tr => tr.style.display = '');
+  }
+
+  function filtrarTabela(input, tblId) {
+    const q = input.value.toLowerCase().trim();
+    const rows = document.querySelectorAll('#' + tblId + ' tbody tr');
+    rows.forEach(row => {
+      row.style.display = (!q || row.textContent.toLowerCase().includes(q)) ? '' : 'none';
+    });
+  }
+
+  function uploadPDF(tipo, id_ativo) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/pdf';
+    input.onchange = async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const form = new FormData();
+      form.append('file', file);
+      try {
+        const r = await fetch(
+          `/api/upload_termo/${tipo}/${encodeURIComponent(id_ativo)}`,
+          { method: 'POST', body: form }
+        );
+        const res = await r.json();
+        if (res.ok) { alert('✅ Termo anexado com sucesso!'); location.reload(); }
+        else alert('❌ Erro: ' + res.msg);
+      } catch (err) {
+        alert('❌ Erro na requisição: ' + err.message);
+      }
+    };
+    input.click();
+  }
+</script>
+
+{% endif %}
 {% endblock %}
