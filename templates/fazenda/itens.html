@@ -243,7 +243,7 @@
               {% if has_permission('editar_equipamentos') %}
                 <button
                   class="btn btn-ghost btn-xs"
-                  onclick="window.location.href='/?edit_modal={{ tipo_api }}&id={{ item.id_ativo }}'"
+                  onclick="openEditModal('{{ tipo_api }}', '{{ item.id_ativo }}')"
                   title="Editar">✏️</button>
               {% endif %}
             </div>
@@ -267,7 +267,35 @@
 {% endfor %}
 
 {# ── Scripts ──────────────────────────────────────────────── #}
+
+{# ── Modal de Edição (embutido) ───────────────────────────── #}
+<div id="edit-modal-overlay" style="
+  display:none; position:fixed; inset:0; z-index:9000;
+  background:rgba(0,0,0,.6); backdrop-filter:blur(4px);
+  align-items:center; justify-content:center;
+">
+  <div style="
+    background:var(--bg2); border:1px solid var(--border2); border-radius:14px;
+    width:min(560px,96vw); max-height:88vh; overflow-y:auto;
+    padding:28px; position:relative;
+  ">
+    <button onclick="closeEditModal()" style="
+      position:absolute; top:14px; right:14px; background:none; border:none;
+      color:var(--text3); font-size:20px; cursor:pointer; line-height:1;
+    ">✕</button>
+    <h3 id="edit-modal-title" style="margin:0 0 20px; font-size:16px; font-weight:600;">Editar</h3>
+    <form id="edit-modal-form" onsubmit="submitEditModal(event)">
+      <div id="edit-modal-body" style="display:grid; gap:12px;"></div>
+      <div style="display:flex; gap:10px; margin-top:22px; justify-content:flex-end;">
+        <button type="button" onclick="closeEditModal()" class="btn btn-ghost">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="edit-save-btn">💾 Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
+  /* ── Tab navigation ───────────────────────────────────────── */
   function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tabId);
@@ -275,19 +303,18 @@
     document.querySelectorAll('.tab-panel').forEach(panel => {
       panel.classList.toggle('active', panel.id === tabId);
     });
-    // Limpa busca ao trocar de aba
     document.querySelectorAll('.tab-search').forEach(inp => inp.value = '');
     document.querySelectorAll('tbody tr').forEach(tr => tr.style.display = '');
   }
 
   function filtrarTabela(input, tblId) {
     const q = input.value.toLowerCase().trim();
-    const rows = document.querySelectorAll('#' + tblId + ' tbody tr');
-    rows.forEach(row => {
+    document.querySelectorAll('#' + tblId + ' tbody tr').forEach(row => {
       row.style.display = (!q || row.textContent.toLowerCase().includes(q)) ? '' : 'none';
     });
   }
 
+  /* ── Upload de Termo PDF ──────────────────────────────────── */
   function uploadPDF(tipo, id_ativo) {
     const input = document.createElement('input');
     input.type = 'file';
@@ -311,7 +338,157 @@
     };
     input.click();
   }
+
+  /* ── Modal de Edição ──────────────────────────────────────── */
+  let _editCtx = {};
+
+  // Mapeamento tipo_api → endpoint REST
+  const _API_MAP = {
+    celular:           'celulares',
+    celular_ponto:     'celulares_ponto',
+    celular_inspecao:  'celulares_inspecao',
+    celular_turma:     'celulares_turma',
+    computador:        'computadores',
+    impressora:        'impressoras',
+    estabilizador:     'estabilizadores',
+    starlink:          'starlink',
+  };
+
+  function fld(label, html) {
+    return `<div style="display:flex;flex-direction:column;gap:4px;">
+      <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">${label}</label>
+      ${html}
+    </div>`;
+  }
+  function inp(name, val, placeholder='', type='text', ro=false) {
+    return `<input type="${type}" name="${name}" value="${val||''}" placeholder="${placeholder}"
+      ${ro?'readonly':''} style="width:100%;padding:8px 10px;background:var(--bg3);
+      border:1px solid var(--border);border-radius:8px;color:var(--text);
+      font-family:inherit;font-size:13px;outline:none;">`;
+  }
+  function sel(name, val, opts) {
+    const options = opts.map(o => {
+      const v = typeof o === 'string' ? o : o.v;
+      const l = typeof o === 'string' ? o : o.l;
+      return `<option value="${v}" ${val==v?'selected':''}>${l}</option>`;
+    }).join('');
+    return `<select name="${name}" style="width:100%;padding:8px 10px;background:var(--bg3);
+      border:1px solid var(--border);border-radius:8px;color:var(--text);
+      font-family:inherit;font-size:13px;outline:none;">
+      <option value="">Selecione...</option>${options}</select>`;
+  }
+
+  const STATUS_OPTS = ['Ativo','Inativo','Manutenção','Descartado',{v:'Estoque',l:'Em Estoque'}];
+  const FAZENDAS = ['Central','São Manoel','Tangará','São Pedro','São Judas','São Francisco',
+    'Santana','Santa Eliza','Santa Lucia','Santa Lucia 2','Caroline','São João',
+    'Santa Luzia','Santa Adelina','CD'];
+
+  function _buildForm(tipoApi, d) {
+    // Campos comuns a todos os tipos
+    const common = `
+      ${fld('ID Ativo', inp('id_ativo', d.id_ativo, '', 'text', true))}
+      ${fld('Status', sel('status', d.status, STATUS_OPTS))}
+      ${fld('Fazenda', sel('fazenda', d.fazenda, FAZENDAS))}
+      ${fld('Responsável', inp('responsavel', d.responsavel))}
+      ${fld('Modelo', inp('modelo', d.modelo))}
+    `;
+
+    if (tipoApi === 'celular_inspecao') {
+      return common + `
+        ${fld('ID Sistema', inp('id_sistema', d.id_sistema, 'Ex: INS-0001'))}
+        ${fld('Usuário MIP', inp('usuario_mip', d.usuario_mip))}
+        ${fld('Senha MIP', inp('senha_mip', d.senha_mip, '••••••••', 'text'))}
+        ${fld('Observações', `<textarea name="observacoes" rows="2" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none;resize:vertical;">${d.observacoes||''}</textarea>`)}
+      `;
+    }
+    if (tipoApi === 'celular_turma') {
+      return common + `
+        ${fld('Nº Turma', inp('num_turma', d.num_turma, 'Ex: T01'))}
+        ${fld('Gmail ClockIn', inp('gmail_clockin', d.gmail_clockin))}
+      `;
+    }
+    if (tipoApi === 'celular_ponto') {
+      return common + `
+        ${fld('Função', inp('funcao', d.funcao, 'Operador, Supervisor...'))}
+        ${fld('Gmail ClockIn', inp('gmail_clockin', d.gmail_clockin))}
+        ${fld('Número', inp('numero', d.numero, '(16) 99999-1234'))}
+      `;
+    }
+    if (tipoApi === 'celular') {
+      return common + `
+        ${fld('Número', inp('numero', d.numero, '(16) 99999-1234'))}
+        ${fld('Gmail', inp('gmail', d.gmail))}
+        ${fld('Cargo', inp('cargo', d.cargo))}
+      `;
+    }
+    if (tipoApi === 'computador') {
+      return common + `
+        ${fld('Setor', inp('setor', d.setor))}
+        ${fld('Processador', inp('processador', d.processador))}
+        ${fld('Memória RAM', inp('memoria_ram', d.memoria_ram))}
+        ${fld('Armazenamento', inp('armazenamento', d.armazenamento))}
+        ${fld('Sistema Operacional', inp('sistema_operacional', d.sistema_operacional))}
+      `;
+    }
+    // Demais tipos (impressora, estabilizador, starlink)
+    return common + `${fld('Setor', inp('setor', d.setor))}`;
+  }
+
+  async function openEditModal(tipoApi, idAtivo) {
+    const endpoint = _API_MAP[tipoApi];
+    if (!endpoint) return;
+    try {
+      const r = await fetch(`/api/${endpoint}/${encodeURIComponent(idAtivo)}`);
+      if (!r.ok) { alert('❌ Equipamento não encontrado.'); return; }
+      const data = await r.json();
+      _editCtx = { tipoApi, endpoint, idAtivo };
+      document.getElementById('edit-modal-title').textContent = `✏️ Editar — ${idAtivo}`;
+      document.getElementById('edit-modal-body').innerHTML = _buildForm(tipoApi, data);
+      const ov = document.getElementById('edit-modal-overlay');
+      ov.style.display = 'flex';
+    } catch(e) {
+      alert('❌ Erro ao carregar dados: ' + e.message);
+    }
+  }
+
+  function closeEditModal() {
+    document.getElementById('edit-modal-overlay').style.display = 'none';
+    _editCtx = {};
+  }
+
+  async function submitEditModal(e) {
+    e.preventDefault();
+    const btn = document.getElementById('edit-save-btn');
+    btn.disabled = true; btn.textContent = '⏳ Salvando...';
+    const form = document.getElementById('edit-modal-form');
+    const payload = Object.fromEntries(new FormData(form).entries());
+    try {
+      const r = await fetch(`/api/${_editCtx.endpoint}/${encodeURIComponent(_editCtx.idAtivo)}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload),
+      });
+      const res = await r.json();
+      if (res.ok) {
+        alert('✅ Salvo com sucesso!');
+        closeEditModal();
+        location.reload();
+      } else {
+        alert('❌ Erro: ' + (res.msg || 'Falha ao salvar'));
+      }
+    } catch(err) {
+      alert('❌ Erro na requisição: ' + err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = '💾 Salvar';
+    }
+  }
+
+  // Fechar ao clicar fora do modal
+  document.getElementById('edit-modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+  });
 </script>
 
 {% endif %}
 {% endblock %}
+

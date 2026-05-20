@@ -1700,23 +1700,7 @@
       'Santa Luzia': 'SLZ', 'Santa Adelina': 'SAD', 'CD': 'CD'
     };
 
-    // ─── INIT ──────────────────────────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', () => {
-      // Auto-open edit modal if query param is present
-      const urlParams = new URLSearchParams(window.location.search);
-      const editModal = urlParams.get('edit_modal');
-      const editId = urlParams.get('id');
-      
-      showPage('dashboard');
-      
-      if (editModal && editId) {
-        setTimeout(() => {
-          const navItem = document.querySelector(`.nav-item[data-page="${editModal}"]`);
-          if (navItem) navItem.click();
-          editItem(editModal, editId);
-        }, 300);
-      }
-    });
+
 
     const SIGLAS_SETOR_JS = {
       'FT': 'Fito', 'ALP': 'Almoxarifado Peças', 'ALI': 'Almoxarifado Insumos',

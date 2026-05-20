@@ -68,14 +68,26 @@ _PERM_POR_TABELA: dict[str, str] = {
 
 # Campos especiais por tabela
 _TABELA_CONFIG: dict[str, dict] = {
-    "celulares":      {"setor": "setor",           "responsavel": "responsavel", "numero": "numero",      "termo": "termo_pdf"},
-    "celulares_ponto":{"setor": "funcao AS setor", "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf"},
-    "celulares_inspecao":{"setor": "setor",        "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf"},
-    "celulares_turma":{"setor": "setor",           "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf"},
-    "computadores":   {"setor": "setor",           "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "termo_pdf"},
-    "impressoras":    {"setor": "setor",           "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf"},
-    "estabilizadores":{"setor": "setor",           "responsavel": "NULL AS responsavel","numero": "NULL::text AS numero","termo": "NULL::text AS termo_pdf"},
-    "starlink":       {"setor": "setor",           "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf"},
+    "celulares":      {"setor": "setor",           "responsavel": "responsavel", "numero": "numero",      "termo": "termo_pdf", "extra": ""},
+    "celulares_ponto":{
+        "setor": "funcao AS setor", "responsavel": "responsavel",
+        "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf",
+        "extra": "",
+    },
+    "celulares_inspecao":{
+        "setor": "setor", "responsavel": "responsavel",
+        "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf",
+        "extra": ", id_sistema, usuario_mip, senha_mip",
+    },
+    "celulares_turma":{
+        "setor": "setor", "responsavel": "responsavel",
+        "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf",
+        "extra": ", num_turma",
+    },
+    "computadores":   {"setor": "setor",           "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "termo_pdf",           "extra": ""},
+    "impressoras":    {"setor": "setor",           "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf", "extra": ""},
+    "estabilizadores":{"setor": "setor",           "responsavel": "NULL AS responsavel","numero": "NULL::text AS numero","termo": "NULL::text AS termo_pdf", "extra": ""},
+    "starlink":       {"setor": "setor",           "responsavel": "responsavel", "numero": "NULL::text AS numero", "termo": "NULL::text AS termo_pdf", "extra": ""},
 }
 
 
@@ -146,11 +158,13 @@ def listar_itens():
                     "responsavel": "responsavel",
                     "numero": "NULL::text AS numero",
                     "termo": "NULL::text AS termo_pdf",
+                    "extra": "",
                 })
                 params: list[Any] = ["Ativo"]
+                extra = cfg.get("extra", "")
                 query = (
                     f"SELECT id_ativo, fazenda, {cfg['setor']}, {cfg['responsavel']}, "
-                    f"modelo, status, {cfg['numero']}, {cfg['termo']} "
+                    f"modelo, status, {cfg['numero']}, {cfg['termo']}{extra} "
                     f"FROM {tabela} WHERE status = %s"
                 )
                 query += _build_localidade_clause(localidade_id, params)
