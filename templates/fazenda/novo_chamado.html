@@ -24,7 +24,7 @@
         <select id="modelo_select" style="margin-top:5px;font-size:13px;padding:8px 12px">
           <option value="">-- Selecione um modelo para auto-preencher --</option>
           {% for m in modelos_prontos %}
-          <option value="{{ m.id }}" data-titulo="{{ m.titulo_padrao }}" data-prioridade="{{ m.prioridade_padrao }}" data-descricao="{{ m.descricao_padrao }}">
+          <option value="{{ m.id }}" data-titulo="{{ m.titulo_padrao }}" data-prioridade="{{ m.prioridade_padrao }}" data-descricao="{{ m.descricao_padrao }}" data-etiquetas="{{ m.etiquetas | tojson | forceescape }}">
             {{ m.nome_modelo }}
           </option>
           {% endfor %}
@@ -85,7 +85,7 @@
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;background:var(--bg3);padding:12px;border-radius:8px;border:1px solid var(--border)">
           {% for et in todas_etiquetas %}
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
-            <input type="checkbox" name="etiqueta_ids" value="{{ et.id }}" style="width:auto;accent-color:{{ et.cor_hex }}">
+            <input type="checkbox" name="etiqueta_ids" value="{{ et.id }}" class="chk-etiqueta" style="width:auto;accent-color:{{ et.cor_hex }}">
             <span style="padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;background:{{ et.cor_hex }}20;color:{{ et.cor_hex }}">
               {{ et.nome }}
             </span>
@@ -150,6 +150,14 @@
       if(textarea && option.dataset.descricao) {
         textarea.value = option.dataset.descricao;
         update();
+      }
+      
+      if(option.dataset.etiquetas) {
+        let etiquetas = [];
+        try { etiquetas = JSON.parse(option.dataset.etiquetas); } catch(e){}
+        document.querySelectorAll('.chk-etiqueta').forEach(chk => {
+          chk.checked = etiquetas.includes(parseInt(chk.value));
+        });
       }
     });
   }

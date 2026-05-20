@@ -25,18 +25,44 @@
           </div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:2px"><strong>Título Padrão:</strong> {{ m.titulo_padrao }}</div>
           <div style="font-size:12px;color:var(--text3);margin-bottom:4px"><strong>Prioridade:</strong> {{ m.prioridade_padrao | title }}</div>
+          
+          {% if m.etiquetas %}
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">
+            {% for et_id in m.etiquetas %}
+              {% for et in todas_etiquetas if et.id == et_id %}
+              <span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:{{ et.cor_hex }}20;color:{{ et.cor_hex }}">
+                {{ et.nome }}
+              </span>
+              {% endfor %}
+            {% endfor %}
+          </div>
+          {% endif %}
+
           <div style="font-size:11px;color:var(--text3);background:var(--bg);padding:8px;border-radius:5px;margin-top:6px;border:1px dashed var(--border2)">
             {{ m.descricao_padrao | truncate(150, True, '...') }}
           </div>
         </div>
         
-        <form method="POST" action="{{ url_for('admin_chamados.toggle_modelo', modelo_id=m.id) }}">
-          {% if m.ativo %}
-          <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red)">Desativar</button>
-          {% else %}
-          <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--green)">Ativar</button>
-          {% endif %}
-        </form>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button type="button" class="btn btn-ghost btn-sm btn-editar-modelo" 
+            data-id="{{ m.id }}"
+            data-nome="{{ m.nome_modelo }}"
+            data-titulo="{{ m.titulo_padrao }}"
+            data-prioridade="{{ m.prioridade_padrao }}"
+            data-descricao="{{ m.descricao_padrao }}"
+            data-etiquetas="{{ m.etiquetas | tojson | forceescape }}"
+            style="color:var(--accent)">
+            Editar
+          </button>
+          
+          <form method="POST" action="{{ url_for('admin_chamados.toggle_modelo', modelo_id=m.id) }}" style="margin:0">
+            {% if m.ativo %}
+            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red);width:100%">Desativar</button>
+            {% else %}
+            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--green);width:100%">Ativar</button>
+            {% endif %}
+          </form>
+        </div>
       </div>
       {% endfor %}
     </div>
@@ -46,7 +72,7 @@
   </div>
 
   {# ── COLUNA DIREITA: NOVO MODELO ───────────────────────────────── #}
-  <div style="width:340px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;position:sticky;top:20px">
+  <div style="width:360px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;position:sticky;top:20px">
     <h3 style="font-size:14px;color:var(--text);margin-bottom:15px;font-weight:600">Criar Novo Modelo</h3>
     
     <form method="POST" action="{{ url_for('admin_chamados.gerenciar_modelos') }}">
@@ -68,6 +94,20 @@
           {% endfor %}
         </select>
       </div>
+
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Etiquetas Automáticas</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;background:var(--bg3);padding:10px;border-radius:8px;border:1px solid var(--border)">
+          {% for et in todas_etiquetas %}
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
+            <input type="checkbox" name="etiqueta_ids" value="{{ et.id }}" style="width:auto;accent-color:{{ et.cor_hex }}">
+            <span style="padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:{{ et.cor_hex }}20;color:{{ et.cor_hex }}">
+              {{ et.nome }}
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
       
       <div class="form-group" style="margin-bottom:16px">
         <label>Descrição Base (Template)</label>
@@ -78,4 +118,93 @@
     </form>
   </div>
 </div>
+
+{# ── MODAL DE EDIÇÃO ────────────────────────────────────────────────────────── #}
+<div id="modal-edit-modelo" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+  <div style="background:var(--bg2);padding:24px;border-radius:12px;width:400px;max-width:90%;border:1px solid var(--border);box-shadow:0 10px 25px rgba(0,0,0,0.2)">
+    <h3 style="margin-bottom:15px;font-size:16px;font-weight:600">Editar Modelo</h3>
+    <form id="form-edit" method="POST" action="">
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Nome do Modelo</label>
+        <input type="text" id="edit_nome" name="nome_modelo" required class="form-control" style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Título do Chamado</label>
+        <input type="text" id="edit_titulo" name="titulo_padrao" required class="form-control" style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Prioridade Padrão</label>
+        <select id="edit_prioridade" name="prioridade_padrao" required class="form-control" style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px">
+          {% for p in prioridades %}
+          <option value="{{ p }}">{{ p | title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Etiquetas Automáticas</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;background:var(--bg3);padding:10px;border-radius:8px;border:1px solid var(--border)">
+          {% for et in todas_etiquetas %}
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
+            <input type="checkbox" name="etiqueta_ids" value="{{ et.id }}" class="edit-etiqueta-checkbox" style="width:auto;accent-color:{{ et.cor_hex }}">
+            <span style="padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:{{ et.cor_hex }}20;color:{{ et.cor_hex }}">
+              {{ et.nome }}
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Descrição Base</label>
+        <textarea id="edit_descricao" name="descricao_padrao" required rows="5" class="form-control" style="width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" class="btn btn-ghost" id="btn-fechar-modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const modalEdit = document.getElementById('modal-edit-modelo');
+  const formEdit = document.getElementById('form-edit');
+  const btnFecharModal = document.getElementById('btn-fechar-modal');
+
+  document.querySelectorAll('.btn-editar-modelo').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.dataset.id;
+      const nome = this.dataset.nome;
+      const titulo = this.dataset.titulo;
+      const prioridade = this.dataset.prioridade;
+      const descricao = this.dataset.descricao;
+      const etiquetasJson = this.dataset.etiquetas;
+      let etiquetas = [];
+      try { etiquetas = JSON.parse(etiquetasJson || '[]'); } catch(e){}
+
+      formEdit.action = `/admin/chamados/modelos/${id}/editar`;
+      document.getElementById('edit_nome').value = nome;
+      document.getElementById('edit_titulo').value = titulo;
+      document.getElementById('edit_prioridade').value = prioridade;
+      document.getElementById('edit_descricao').value = descricao;
+
+      // Resetar checkboxes
+      document.querySelectorAll('.edit-etiqueta-checkbox').forEach(chk => {
+        chk.checked = etiquetas.includes(parseInt(chk.value));
+      });
+
+      modalEdit.style.display = 'flex';
+    });
+  });
+
+  btnFecharModal.addEventListener('click', () => {
+    modalEdit.style.display = 'none';
+  });
+  
+  // Fechar ao clicar fora
+  modalEdit.addEventListener('click', (e) => {
+    if(e.target === modalEdit) {
+      modalEdit.style.display = 'none';
+    }
+  });
+</script>
 {% endblock %}

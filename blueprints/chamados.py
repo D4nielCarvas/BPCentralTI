@@ -195,6 +195,19 @@ def novo_chamado():
         with conn.cursor() as cur:
             todas_etiquetas = fetch_all(cur, "SELECT id, nome, cor_hex FROM chamado_etiquetas ORDER BY nome ASC")
             modelos_prontos = fetch_all(cur, "SELECT id, nome_modelo, titulo_padrao, descricao_padrao, prioridade_padrao FROM chamado_modelos WHERE ativo = TRUE ORDER BY nome_modelo ASC")
+            
+            try:
+                rels = fetch_all(cur, "SELECT modelo_id, etiqueta_id FROM chamado_modelos_etiquetas_rel")
+                rels_por_modelo = {}
+                for row in rels:
+                    rels_por_modelo.setdefault(row['modelo_id'], []).append(row['etiqueta_id'])
+                for m in modelos_prontos:
+                    m['etiquetas'] = rels_por_modelo.get(m['id'], [])
+            except Exception:
+                # Tabela de relacionamento não foi criada ainda
+                conn.rollback()
+                for m in modelos_prontos:
+                    m['etiquetas'] = []
             loc_query = localidade_id
 
             if session.get("role") == "admin":

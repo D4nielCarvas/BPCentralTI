@@ -422,6 +422,7 @@ def gerenciar_modelos():
         titulo_padrao = (request.form.get("titulo_padrao") or "").strip()
         descricao_padrao = (request.form.get("descricao_padrao") or "").strip()
         prioridade_padrao = request.form.get("prioridade_padrao")
+        etiqueta_ids = request.form.getlist("etiqueta_ids")
 
         if not nome_modelo or not titulo_padrao or not descricao_padrao:
             flash("Preencha todos os campos obrigatórios.", "warning")
@@ -432,18 +433,92 @@ def gerenciar_modelos():
                 cur.execute(
                     """
                     INSERT INTO chamado_modelos (nome_modelo, titulo_padrao, descricao_padrao, prioridade_padrao)
-                    VALUES (%s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s) RETURNING id
                     """,
                     (nome_modelo, titulo_padrao, descricao_padrao, prioridade_padrao)
                 )
+                novo_modelo_id = cur.fetchone()["id"]
+                
+                # Salvar etiquetas vinculadas
+                for et_id in etiqueta_ids:
+                    if et_id.isdigit():
+                        cur.execute(
+                            "INSERT INTO chamado_modelos_etiquetas_rel (modelo_id, etiqueta_id) VALUES (%s, %s)",
+                            (novo_modelo_id, int(et_id))
+                        )
+
         flash("Modelo de chamado adicionado com sucesso!", "success")
         return redirect(url_for("admin_chamados.gerenciar_modelos"))
 
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             modelos = fetch_all(cur, "SELECT * FROM chamado_modelos ORDER BY nome_modelo ASC")
+            todas_etiquetas = fetch_all(cur, "SELECT id, nome, cor_hex FROM chamado_etiquetas ORDER BY nome ASC")
+            
+            try:
+                # Tentativa de buscar os relacionamentos. Caso a tabela não exista ainda, não quebra a página (ajuda no deploy manual da migration)
+                rels = fetch_all(cur, "SELECT modelo_id, etiqueta_id FROM chamado_modelos_etiquetas_rel")
+                rels_por_modelo = {}
+                for row in rels:
+                    rels_por_modelo.setdefault(row['modelo_id'], []).append(row['etiqueta_id'])
+                for m in modelos:
+                    m['etiquetas'] = rels_por_modelo.get(m['id'], [])
+            except Exception:
+                # Tabela de relacionamento não foi criada ainda
+                conn.rollback()
+                for m in modelos:
+                    m['etiquetas'] = []
 
-    return render_template("admin/chamados_modelos.html", modelos=modelos, prioridades=_PRIORIDADES)
+    return render_template(
+        "admin/chamados_modelos.html", 
+        modelos=modelos, 
+        prioridades=_PRIORIDADES,
+        todas_etiquetas=todas_etiquetas
+    )
+
+@admin_chamados_bp.route("/modelos/<int:modelo_id>/editar", methods=["POST"])
+@admin_required
+def editar_modelo(modelo_id: int):
+    """Edita um modelo de chamado existente e atualiza as etiquetas."""
+    nome_modelo = (request.form.get("nome_modelo") or "").strip()
+    titulo_padrao = (request.form.get("titulo_padrao") or "").strip()
+    descricao_padrao = (request.form.get("descricao_padrao") or "").strip()
+    prioridade_padrao = request.form.get("prioridade_padrao")
+    etiqueta_ids = request.form.getlist("etiqueta_ids")
+
+    if not nome_modelo or not titulo_padrao or not descricao_padrao:
+        flash("Preencha todos os campos obrigatórios.", "warning")
+        return redirect(url_for("admin_chamados.gerenciar_modelos"))
+
+    with acquire_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE chamado_modelos 
+                SET nome_modelo = %s, titulo_padrao = %s, descricao_padrao = %s, prioridade_padrao = %s
+                WHERE id = %s
+                """,
+                (nome_modelo, titulo_padrao, descricao_padrao, prioridade_padrao, modelo_id)
+            )
+            
+            try:
+                # Limpa etiquetas antigas
+                cur.execute("DELETE FROM chamado_modelos_etiquetas_rel WHERE modelo_id = %s", (modelo_id,))
+                
+                # Insere as novas
+                for et_id in etiqueta_ids:
+                    if et_id.isdigit():
+                        cur.execute(
+                            "INSERT INTO chamado_modelos_etiquetas_rel (modelo_id, etiqueta_id) VALUES (%s, %s)",
+                            (modelo_id, int(et_id))
+                        )
+            except Exception:
+                conn.rollback()
+                flash("Modelo editado, mas houve falha ao salvar etiquetas. A tabela de relacionamento existe?", "warning")
+                return redirect(url_for("admin_chamados.gerenciar_modelos"))
+
+    flash("Modelo atualizado com sucesso!", "success")
+    return redirect(url_for("admin_chamados.gerenciar_modelos"))
 
 @admin_chamados_bp.route("/modelos/<int:modelo_id>/toggle", methods=["POST"])
 @admin_required
