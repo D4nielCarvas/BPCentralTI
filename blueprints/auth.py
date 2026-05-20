@@ -153,7 +153,7 @@ def login():
                            p.is_admin_master, p.permissoes
                     FROM usuarios u
                     LEFT JOIN perfis_acesso p ON u.perfil_id = p.id
-                    WHERE u.login = %s OR u.login = %s
+                    WHERE u.login = %s OR u.email = %s
                     """,
                     (login_input, login_input),
                 )
