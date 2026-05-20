@@ -131,6 +131,31 @@ def formata_data_br(dt):
     return dt_local.strftime('%d/%m/%y %H:%M')
 
 
+@app.context_processor
+def injetar_notificacoes():
+    """Injeta notificações não lidas no template global (para usuários admin)."""
+    if session.get("usuario_id") and session.get("role") == "admin":
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                # Contagem
+                cur.execute(
+                    "SELECT COUNT(*) as qtd FROM notificacoes WHERE usuario_id = %s AND lida = FALSE",
+                    (session.get("usuario_id"),)
+                )
+                qtd_notificacoes = cur.fetchone()["qtd"]
+                
+                # Lista das últimas 5 não lidas
+                ultimas = _fetch_all(
+                    cur,
+                    """SELECT id, chamado_id, mensagem, criado_em 
+                       FROM notificacoes 
+                       WHERE usuario_id = %s AND lida = FALSE 
+                       ORDER BY id DESC LIMIT 5""",
+                    (session.get("usuario_id"),)
+                )
+        return dict(qtd_notificacoes=qtd_notificacoes, notificacoes_lista=ultimas)
+    return dict(qtd_notificacoes=0, notificacoes_lista=[])
+
 # ── Conexão com banco de dados (delegado ao db_layer com pool) ───────────────
 # get_db, _fetch_all, _fetch_one já importados acima via db_layer aliases.
 

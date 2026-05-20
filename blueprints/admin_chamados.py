@@ -454,3 +454,30 @@ def toggle_modelo(modelo_id: int):
             cur.execute("UPDATE chamado_modelos SET ativo = NOT ativo WHERE id = %s", (modelo_id,))
     flash("Status do modelo atualizado.", "success")
     return redirect(url_for("admin_chamados.gerenciar_modelos"))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LER NOTIFICAÇÃO
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@admin_chamados_bp.route("/notificacao/<int:notif_id>/ler")
+@admin_required
+def ler_notificacao(notif_id: int):
+    """Marca a notificação como lida e redireciona para o chamado."""
+    usuario_id = get_usuario_id()
+    with acquire_conn() as conn:
+        with conn.cursor() as cur:
+            notificacao = fetch_one(
+                cur, 
+                "SELECT chamado_id FROM notificacoes WHERE id = %s AND usuario_id = %s", 
+                (notif_id, usuario_id)
+            )
+            if notificacao:
+                cur.execute(
+                    "UPDATE notificacoes SET lida = TRUE WHERE id = %s",
+                    (notif_id,)
+                )
+                return redirect(url_for('admin_chamados.detalhe_chamado_admin', chamado_id=notificacao['chamado_id']))
+    
+    flash("Notificação não encontrada.", "warning")
+    return redirect(url_for('admin_chamados.dashboard_chamados'))

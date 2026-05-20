@@ -171,6 +171,17 @@ def novo_chamado():
                 if arquivo:
                     save_anexo(arquivo, novo_id, None, usuario_id, cur)
 
+                # Notificar administradores
+                cur.execute(
+                    """
+                    INSERT INTO notificacoes (usuario_id, chamado_id, mensagem)
+                    SELECT id, %s, %s
+                    FROM usuarios 
+                    WHERE role = 'admin' AND ativo = TRUE
+                    """,
+                    (novo_id, f"Novo chamado: {titulo[:50]}")
+                )
+
         flash("Chamado aberto com sucesso! A equipe de TI entrará em contato.", "success")
         return redirect(url_for("chamados.detalhe_chamado", chamado_id=novo_id))
 
