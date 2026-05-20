@@ -295,13 +295,20 @@ def index():
     Rota raiz — redireciona com base no estado de autenticação e role.
 
     - Não autenticado → /login
-    - Admin           → renderiza o painel principal (index.html)
-    - Viewer          → /fazenda/itens (portal de fazenda)
+    - Admin ou Viewer com permissões avançadas → renderiza o painel principal (index.html)
+    - Viewer restrito → /fazenda/itens (portal de fazenda)
     """
     if "usuario_id" not in session:
         return redirect(url_for("auth.login"))
+        
+    from auth_utils import has_permission
     if session.get("role") == "viewer":
-        return redirect(url_for("fazenda.listar_itens"))
+        # Se for um viewer, mas tiver permissão para ver ou editar o dashboard principal, permite acesso
+        if has_permission("ver_equipamentos") or has_permission("editar_equipamentos") or has_permission("ver_dashboard"):
+            return render_template("index.html")
+        else:
+            return redirect(url_for("fazenda.listar_itens"))
+            
     return render_template("index.html")
 
 

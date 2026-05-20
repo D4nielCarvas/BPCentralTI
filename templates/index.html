@@ -1649,6 +1649,7 @@
     const canVerDashboard = {{ 'true' if has_permission('ver_dashboard') else 'false' }};
     const canVerEstoque = {{ 'true' if has_permission('ver_estoque_geral') else 'false' }};
     const canExportar = {{ 'true' if has_permission('exportar_equipamentos') else 'false' }};
+    const canVerEquip = {{ 'true' if has_permission('ver_equipamentos') else 'false' }};
     const canVerPonto = {{ 'true' if has_permission('ver_celulares_ponto') else 'false' }};
     const canVerTurma = {{ 'true' if has_permission('ver_celulares_turma') else 'false' }};
     const canVerInspecao = {{ 'true' if has_permission('ver_celulares_inspecao') else 'false' }};
@@ -1667,6 +1668,9 @@
     }
     if (!canVerEstoque && !isMaster) {
       rbacCss += '.nav-item[data-page="estoque"], .nav-item[data-page="estoque_equipamentos"], .nav-item[data-page="toners"] { display: none !important; }\n';
+    }
+    if (!canVerEquip && !isMaster) {
+      rbacCss += '.nav-item[data-page="celulares"], .nav-item[data-page="computadores"], .nav-item[data-page="impressoras"], .nav-item[data-page="estabilizadores"], .nav-item[data-page="starlink"] { display: none !important; }\n';
     }
     if (!canVerPonto && !isMaster) {
       rbacCss += '.nav-item[data-page="celulares_ponto"] { display: none !important; }\n';

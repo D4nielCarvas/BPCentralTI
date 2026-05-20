@@ -56,6 +56,11 @@ _TIPO_ICONES: dict[str, str] = {
 
 # Permissão necessária por tabela (apenas as que têm restrição específica)
 _PERM_POR_TABELA: dict[str, str] = {
+    "celulares":          "ver_equipamentos",
+    "computadores":       "ver_equipamentos",
+    "impressoras":        "ver_equipamentos",
+    "estabilizadores":    "ver_equipamentos",
+    "starlink":           "ver_equipamentos",
     "celulares_ponto":    "ver_celulares_ponto",
     "celulares_turma":    "ver_celulares_turma",
     "celulares_inspecao": "ver_celulares_inspecao",
