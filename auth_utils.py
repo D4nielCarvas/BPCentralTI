@@ -36,9 +36,9 @@ def get_localidade_filter() -> Optional[int]:
         int  — ID da localidade do viewer (restringe a query).
         None — Usuário é admin; nenhum filtro aplicado.
     """
-    if session.get("role") == "viewer":
-        return session.get("localidade_id")
-    return None
+    if session.get("is_admin_master") or session.get("role") == "admin":
+        return None
+    return session.get("localidade_id")
 
 
 def get_usuario_id() -> Optional[int]:
@@ -59,6 +59,17 @@ def get_role() -> Optional[str]:
         str ou None se não houver sessão ativa.
     """
     return session.get("role")
+
+def has_permission(perm_name: str) -> bool:
+    """
+    Verifica se o usuário logado possui uma permissão específica.
+    """
+    # Administrador Master ou Admin legado têm acesso total
+    if session.get("is_admin_master") or session.get("role") == "admin":
+        return True
+    
+    permissoes = session.get("permissoes") or {}
+    return bool(permissoes.get(perm_name))
 
 
 # ── Decorators de acesso ──────────────────────────────────────────────────────
@@ -95,20 +106,28 @@ def viewer_required(f):
 
 def admin_required(f):
     """
-    Exige autenticação E role == 'admin'.
-
-    Retorna 403 Forbidden se o usuário estiver logado mas não for admin.
-    Redireciona para login se não houver sessão.
-
-    Risco de segurança: Garanta que 'role' na sessão só é gravado
-    no momento do login a partir do banco de dados — nunca a partir
-    de input do usuário (evita privilege escalation).
+    Exige autenticação E (role == 'admin' ou is_admin_master == True).
     """
     @wraps(f)
     def decorated(*args, **kwargs):
         if "usuario_id" not in session:
             return redirect(url_for("auth.login"))
-        if session.get("role") != "admin":
+        if not (session.get("is_admin_master") or session.get("role") == "admin"):
             abort(403)
         return f(*args, **kwargs)
     return decorated
+
+def permission_required(perm_name: str):
+    """
+    Decorator que exige uma permissão granular específica.
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if "usuario_id" not in session:
+                return redirect(url_for("auth.login"))
+            if not has_permission(perm_name):
+                abort(403)
+            return f(*args, **kwargs)
+        return decorated
+    return decorator

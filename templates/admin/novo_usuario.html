@@ -48,27 +48,23 @@
       </div>
 
       <div class="form-group">
-        <label for="role">Perfil de acesso *</label>
-        <select id="role" name="role" required onchange="toggleLocalidade(this.value)">
+        <label for="perfil_id">Cargo de acesso *</label>
+        <select id="perfil_id" name="perfil_id" required onchange="toggleLocalidade()">
           <option value="">Selecione…</option>
-          <option value="admin"  {% if form.get('role') == 'admin'  %}selected{% endif %}>
-            👑 Admin — acesso total ao sistema
+          {% for p in perfis %}
+          <option value="{{ p.id }}" data-master="{{ '1' if p.is_admin_master else '0' }}"
+                  {% if form.get('perfil_id') | string == p.id | string %}selected{% endif %}>
+            {% if p.is_admin_master %}👑{% else %}🔖{% endif %} {{ p.nome }} {% if p.is_admin_master %}(Admin Master){% endif %}
           </option>
-          <option value="viewer" {% if form.get('role') == 'viewer' %}selected{% endif %}>
-            👁 Viewer — acesso restrito à localidade
-          </option>
-          <option value="apoio" {% if form.get('role') == 'apoio' %}selected{% endif %}>
-            🔑 Apoio — acesso celulares de inspeção
-          </option>
+          {% endfor %}
         </select>
       </div>
 
-      {# ── Localidade — visível apenas para viewers ─────────────────────── #}
-      <div class="form-group" id="grupo-localidade"
-           {% if form.get('role') == 'viewer' %}style="display:flex"{% else %}style="display:none"{% endif %}>
-        <label for="localidade_id">Localidade *</label>
+      {# ── Localidade ─────────────────────── #}
+      <div class="form-group" id="grupo-localidade">
+        <label for="localidade_id">Localidade <span style="color:var(--text3);font-weight:400" id="lbl-loc-opt">(opcional)</span></label>
         <select id="localidade_id" name="localidade_id">
-          <option value="">Selecione a localidade…</option>
+          <option value="">Nenhuma / Acesso Global</option>
           {% for loc in localidades %}
           <option value="{{ loc.id }}"
             {% if form.get('localidade_id', '') | string == loc.id | string %}selected{% endif %}>
@@ -77,8 +73,8 @@
           </option>
           {% endfor %}
         </select>
-        <span style="font-size:11px;color:var(--text3)">
-          O viewer visualizará apenas dados desta localidade.
+        <span style="font-size:11px;color:var(--text3)" id="hint-loc">
+          Se o cargo for restrito a uma localidade, defina-a aqui.
         </span>
       </div>
 
@@ -92,23 +88,33 @@
   </div>
 </div>
 
-<script>
-  function toggleLocalidade(role) {
+  function toggleLocalidade() {
+    const selPerfil = document.getElementById('perfil_id');
+    const selOption = selPerfil.options[selPerfil.selectedIndex];
+    const isMaster = selOption ? selOption.getAttribute('data-master') === '1' : false;
+    
     const grupo = document.getElementById('grupo-localidade');
-    const select = document.getElementById('localidade_id');
-    const visivel = role === 'viewer';
+    const selectLoc = document.getElementById('localidade_id');
+    const lblLocOpt = document.getElementById('lbl-loc-opt');
+    const hintLoc = document.getElementById('hint-loc');
 
-    grupo.style.display = visivel ? 'flex' : 'none';
-
-    // Obrigatório apenas para viewer
-    select.required = visivel;
-    if (!visivel) select.value = '';
+    if (isMaster) {
+      grupo.style.opacity = '0.5';
+      selectLoc.disabled = true;
+      selectLoc.value = '';
+      lblLocOpt.textContent = '(ignorado para Admin Master)';
+      hintLoc.textContent = 'Admins Master ignoram restrição de localidade.';
+    } else {
+      grupo.style.opacity = '1';
+      selectLoc.disabled = false;
+      lblLocOpt.textContent = '(opcional)';
+      hintLoc.textContent = 'Deixe em branco para acesso sem restrição de local ou selecione uma.';
+    }
   }
 
-  // Aplica no carregamento caso haja valor pré-selecionado (re-render por erro)
+  // Aplica no carregamento
   document.addEventListener('DOMContentLoaded', function () {
-    const role = document.getElementById('role').value;
-    if (role) toggleLocalidade(role);
+    toggleLocalidade();
   });
 
   document.getElementById('form-novo-usuario').addEventListener('submit', function () {

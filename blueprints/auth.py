@@ -149,9 +149,11 @@ def login():
                 usuario = fetch_one(
                     cur,
                     """
-                    SELECT id, nome, login, senha_hash, role, localidade_id, ativo
-                    FROM usuarios
-                    WHERE login = %s OR email = %s
+                    SELECT u.id, u.nome, u.login, u.senha_hash, u.role, u.localidade_id, u.ativo,
+                           p.is_admin_master, p.permissoes
+                    FROM usuarios u
+                    LEFT JOIN perfis_acesso p ON u.perfil_id = p.id
+                    WHERE u.login = %s OR u.login = %s
                     """,
                     (login_input, login_input),
                 )
@@ -169,6 +171,20 @@ def login():
         session["usuario_nome"]  = usuario["nome"]
         session["role"]          = usuario["role"]
         session["localidade_id"] = usuario["localidade_id"]
+        
+        # Carregar as permissões e a flag de super_admin
+        session["is_admin_master"] = usuario.get("is_admin_master", False)
+        # Se for admin master ou a role legada for admin, carrega tudo ou define o acesso via utils depois
+        import json
+        permissoes_json = usuario.get("permissoes") or '{}'
+        if isinstance(permissoes_json, str):
+            try:
+                session["permissoes"] = json.loads(permissoes_json)
+            except:
+                session["permissoes"] = {}
+        else:
+            session["permissoes"] = permissoes_json
+            
         session.permanent = True
 
         if usuario["role"] == "viewer":

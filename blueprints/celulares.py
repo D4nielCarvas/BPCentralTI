@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Any
 
 import psycopg2
-from flask import Blueprint, Response, jsonify, request
+from flask import Blueprint, Response, jsonify, request, session
 
 from db_layer import acquire_conn, fetch_all, fetch_one
 
@@ -27,6 +27,23 @@ def _log(cur, id_ativo: str, tipo: str, acao: str) -> None:
         " VALUES (%s,%s,%s,NULL,NULL,NULL)",
         (id_ativo, tipo, acao),
     )
+
+def _mask_telefones(rows: list[dict]) -> list[dict]:
+    """Mascarar telefones caso o usuário não tenha a permissão 'ver_telefones'."""
+    is_master = session.get("is_admin_master")
+    pode_ver = session.get("permissoes", {}).get("ver_telefones")
+    
+    if is_master or pode_ver:
+        return rows
+        
+    for r in rows:
+        if "numero" in r and r["numero"]:
+            num = str(r["numero"])
+            if len(num) > 4:
+                r["numero"] = "*" * (len(num) - 4) + num[-4:]
+            else:
+                r["numero"] = "***"
+    return rows
 
 
 def _list_paginado(tabela: str, colunas_busca: list[str]) -> Response:
@@ -66,7 +83,7 @@ def _list_paginado(tabela: str, colunas_busca: list[str]) -> Response:
         with conn.cursor() as cur:
             rows = fetch_all(cur, query, tuple(params))
 
-    return jsonify(rows)
+    return jsonify(_mask_telefones(rows))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -125,7 +142,7 @@ def get_celular(id_ativo: str) -> tuple[Response, int] | Response:
             row = fetch_one(cur, "SELECT * FROM celulares WHERE id_ativo=%s", (id_ativo,))
     if row is None:
         return jsonify({"ok": False, "msg": "Celular não encontrado"}), 404
-    return jsonify(row)
+    return jsonify(_mask_telefones([row])[0])
 
 
 @celulares_bp.route("/celulares/<id_ativo>", methods=["PUT"])
@@ -134,9 +151,16 @@ def atualizar_celular(id_ativo: str) -> tuple[Response, int] | Response:
     d = request.get_json(silent=True) or {}
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            existe = fetch_one(cur, "SELECT id_ativo FROM celulares WHERE id_ativo=%s", (id_ativo,))
+            existe = fetch_one(cur, "SELECT id_ativo, numero FROM celulares WHERE id_ativo=%s", (id_ativo,))
             if not existe:
                 return jsonify({"ok": False, "msg": "Celular não encontrado"}), 404
+                
+            # Preserva o telefone original se o usuário não tiver permissão
+            is_master = session.get("is_admin_master")
+            pode_ver = session.get("permissoes", {}).get("ver_telefones")
+            if not (is_master or pode_ver):
+                d["numero"] = existe["numero"]
+                
             cur.execute(
                 """UPDATE celulares SET
                    fazenda=%s,setor=%s,responsavel=%s,tipo=%s,modelo=%s,numero=%s,status=%s,

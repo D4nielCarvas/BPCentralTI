@@ -132,9 +132,18 @@ def formata_data_br(dt):
 
 
 @app.context_processor
+def inject_permissions():
+    from auth_utils import has_permission
+    return dict(has_permission=has_permission)
+
+@app.context_processor
 def injetar_notificacoes():
-    """Injeta notificações não lidas no template global (para usuários admin)."""
-    if session.get("usuario_id") and session.get("role") == "admin":
+    """Injeta notificações não lidas no template global (para usuários autorizados)."""
+    is_master = session.get("is_admin_master")
+    perms = session.get("permissoes") or {}
+    pode_ver = is_master or perms.get("responder_chamados") or session.get("role") == "admin"
+    
+    if session.get("usuario_id") and pode_ver:
         with get_db() as conn:
             with conn.cursor() as cur:
                 # Contagem

@@ -281,8 +281,12 @@
       <span class="icon">📝</span> Modelos de Chamados
     </a>
     <a href="{{ url_for('admin.listar_usuarios') }}"
-       class="nav-item {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}">
+       class="nav-item {% if request.endpoint and request.endpoint == 'admin.listar_usuarios' %}active{% endif %}">
       <span class="icon">👥</span> Usuários
+    </a>
+    <a href="{{ url_for('admin.listar_perfis') }}"
+       class="nav-item {% if request.endpoint and 'perfil' in (request.endpoint or '') %}active{% endif %}">
+      <span class="icon">🔐</span> Cargos e Permissões
     </a>
     <a href="/" class="nav-item">
       <span class="icon">🏠</span> Painel Principal

@@ -1,0 +1,408 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block title %}Perfis de Acesso — Admin — BP Central TI{% endblock %}
+{% block page_title %}Cargos e Permissões{% endblock %}
+
+{% block topbar_actions %}
+<button class="btn btn-primary btn-sm" onclick="abrirModalNovoPerfil()">＋ Novo Cargo</button>
+<a href="{{ url_for('admin.listar_usuarios') }}" class="btn btn-ghost btn-sm">👥 Usuários</a>
+{% endblock %}
+
+{% block content %}
+<style>
+/* ── Perfis Page ─────────────────────────────────────────── */
+.perfis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.perfil-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.perfil-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 8px 32px rgba(59,130,246,0.1);
+}
+.perfil-card.is-master {
+  border-color: rgba(239,68,68,0.3);
+}
+.perfil-card.is-master:hover {
+  border-color: var(--red);
+  box-shadow: 0 0 0 1px var(--red), 0 8px 32px rgba(239,68,68,0.1);
+}
+
+.perfil-card-header {
+  padding: 18px 20px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.perfil-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.master-crown {
+  font-size: 16px;
+}
+.perfil-meta {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
+}
+
+.perfil-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.perfil-perms {
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.perm-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+.perm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.perm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.perm-chip.on {
+  background: rgba(16,185,129,0.1);
+  color: var(--green);
+  border: 1px solid rgba(16,185,129,0.2);
+}
+.perm-chip.off {
+  background: var(--bg3);
+  color: var(--text3);
+  border: 1px solid var(--border);
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+/* ── Modal de Permissões ───────────────────────────── */
+.perm-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 600px) { .perm-modal-grid { grid-template-columns: 1fr; } }
+
+.perm-group-block {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.perm-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text2);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.perm-toggle-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+.perm-toggle-label {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+/* Switch reutilizado */
+.switch { position:relative;display:inline-block;width:40px;height:22px;vertical-align:middle; }
+.switch input { opacity:0;width:0;height:0; }
+.slider { position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--bg3);transition:.3s;border-radius:22px;border:1px solid var(--border); }
+.slider:before { position:absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background:var(--text2);transition:.3s;border-radius:50%; }
+input:checked + .slider { background:rgba(16,185,129,.15);border-color:var(--green); }
+input:checked + .slider:before { transform:translateX(18px);background:var(--green); }
+
+.glass-modal {
+  background:rgba(19,22,30,.85);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;
+  padding:28px;
+  width:100%;max-width:640px;
+  box-shadow:0 25px 50px -12px rgba(0,0,0,.6);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-overlay {
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
+  z-index:1000;align-items:center;justify-content:center;
+  padding: 20px;
+}
+
+.admin-master-banner {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  font-size: 12px;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+</style>
+
+{# ── Cabeçalho Informativo ─────────────────────────────────────────────────── #}
+<div style="margin-bottom:18px;padding:14px 18px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:10px;font-size:13px;color:var(--text2)">
+  <strong style="color:var(--accent)">💡 Como funciona:</strong>
+  Crie cargos personalizados e defina exatamente o que cada tipo de usuário pode ver e fazer.
+  Ao criar um usuário, atribua um destes cargos a ele.
+</div>
+
+<div class="perfis-grid">
+  {% for p in perfis %}
+  {% set perms = p.permissoes if p.permissoes is mapping else {} %}
+  <div class="perfil-card {% if p.is_admin_master %}is-master{% endif %}">
+    <div class="perfil-card-header">
+      <div>
+        <div class="perfil-card-title">
+          {% if p.is_admin_master %}<span class="master-crown">👑</span>{% else %}🔖{% endif %}
+          {{ p.nome }}
+        </div>
+        <div class="perfil-meta">
+          {{ p.total_usuarios }} usuário(s) com este cargo ·
+          {% if p.is_admin_master %}
+            <span style="color:var(--red)">Acesso Total (Admin Master)</span>
+          {% else %}
+            Permissões customizadas
+          {% endif %}
+        </div>
+      </div>
+      <div class="perfil-card-actions">
+        <button class="btn btn-ghost btn-xs" style="color:var(--accent)"
+                onclick='abrirEditar({{ p.id }}, {{ p|tojson }}, {{ perms|tojson }})'
+                title="Editar perfil">✏️</button>
+        {% if p.total_usuarios == 0 %}
+        <form method="POST" action="{{ url_for('admin.excluir_perfil', perfil_id=p.id) }}" style="margin:0"
+              onsubmit="return confirm('Excluir o perfil {{ p.nome }}?')">
+          <button type="submit" class="btn btn-ghost btn-xs" style="color:var(--red)" title="Excluir perfil">🗑️</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not p.is_admin_master %}
+    <div class="perfil-perms">
+      {% for grupo, lista_perms in permissoes_sistema.items() %}
+      <div>
+        <div class="perm-group-label">{{ grupo }}</div>
+        <div class="perm-chips">
+          {% for chave, rotulo in lista_perms %}
+          <span class="perm-chip {% if perms.get(chave) %}on{% else %}off{% endif %}">
+            {% if perms.get(chave) %}✓{% else %}✗{% endif %} {{ rotulo }}
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="padding:16px 20px;font-size:12px;color:var(--text3);font-style:italic">
+      ✅ Acesso irrestrito a todas as funcionalidades do sistema.
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text3)">
+    Nenhum cargo cadastrado. <button class="btn btn-primary btn-sm" onclick="abrirModalNovoPerfil()" style="margin-left:12px">＋ Criar primeiro cargo</button>
+  </div>
+  {% endfor %}
+</div>
+
+
+{# ── Modal: Novo Perfil ────────────────────────────────────────────────────── #}
+<div id="modal-novo-perfil" class="modal-overlay">
+  <div class="glass-modal">
+    <h3 style="font-size:16px;margin-bottom:4px">＋ Novo Cargo</h3>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:20px">
+      Defina um nome e selecione as permissões para este cargo.
+    </p>
+
+    <form id="form-novo-perfil" method="POST" action="{{ url_for('admin.novo_perfil') }}">
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Nome do Cargo *</label>
+        <input type="text" name="nome" id="novo-nome" required placeholder="Ex: Técnico de Campo, Auditor..."
+               style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none">
+      </div>
+
+      <div class="admin-master-banner">
+        <label class="switch" style="flex-shrink:0">
+          <input type="checkbox" id="novo-admin-master" name="is_admin_master" value="1">
+          <span class="slider"></span>
+        </label>
+        <div>
+          <strong style="color:var(--red)">Admin Master</strong> — ignora todas as permissões abaixo
+          e concede acesso total ao sistema. Use apenas para administradores TI.
+        </div>
+      </div>
+
+      <div id="novo-perms-container">
+        <div class="perm-modal-grid">
+          {% for grupo, lista_perms in permissoes_sistema.items() %}
+          <div class="perm-group-block">
+            <div class="perm-group-title">{{ grupo }}</div>
+            {% for chave, rotulo in lista_perms %}
+            <div class="perm-toggle-item">
+              <span class="perm-toggle-label">{{ rotulo }}</span>
+              <label class="switch">
+                <input type="checkbox" name="perm_{{ chave }}" value="1">
+                <span class="slider"></span>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:22px">
+        <button type="button" onclick="fecharModalNovoPerfil()" class="btn btn-ghost btn-sm">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm">Criar Cargo</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+{# ── Modal: Editar Perfil ─────────────────────────────────────────────────── #}
+<div id="modal-editar-perfil" class="modal-overlay">
+  <div class="glass-modal">
+    <h3 style="font-size:16px;margin-bottom:4px">✏️ Editar Cargo</h3>
+    <p id="editar-perfil-label" style="font-size:12px;color:var(--text3);margin-bottom:20px"></p>
+
+    <form id="form-editar-perfil" method="POST">
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Nome do Cargo *</label>
+        <input type="text" name="nome" id="editar-nome" required
+               style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none">
+      </div>
+
+      <div class="admin-master-banner">
+        <label class="switch" style="flex-shrink:0">
+          <input type="checkbox" id="editar-admin-master" name="is_admin_master" value="1">
+          <span class="slider"></span>
+        </label>
+        <div>
+          <strong style="color:var(--red)">Admin Master</strong> — ignora todas as permissões abaixo
+          e concede acesso total ao sistema.
+        </div>
+      </div>
+
+      <div class="perm-modal-grid">
+        {% for grupo, lista_perms in permissoes_sistema.items() %}
+        <div class="perm-group-block">
+          <div class="perm-group-title">{{ grupo }}</div>
+          {% for chave, rotulo in lista_perms %}
+          <div class="perm-toggle-item">
+            <span class="perm-toggle-label">{{ rotulo }}</span>
+            <label class="switch">
+              <input type="checkbox" id="edit-perm-{{ chave }}" name="perm_{{ chave }}" value="1">
+              <span class="slider"></span>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:22px">
+        <button type="button" onclick="fecharEditar()" class="btn btn-ghost btn-sm">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm">Salvar Alterações</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<script>
+  // ── Modal Novo Perfil ──────────────────────────────────────
+  function abrirModalNovoPerfil() {
+    document.getElementById('modal-novo-perfil').style.display = 'flex';
+  }
+  function fecharModalNovoPerfil() {
+    document.getElementById('modal-novo-perfil').style.display = 'none';
+    document.getElementById('form-novo-perfil').reset();
+  }
+  document.getElementById('modal-novo-perfil').addEventListener('click', function(e) {
+    if (e.target === this) fecharModalNovoPerfil();
+  });
+
+  // Toggle Admin Master desabilita checkboxes de permissão
+  document.getElementById('novo-admin-master').addEventListener('change', function() {
+    const container = document.getElementById('novo-perms-container');
+    container.style.opacity = this.checked ? '0.3' : '1';
+    container.querySelectorAll('input[type=checkbox]').forEach(cb => cb.disabled = this.checked);
+  });
+
+  // ── Modal Editar Perfil ────────────────────────────────────
+  function abrirEditar(id, perfil, perms) {
+    document.getElementById('editar-perfil-label').textContent = 'Editando: ' + perfil.nome;
+    document.getElementById('form-editar-perfil').action = '/admin/perfis/' + id + '/editar';
+    document.getElementById('editar-nome').value = perfil.nome;
+    document.getElementById('editar-admin-master').checked = !!perfil.is_admin_master;
+
+    // Preenche os toggles de permissão
+    Object.entries(perms).forEach(([chave, valor]) => {
+      const el = document.getElementById('edit-perm-' + chave);
+      if (el) el.checked = !!valor;
+    });
+
+    document.getElementById('modal-editar-perfil').style.display = 'flex';
+  }
+  function fecharEditar() {
+    document.getElementById('modal-editar-perfil').style.display = 'none';
+  }
+  document.getElementById('modal-editar-perfil').addEventListener('click', function(e) {
+    if (e.target === this) fecharEditar();
+  });
+
+  document.getElementById('editar-admin-master').addEventListener('change', function() {
+    const grid = this.closest('.glass-modal').querySelector('.perm-modal-grid');
+    grid.style.opacity = this.checked ? '0.3' : '1';
+    grid.querySelectorAll('input[type=checkbox]').forEach(cb => cb.disabled = this.checked);
+  });
+</script>
+{% endblock %}

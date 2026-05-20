@@ -5,6 +5,7 @@
 
 {% block topbar_actions %}
 <a href="{{ url_for('admin.novo_usuario') }}" class="btn btn-primary btn-sm">＋ Novo Usuário</a>
+<a href="{{ url_for('admin.listar_perfis') }}" class="btn btn-ghost btn-sm">🔐 Gerenciar Cargos</a>
 {% endblock %}
 
 {% block content %}
@@ -59,12 +60,12 @@
         <td style="color:var(--text);font-weight:500">{{ u.nome }}</td>
         <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cyan)">{{ u.login }}</td>
         <td>
-          {% if u.role == 'admin' %}
-          <span class="badge badge-em_analise">👑 admin</span>
-          {% elif u.role == 'apoio' %}
-          <span class="badge" style="background:rgba(168,85,247,.15);color:#a855f7;border:1px solid rgba(168,85,247,.3)">🔑 apoio</span>
+          {% if u.is_admin_master %}
+          <span class="modern-badge role-admin">👑 {{ u.perfil_nome or 'Admin Master' }}</span>
+          {% elif u.perfil_nome %}
+          <span class="modern-badge role-viewer" style="background:rgba(99,102,241,.1);color:#818cf8;border-color:rgba(99,102,241,.2)">🔖 {{ u.perfil_nome }}</span>
           {% else %}
-          <span class="badge badge-ativo">👁 viewer</span>
+          <span class="modern-badge role-viewer">👁 {{ u.role }}</span>
           {% endif %}
         </td>
         <td style="color:var(--text2)">{{ u.localidade_nome or '—' }}</td>
@@ -103,11 +104,10 @@
               🔑 Senha
             </button>
 
-            {# Editar Role/Localidade #}
+            {# Editar Cargo #}
             {% if u.id != session.usuario_id %}
-            <button class="btn btn-xs btn-primary"
-                    onclick="abrirEditar({{ u.id }}, '{{ u.login }}', '{{ u.role }}', '{{ u.localidade_id or '' }}')">
-              ✏️ Editar
+            <button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="abrirEditar({{ u.id }}, '{{ u.login }}', '{{ u.perfil_id or '' }}', '{{ u.localidade_id or '' }}')" title="Editar Cargo">
+              ✏️
             </button>
             {% endif %}
           </div>
@@ -167,64 +167,47 @@
     if (e.target === this) fecharReset();
   });
 
-  // ── Modal Editar Role/Localidade ──
-  function abrirEditar(id, login, role, localidade_id) {
+  function abrirEditar(id, login, perfil_id, localidade_id) {
     document.getElementById('modal-editar-label').textContent = 'Usuário: ' + login;
     document.getElementById('form-editar-usuario').action = '/admin/usuarios/' + id + '/editar';
-    
-    document.getElementById('edit-role').value = role;
+    document.getElementById('edit-perfil_id').value = perfil_id;
     document.getElementById('edit-localidade_id').value = localidade_id;
-    toggleLocalidadeEdit(role);
-
-    const modal = document.getElementById('modal-editar');
-    modal.style.display = 'flex';
+    document.getElementById('modal-editar').style.display = 'flex';
   }
   function fecharEditar() {
     document.getElementById('modal-editar').style.display = 'none';
-  }
-  function toggleLocalidadeEdit(role) {
-    const grupo = document.getElementById('edit-grupo-localidade');
-    const select = document.getElementById('edit-localidade_id');
-    if (role === 'viewer') {
-      grupo.style.display = 'flex';
-      select.required = true;
-    } else {
-      grupo.style.display = 'none';
-      select.required = false;
-      select.value = '';
-    }
   }
   document.getElementById('modal-editar').addEventListener('click', function(e) {
     if (e.target === this) fecharEditar();
   });
 </script>
 
-{# ── Modal de Edição de Usuário ────────────────────────────────────────── #}
-<div id="modal-editar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+{# ── Modal de Edição de Usuário ──────────────────────────────────── #}
+<div id="modal-editar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6); backdrop-filter:blur(5px);
      z-index:1000;align-items:center;justify-content:center">
-  <div style="background:#13161e;border:1px solid #2e364d;border-radius:14px;
-              padding:28px;width:100%;max-width:400px;box-shadow:0 32px 64px rgba(0,0,0,.5)">
-    <h3 style="font-size:14px;margin-bottom:4px">✏️ Editar Perfil do Usuário</h3>
-    <p id="modal-editar-label" style="font-size:12px;color:#475569;margin-bottom:18px"></p>
+  <div class="glass-modal">
+    <h3 style="font-size:14px;margin-bottom:4px">✏️ Editar Cargo do Usuário</h3>
+    <p id="modal-editar-label" style="font-size:12px;color:var(--text3);margin-bottom:18px"></p>
 
     <form id="form-editar-usuario" method="POST" style="margin:0">
       <div class="form-group" style="margin-bottom:12px">
-        <label>Perfil de Acesso *</label>
-        <select id="edit-role" name="role" required onchange="toggleLocalidadeEdit(this.value)"
-                style="background:#1a1e29;border:1px solid #252b3b;color:#e2e8f0;
+        <label>Cargo de Acesso *</label>
+        <select id="edit-perfil_id" name="perfil_id" required
+                style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);
                        border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none">
-          <option value="admin">👑 Admin — acesso total ao sistema</option>
-          <option value="viewer">👁 Viewer — acesso restrito à localidade</option>
-          <option value="apoio">🔑 Apoio — acesso celulares de inspeção</option>
+          <option value="">Selecione o cargo…</option>
+          {% for p in perfis %}
+          <option value="{{ p.id }}">{% if p.is_admin_master %}👑{% else %}🔖{% endif %} {{ p.nome }}{% if p.is_admin_master %} (Admin Master){% endif %}</option>
+          {% endfor %}
         </select>
       </div>
 
-      <div class="form-group" id="edit-grupo-localidade" style="display:none;flex-direction:column;margin-bottom:12px">
-        <label>Localidade *</label>
+      <div class="form-group" id="edit-grupo-localidade" style="display:flex;flex-direction:column;margin-bottom:12px">
+        <label>Localidade <span style="color:var(--text3);font-weight:400">(opcional para Admin Master)</span></label>
         <select id="edit-localidade_id" name="localidade_id"
-                style="background:#1a1e29;border:1px solid #252b3b;color:#e2e8f0;
+                style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);
                        border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none">
-          <option value="">Selecione a localidade…</option>
+          <option value="">Sem localidade vinculada</option>
           {% for loc in localidades %}
           <option value="{{ loc.id }}">{{ loc.nome }} ({{ loc.tipo }})</option>
           {% endfor %}
