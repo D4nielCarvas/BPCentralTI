@@ -4,7 +4,7 @@
 {% block page_title %}Abrir Novo Chamado{% endblock %}
 
 {% block topbar_actions %}
-<a href="{{ url_for('chamados.listar_chamados') }}" class="btn btn-ghost btn-sm">← Voltar</a>
+<a href="{% if session.role == 'admin' %}{{ url_for('admin_chamados.dashboard_chamados') }}{% else %}{{ url_for('chamados.listar_chamados') }}{% endif %}" class="btn btn-ghost btn-sm">← Voltar</a>
 {% endblock %}
 
 {% block content %}
@@ -109,7 +109,7 @@
       </div>
 
       <div class="form-actions">
-        <a href="{{ url_for('chamados.listar_chamados') }}" class="btn btn-ghost">Cancelar</a>
+        <a href="{% if session.role == 'admin' %}{{ url_for('admin_chamados.dashboard_chamados') }}{% else %}{{ url_for('chamados.listar_chamados') }}{% endif %}" class="btn btn-ghost">Cancelar</a>
         <button type="submit" id="btn-enviar" class="btn btn-primary">
           📤 Abrir Chamado
         </button>
