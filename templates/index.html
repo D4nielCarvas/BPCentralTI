@@ -1642,6 +1642,36 @@
   </div>
 
   <script>
+    // ─── RBAC ───────────────────────────────────────────────────────────────────
+    const canAnexarTermos = {{ 'true' if has_permission('anexar_termos') else 'false' }};
+    const canVerTermos = {{ 'true' if has_permission('ver_termos') else 'false' }};
+    const canEditarEquip = {{ 'true' if has_permission('editar_equipamentos') else 'false' }};
+    const canVerDashboard = {{ 'true' if has_permission('ver_dashboard') else 'false' }};
+    const canVerEstoque = {{ 'true' if has_permission('ver_estoque_geral') else 'false' }};
+    const canExportar = {{ 'true' if has_permission('exportar_equipamentos') else 'false' }};
+    const isMaster = {{ 'true' if session.get('is_admin_master') else 'false' }};
+
+    // Auto-inject CSS para ocultar elementos não permitidos
+    let rbacCss = '';
+    if (!canEditarEquip && !isMaster) {
+      rbacCss += 'button[onclick^="editItem("], button[onclick^="newManut"], button[onclick^="newDescarte"], button[onclick^="aprovarPedido"], button[onclick^="rejeitarPedido"], button[onclick^="finalizar"] { display: none !important; }\n';
+    }
+    if (!canAnexarTermos && !isMaster) {
+      rbacCss += 'button[onclick^="uploadPDF("], button[onclick^="uploadNota("] { display: none !important; }\n';
+    }
+    if (!canVerDashboard && !isMaster) {
+      rbacCss += '.nav-item[data-page="dashboard"] { display: none !important; }\n';
+    }
+    if (!canVerEstoque && !isMaster) {
+      rbacCss += '.nav-item[data-page="estoque"], .nav-item[data-page="estoque_equipamentos"], .nav-item[data-page="toners"] { display: none !important; }\n';
+    }
+    if (!canExportar && !isMaster) {
+      rbacCss += 'button[onclick^="exportar("] { display: none !important; }\n';
+    }
+    if (rbacCss) {
+      document.head.insertAdjacentHTML('beforeend', '<style>' + rbacCss + '</style>');
+    }
+
     // ─── CONSTANTES ─────────────────────────────────────────────────────────────
     const FAZENDAS = ['Central', 'São Manoel', 'Tangará', 'São Pedro', 'São Judas', 'São Francisco',
       'Santana', 'Santa Eliza', 'Santa Lucia', 'Santa Lucia 2', 'Caroline', 'São João',
@@ -1690,8 +1720,11 @@
       document.getElementById('page-title').textContent = titles[page] || page;
       const noNew = ['dashboard', 'descartes', 'historico', 'estoque_equipamentos'];
       const btn = document.getElementById('btn-new');
-      btn.style.display = noNew.includes(page) ? 'none' : '';
-      if (page === 'celulares_turma') btn.style.display = '';
+      
+      // Esconder botão +Novo se estiver nestas telas ou se não tiver permissão
+      btn.style.display = (noNew.includes(page) || !canEditarEquip) ? 'none' : '';
+      if (page === 'celulares_turma' && canEditarEquip) btn.style.display = '';
+      
       const lbls = {
         celulares: '+ Celular', celulares_ponto: '+ Cel. Ponto', celulares_turma: '+ Cel. Turma',
         celulares_inspecao: '+ Cel. Inspeção',
@@ -1876,11 +1909,21 @@
       return `<span class="badge ${map[s] || 'badge-inativo'}">${s || '—'}</span>`;
     }
     function pdfLink(filename) {
+      if (!canVerTermos) return '<span style="color:var(--text3);font-size:11px">🔒 Oculto</span>';
       if (!filename) return '<span style="color:var(--text3);font-size:11px">—</span>';
       return `<a class="pdf-link" href="/termos/${filename}" target="_blank">📄 Ver PDF</a>`;
     }
     function uploadBtn(tipo, id_ativo) {
+      if (!canAnexarTermos) return '';
       return `<button class="btn btn-ghost btn-xs" onclick="uploadPDF('${tipo}','${encodeURIComponent(id_ativo)}')">📎</button>`;
+    }
+    function editBtn(tipo, id_ativo) {
+      if (!canEditarEquip) return '';
+      return `<button class="btn btn-ghost btn-xs" onclick="editItem('${tipo}','${id_ativo}')">✏️</button>`;
+    }
+    function actBtn(icon, onclickStr) {
+      if (!canEditarEquip) return '';
+      return `<button class="btn btn-ghost btn-xs" onclick="${onclickStr}">${icon}</button>`;
     }
     function emptyRow(cols, msg, icon) {
       return `<tr><td colspan="${cols}"><div class="empty"><div class="empty-icon">${icon}</div><p>${msg}</p></div></td></tr>`;

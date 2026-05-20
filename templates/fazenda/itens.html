@@ -56,10 +56,12 @@
         <th>Responsável</th>
         <th>Fazenda / Setor</th>
         <th>Status</th>
+        <th>Termo</th>
       </tr>
     </thead>
     <tbody>
       {% for item in itens %}
+      {% set tipo_api = "celular" if item.tipo == "Celular" else "celular_ponto" if item.tipo == "Celular Ponto" else "celular_inspecao" if item.tipo == "Celular Inspeção" else "celular_turma" if item.tipo == "Celular Turma" else "computador" if item.tipo == "Computador" else "impressora" if item.tipo == "Impressora" else "estabilizador" if item.tipo == "Estabilizador" else "starlink" if item.tipo == "Starlink" else item.tipo | lower %}
       <tr>
         <td class="td-id">{{ item.id_ativo }}</td>
         <td style="color:var(--text2)">{{ item.tipo }}</td>
@@ -75,10 +77,42 @@
             {{ item.status }}
           </span>
         </td>
+        <td>
+          <div style="display:flex; gap:6px; align-items:center;">
+            {% if has_permission('ver_termos') %}
+              {% if item.termo_pdf %}
+                <a class="pdf-link" href="/termos/{{ item.termo_pdf }}" target="_blank" style="font-size:11px">📄 Ver PDF</a>
+              {% else %}
+                <span style="color:var(--text3);font-size:11px">—</span>
+              {% endif %}
+            {% endif %}
+            {% if has_permission('anexar_termos') %}
+            <button class="btn btn-ghost btn-xs" onclick="uploadPDF('{{ tipo_api }}', '{{ item.id_ativo }}')" title="Anexar Termo">📎</button>
+            {% endif %}
+          </div>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  <script>
+    function uploadPDF(tipo, id_ativo) {
+      const input = document.createElement('input');
+      input.type = 'file'; input.accept = 'application/pdf';
+      input.onchange = async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const form = new FormData(); form.append('file', file);
+        try {
+          const r = await fetch(`/api/upload_termo/${tipo}/${encodeURIComponent(id_ativo)}`, { method: 'POST', body: form });
+          const res = await r.json();
+          if (res.ok) { alert('Termo anexado!'); location.reload(); }
+          else alert('Erro: ' + res.msg);
+        } catch (err) { alert('Erro na requisição'); }
+      };
+      input.click();
+    }
+  </script>
   {% else %}
   <div style="padding:40px;text-align:center;color:var(--text3)">
     Nenhum equipamento ativo encontrado para a sua localidade.
