@@ -304,6 +304,27 @@
     if (b) { b.disabled = true; b.textContent = '⏳ Enviando…'; }
   });
 
+  // Suporte para colar imagens diretamente
+  document.addEventListener('paste', function(e) {
+    if (e.clipboardData && e.clipboardData.files.length > 0) {
+      const file = e.clipboardData.files[0];
+      if (file.type.startsWith('image/')) {
+        const fileInput = document.querySelector('input[type="file"][name="anexo"]');
+        if (fileInput) {
+          fileInput.files = e.clipboardData.files;
+          let feedback = document.getElementById('paste-feedback');
+          if (!feedback) {
+            feedback = document.createElement('div');
+            feedback.id = 'paste-feedback';
+            feedback.style = 'font-size:11px; color:var(--green); margin-top:6px; font-weight:600; padding:4px 8px; background:rgba(16,185,129,0.1); border-radius:4px; border:1px solid rgba(16,185,129,0.3); display:inline-block;';
+            fileInput.parentNode.appendChild(feedback);
+          }
+          feedback.textContent = `✅ Imagem colada: ${file.name || 'imagem_colada.png'}`;
+        }
+      }
+    }
+  });
+
   // ── Polling de mensagens a cada 5 segundos ──────────────────────────────────
   const CHAMADO_ID = {{ chamado.id }};
   const MEU_ID = {{ usuario_id }};
