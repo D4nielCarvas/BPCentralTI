@@ -72,6 +72,8 @@ def _build_localidade_clause(
 # ITENS / EQUIPAMENTOS ATIVOS DA FAZENDA
 # ═══════════════════════════════════════════════════════════════════════════════
 
+from auth_utils import has_permission
+
 @fazenda_bp.route("/itens")
 @viewer_required
 def listar_itens():
@@ -91,23 +93,37 @@ def listar_itens():
     tipo_filtro = request.args.get("tipo", "").strip()
 
     todos_itens: list[dict] = []
+    
+    # Filtrar tabelas de acordo com permissões
+    tabelas_permitidas = []
+    for tab, nome in _TABELAS_EQUIPAMENTOS:
+        if tab == "celulares_ponto" and not has_permission("ver_celulares_ponto"):
+            continue
+        if tab == "celulares_turma" and not has_permission("ver_celulares_turma"):
+            continue
+        if tab == "celulares_inspecao" and not has_permission("ver_celulares_inspecao"):
+            continue
+        tabelas_permitidas.append((tab, nome))
 
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            for tabela, tipo_nome in _TABELAS_EQUIPAMENTOS:
+            for tabela, tipo_nome in tabelas_permitidas:
                 if tipo_filtro and tipo_filtro != tipo_nome:
                     continue
 
                 params: list[Any] = ["Ativo"]
                 col_setor = "setor"
                 col_responsavel = "responsavel"
+                col_numero = "NULL AS numero"
 
                 if tabela == "celulares_ponto":
                     col_setor = "funcao AS setor"
                 elif tabela == "estabilizadores":
                     col_responsavel = "NULL AS responsavel"
+                elif tabela == "celulares":
+                    col_numero = "numero"
 
-                query = f"SELECT id_ativo, fazenda, {col_setor}, {col_responsavel}, modelo, status FROM {tabela} WHERE status = %s"
+                query = f"SELECT id_ativo, fazenda, {col_setor}, {col_responsavel}, modelo, status, {col_numero} FROM {tabela} WHERE status = %s"
                 query += _build_localidade_clause(localidade_id, params)
 
                 if busca:
@@ -116,6 +132,10 @@ def listar_itens():
 
                     if tabela != "estabilizadores":
                         busca_conds.append("responsavel ILIKE %s")
+                        params_busca.append(f"%{busca}%")
+                        
+                    if tabela == "celulares":
+                        busca_conds.append("numero ILIKE %s")
                         params_busca.append(f"%{busca}%")
 
                     query += " AND (" + " OR ".join(busca_conds) + ")"
@@ -126,7 +146,7 @@ def listar_itens():
                 for r in rows:
                     todos_itens.append({**r, "tipo": tipo_nome})
 
-    tipos_disponiveis = [t for _, t in _TABELAS_EQUIPAMENTOS]
+    tipos_disponiveis = [t for _, t in tabelas_permitidas]
 
     return render_template(
         "fazenda/itens.html",

@@ -198,10 +198,12 @@ PERMISSOES_SISTEMA = {
     "Dados dos Membros": [
         ("ver_telefones",         "Ver números de telefone"),
         ("ver_email_membros",     "Ver e-mail dos membros"),
-        ("ver_cpf_membros",       "Ver CPF dos membros"),
     ],
     "Equipamentos": [
         ("ver_equipamentos",      "Visualizar equipamentos"),
+        ("ver_celulares_ponto",   "Visualizar Celulares Ponto"),
+        ("ver_celulares_turma",   "Visualizar Celulares Turma"),
+        ("ver_celulares_inspecao", "Visualizar Celulares Inspeção"),
         ("exportar_equipamentos", "Exportar listagem de equipamentos"),
         ("editar_equipamentos",   "Editar dados dos equipamentos"),
     ],

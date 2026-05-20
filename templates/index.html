@@ -1649,6 +1649,9 @@
     const canVerDashboard = {{ 'true' if has_permission('ver_dashboard') else 'false' }};
     const canVerEstoque = {{ 'true' if has_permission('ver_estoque_geral') else 'false' }};
     const canExportar = {{ 'true' if has_permission('exportar_equipamentos') else 'false' }};
+    const canVerPonto = {{ 'true' if has_permission('ver_celulares_ponto') else 'false' }};
+    const canVerTurma = {{ 'true' if has_permission('ver_celulares_turma') else 'false' }};
+    const canVerInspecao = {{ 'true' if has_permission('ver_celulares_inspecao') else 'false' }};
     const isMaster = {{ 'true' if session.get('is_admin_master') else 'false' }};
 
     // Auto-inject CSS para ocultar elementos não permitidos
@@ -1664,6 +1667,15 @@
     }
     if (!canVerEstoque && !isMaster) {
       rbacCss += '.nav-item[data-page="estoque"], .nav-item[data-page="estoque_equipamentos"], .nav-item[data-page="toners"] { display: none !important; }\n';
+    }
+    if (!canVerPonto && !isMaster) {
+      rbacCss += '.nav-item[data-page="celulares_ponto"] { display: none !important; }\n';
+    }
+    if (!canVerTurma && !isMaster) {
+      rbacCss += '.nav-item[data-page="celulares_turma"] { display: none !important; }\n';
+    }
+    if (!canVerInspecao && !isMaster) {
+      rbacCss += '.nav-item[data-page="celulares_inspecao"] { display: none !important; }\n';
     }
     if (!canExportar && !isMaster) {
       rbacCss += 'button[onclick^="exportar("] { display: none !important; }\n';

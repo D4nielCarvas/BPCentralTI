@@ -54,6 +54,9 @@
         <th>Tipo</th>
         <th>Modelo</th>
         <th>Responsável</th>
+        {% if has_permission('ver_telefones') %}
+        <th>Número</th>
+        {% endif %}
         <th>Fazenda / Setor</th>
         <th>Status</th>
         <th>Termo</th>
@@ -67,6 +70,9 @@
         <td style="color:var(--text2)">{{ item.tipo }}</td>
         <td style="color:var(--text)">{{ item.modelo or '—' }}</td>
         <td>{{ item.responsavel or '—' }}</td>
+        {% if has_permission('ver_telefones') %}
+        <td>{{ item.numero or '—' }}</td>
+        {% endif %}
         <td>
           {{ item.fazenda or '—' }}
           {% if item.setor %}<span style="color:var(--text3)"> / {{ item.setor }}</span>{% endif %}
