@@ -2,11 +2,14 @@
 
 > Sistema de gerenciamento e inventário de ativos de TI para empresas agrícolas, desenvolvido com **Flask + Supabase (PostgreSQL)** e interface web integrada.
 
+🌐 **Acesso online:** [https://inventario-ti-v3.onrender.com](https://inventario-ti-v3.onrender.com)
+
 ---
 
 ## 📋 Sumário
 
 - [Visão Geral](#-visão-geral)
+- [Hospedagem no Render](#-hospedagem-no-render)
 - [Arquitetura do Sistema](#-arquitetura-do-sistema)
 - [Estrutura de Arquivos](#-estrutura-de-arquivos)
 - [Pré-requisitos](#-pré-requisitos)
@@ -26,7 +29,7 @@
 
 ## 🎯 Visão Geral
 
-O **BP Central TI v3** é uma aplicação web local (desktop-like) que centraliza o controle de todos os equipamentos de TI distribuídos entre fazendas e setores. O sistema roda como um servidor Flask local, abrindo automaticamente o navegador, e persiste os dados no **Supabase (PostgreSQL)** na nuvem.
+O **BP Central TI v3** é uma aplicação web que centraliza o controle de todos os equipamentos de TI distribuídos entre fazendas e setores. O sistema é hospedado na nuvem via **Render** e persiste os dados no **Supabase (PostgreSQL)**. Também pode ser executado localmente como servidor Flask, abrindo automaticamente o navegador.
 
 ### Funcionalidades principais
 
@@ -50,6 +53,30 @@ O **BP Central TI v3** é uma aplicação web local (desktop-like) que centraliz
 
 ---
 
+## ☁️ Hospedagem no Render
+
+O sistema está hospedado na plataforma **Render** e pode ser acessado diretamente pelo navegador, sem necessidade de instalação local.
+
+🔗 **URL de Acesso:** [https://inventario-ti-v3.onrender.com](https://inventario-ti-v3.onrender.com)
+
+> ⚠️ **Atenção — Cold Start:** O plano gratuito do Render suspende o serviço após períodos de inatividade. O primeiro acesso pode levar **até 60 segundos** para o servidor inicializar. Aguarde a tela de login carregar completamente.
+
+### Variáveis de Ambiente no Render
+
+As seguintes variáveis devem ser configuradas no painel **Environment** do serviço no Render:
+
+| Variável | Descrição |
+|---|---|
+| `SUPABASE_DATABASE_URL` | String de conexão PostgreSQL do Supabase |
+| `SECRET_KEY` | Chave secreta Flask para sessões |
+| `RENDER` | Defina como `true` para indicar ambiente de produção |
+
+### Deploy Automático
+
+O Render realiza deploy automático a cada `git push` na branch `main`. Para forçar um redeploy manual, acesse o painel do Render e clique em **Manual Deploy → Deploy latest commit**.
+
+---
+
 ## 🏗️ Arquitetura do Sistema
 
 ```text
@@ -57,9 +84,10 @@ O **BP Central TI v3** é uma aplicação web local (desktop-like) que centraliz
 │                     Navegador (Frontend)                  │
 │              templates/index.html (HTML/JS)               │
 └─────────────────────────┬────────────────────────────────┘
-                          │ HTTP (localhost:5000)
+                          │ HTTPS
 ┌─────────────────────────▼────────────────────────────────┐
-│                    Flask Backend (app.py)                  │
+│         Render — Flask Backend (app.py)                   │
+│         https://inventario-ti-v3.onrender.com             │
 │  ┌──────────────┐  ┌──────────────┐  ┌────────────────┐  │
 │  │  REST API    │  │ id_generator │  │ Upload de PDFs │  │
 │  │  (rotas)     │  │   .py        │  │  (termos)      │  │
@@ -77,6 +105,7 @@ O **BP Central TI v3** é uma aplicação web local (desktop-like) que centraliz
 - **Backend:** Python 3.10+ · Flask · psycopg2-binary
 - **Banco:** Supabase (PostgreSQL 15+)
 - **Frontend:** HTML5 · JavaScript (Vanilla) · servido pelo Flask
+- **Hospedagem:** Render (Web Service)
 - **Empacotamento:** PyInstaller (`.exe` para distribuição interna)
 - **Automação:** Script `.bat` para coleta de dados de hardware no Windows
 
@@ -139,11 +168,15 @@ inventario-ti-v3/
 
 ## 🚀 Instalação e Configuração
 
+> **Acesso rápido:** Para usar o sistema sem instalar nada, acesse diretamente [https://inventario-ti-v3.onrender.com](https://inventario-ti-v3.onrender.com).
+
+Para rodar localmente:
+
 ### 1. Clone o repositório
 
 ```bash
-git clone https://github.com/D4nielCarvas/inventario-ti-v3.git
-cd inventario-ti-v3
+git clone https://github.com/D4nielCarvas/BPCentralTI.git
+cd BPCentralTI
 ```
 
 ### 2. Crie e ative um ambiente virtual
@@ -283,7 +316,9 @@ Módulo responsável por aplicar a padronização oficial. Ele consulta o banco 
 
 ## 🌐 API REST — Referência Completa
 
-Base URL: `http://localhost:5000`
+Base URL (produção): `https://inventario-ti-v3.onrender.com`
+
+Base URL (local): `http://localhost:5000`
 
 ### Equipamentos (padrão CRUD)
 Todos os módulos de equipamento (`/api/computadores`, `/api/celulares`, `/api/impressoras`, etc.) seguem o mesmo padrão:
@@ -348,7 +383,7 @@ python -m pytest test_inventario.py -v
 ## 🔒 Segurança e Boas Práticas
 
 - Uso de **Prepared statements** psycopg2 (`%s`) para evitar SQL Injection.
-- **Variáveis de ambiente** isoladas em `.env`.
+- **Variáveis de ambiente** isoladas em `.env` (local) e no painel do Render (produção).
 - Validação rígida (`secure_filename`) de uploads para evitar path traversal.
 
 ---
@@ -362,4 +397,4 @@ python -m pytest test_inventario.py -v
 
 ---
 
-*Documentação atualizada em Abril/2026 — BP Central TI v3.0*
+*Documentação atualizada em Maio/2026 — BP Central TI v3.0*
