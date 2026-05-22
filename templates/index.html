@@ -977,19 +977,110 @@
     }
 
     /* ── Notificações ─────────────────────── */
-    .notif-bell { position:relative; cursor:pointer; font-size:16px; color:var(--text2); display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:8px; transition:all .15s; }
-    .notif-bell:hover { background:var(--bg3); color:var(--text); }
-    .notif-badge { position:absolute; top:0px; right:-2px; background:var(--red); color:#fff; font-size:9px; font-weight:700; width:14px; height:14px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
-    .notif-dropdown { position:absolute; top:46px; right:0px; width:280px; background:var(--bg2); border:1px solid var(--border2); border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.5); z-index:999; display:none; flex-direction:column; overflow:hidden; }
-    .notif-dropdown.show { display:flex; }
-    .notif-header { padding:10px 14px; border-bottom:1px solid var(--border); font-size:11px; font-weight:600; color:var(--text); display:flex; justify-content:space-between; align-items:center; text-transform:uppercase; letter-spacing:0.5px; }
-    .notif-list { max-height:280px; overflow-y:auto; }
-    .notif-item { padding:10px 14px; border-bottom:1px solid var(--border); font-size:12px; color:var(--text2); display:block; text-decoration:none; transition:background .15s; line-height:1.4; }
-    .notif-item:last-child { border-bottom:none; }
-    .notif-item:hover { background:var(--bg3); color:var(--text); }
-    .notif-item-title { color:var(--text); font-weight:600; margin-bottom:2px; }
-    .notif-empty { padding:16px; text-align:center; color:var(--text3); font-size:11px; }
+    .notif-bell {
+      position: relative;
+      cursor: pointer;
+      font-size: 16px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      transition: all .15s;
+    }
 
+    .notif-bell:hover {
+      background: var(--bg3);
+      color: var(--text);
+    }
+
+    .notif-badge {
+      position: absolute;
+      top: 0px;
+      right: -2px;
+      background: var(--red);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .notif-dropdown {
+      position: absolute;
+      top: 46px;
+      right: 0px;
+      width: 280px;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+      z-index: 999;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .notif-dropdown.show {
+      display: flex;
+    }
+
+    .notif-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .notif-list {
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .notif-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text2);
+      display: block;
+      text-decoration: none;
+      transition: background .15s;
+      line-height: 1.4;
+    }
+
+    .notif-item:last-child {
+      border-bottom: none;
+    }
+
+    .notif-item:hover {
+      background: var(--bg3);
+      color: var(--text);
+    }
+
+    .notif-item-title {
+      color: var(--text);
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .notif-empty {
+      padding: 16px;
+      text-align: center;
+      color: var(--text3);
+      font-size: 11px;
+    }
   </style>
 </head>
 
@@ -1039,7 +1130,8 @@
     </nav>
     <div class="sidebar-footer" style="display:flex; justify-content:space-between; align-items:center;">
       <div class="version">localhost:5000</div>
-      <a href="{{ url_for('auth.logout') }}" style="color:var(--red); text-decoration:none; font-size:12px; font-weight:bold;">⏻ Sair</a>
+      <a href="{{ url_for('auth.logout') }}"
+        style="color:var(--red); text-decoration:none; font-size:12px; font-weight:bold;">⏻ Sair</a>
     </div>
   </div>
 
@@ -1062,7 +1154,7 @@
           <div class="notif-badge">{{ qtd_notificacoes }}</div>
           {% endif %}
         </div>
-        
+
         <div id="notif-dropdown" class="notif-dropdown">
           <div class="notif-header">
             <span>Notificações</span>
@@ -1072,20 +1164,20 @@
           </div>
           <div class="notif-list">
             {% if notificacoes_lista %}
-              {% for notif in notificacoes_lista %}
-              <a href="{{ url_for('admin_chamados.ler_notificacao', notif_id=notif.id) }}" class="notif-item">
-                <div class="notif-item-title">{{ notif.mensagem }}</div>
-                <div style="font-size:10px; color:var(--text3);">{{ notif.criado_em | fdt }}</div>
-              </a>
-              {% endfor %}
+            {% for notif in notificacoes_lista %}
+            <a href="{{ url_for('admin_chamados.ler_notificacao', notif_id=notif.id) }}" class="notif-item">
+              <div class="notif-item-title">{{ notif.mensagem }}</div>
+              <div style="font-size:10px; color:var(--text3);">{{ notif.criado_em | fdt }}</div>
+            </a>
+            {% endfor %}
             {% else %}
-              <div class="notif-empty">Nenhuma notificação nova.</div>
+            <div class="notif-empty">Nenhuma notificação nova.</div>
             {% endif %}
           </div>
         </div>
       </div>
       <script>
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
           var bell = document.querySelector('.notif-bell');
           var dropdown = document.getElementById('notif-dropdown');
           if (bell && dropdown) {
@@ -1243,6 +1335,7 @@
                   <th style="color:var(--cyan)">Usuário MIP</th>
                   <th>Status</th>
                   <th>Termo</th>
+                  <th>Observações</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -1738,11 +1831,11 @@
       document.getElementById('page-title').textContent = titles[page] || page;
       const noNew = ['dashboard', 'descartes', 'historico', 'estoque_equipamentos'];
       const btn = document.getElementById('btn-new');
-      
+
       // Esconder botão +Novo se estiver nestas telas ou se não tiver permissão
       btn.style.display = (noNew.includes(page) || !canEditarEquip) ? 'none' : '';
       if (page === 'celulares_turma' && canEditarEquip) btn.style.display = '';
-      
+
       const lbls = {
         celulares: '+ Celular', celulares_ponto: '+ Cel. Ponto', celulares_turma: '+ Cel. Turma',
         celulares_inspecao: '+ Cel. Inspeção',
@@ -2615,7 +2708,7 @@
 
     async function openEstoqueModal(d) {
       const locs = await getLocalidades();
-      const locsHtml = `<option value="">Todas (Global)</option>` + 
+      const locsHtml = `<option value="">Todas (Global)</option>` +
         locs.map(l => `<option value="${l.id}" ${(d && d.localidade_id == l.id) ? 'selected' : ''}>${l.nome}</option>`).join('');
 
       const html = `<form id="modal-form"><div class="form-grid">
