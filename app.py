@@ -1193,7 +1193,7 @@ def busca_global() -> Response:
     tabelas_busca = [
         ("Celular",          "celulares",          ["id_ativo", "responsavel", "modelo", "fazenda", "numero", "setor", "cargo", "num_serie", "imei_1"]),
         ("Celular Ponto",    "celulares_ponto",    ["id_ativo", "responsavel", "modelo", "fazenda", "num_turma", "funcao", "num_serie"]),
-        ("Celular Inspeção", "celulares_inspecao", ["id_ativo", "responsavel", "modelo", "fazenda", "numero", "id_sistema", "num_serie"]),
+        ("Celular Inspeção", "celulares_inspecao", ["id_ativo", "responsavel", "modelo", "fazenda", "id_sistema", "num_serie"]),
         ("Celular Turma",    "celulares_turma",    ["id_ativo", "responsavel", "modelo", "fazenda", "num_turma", "num_serie", "imei_1"]),
         ("Computador",       "computadores",       ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "numero_serie", "setor", "cargo"]),
         ("Impressora",       "impressoras",        ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "ip_rede", "setor", "numero_serie"]),
