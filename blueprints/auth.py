@@ -150,9 +150,10 @@ def login():
                     cur,
                     """
                     SELECT u.id, u.nome, u.login, u.senha_hash, u.role, u.localidade_id, u.ativo,
-                           p.is_admin_master, p.permissoes
+                           p.is_admin_master, p.permissoes, l.nome AS fazenda_nome
                     FROM usuarios u
                     LEFT JOIN perfis_acesso p ON u.perfil_id = p.id
+                    LEFT JOIN localidades l ON u.localidade_id = l.id
                     WHERE u.login = %s OR u.email = %s
                     """,
                     (login_input, login_input),
@@ -171,6 +172,8 @@ def login():
         session["usuario_nome"]  = usuario["nome"]
         session["role"]          = usuario["role"]
         session["localidade_id"] = usuario["localidade_id"]
+        if usuario.get("fazenda_nome"):
+            session["fazenda_nome"] = usuario["fazenda_nome"]
         
         # Carregar as permissões e a flag de super_admin
         session["is_admin_master"] = usuario.get("is_admin_master", False)

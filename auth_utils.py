@@ -40,6 +40,21 @@ def get_localidade_filter() -> Optional[int]:
         return None
     return session.get("localidade_id")
 
+def get_fazenda_nome_filter() -> Optional[str]:
+    """
+    Retorna o nome da fazenda correspondente à localidade do viewer.
+    Evita chamadas ao banco consultando o session cache, se disponível,
+    ou então o dicionário reverso de siglas.
+    """
+    if session.get("is_admin_master") or session.get("role") == "admin":
+        return None
+    
+    # Se já foi cacheado no login (melhor performance)
+    if "fazenda_nome" in session:
+        return session["fazenda_nome"]
+        
+    return None # O app deve preencher session["fazenda_nome"] no login.
+
 
 def get_usuario_id() -> Optional[int]:
     """

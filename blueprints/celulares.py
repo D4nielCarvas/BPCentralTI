@@ -139,7 +139,12 @@ def get_celular(id_ativo: str) -> tuple[Response, int] | Response:
     """Retorna os dados de um celular pelo ID do ativo."""
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            row = fetch_one(cur, "SELECT * FROM celulares WHERE id_ativo=%s", (id_ativo,))
+            from auth_utils import get_fazenda_nome_filter
+            fazenda_nome = get_fazenda_nome_filter()
+            if fazenda_nome:
+                row = fetch_one(cur, "SELECT * FROM celulares WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
+            else:
+                row = fetch_one(cur, "SELECT * FROM celulares WHERE id_ativo=%s", (id_ativo,))
     if row is None:
         return jsonify({"ok": False, "msg": "Celular não encontrado"}), 404
     return jsonify(_mask_telefones([row])[0])
@@ -230,7 +235,12 @@ def get_celular_ponto(id_ativo: str) -> tuple[Response, int] | Response:
     """Retorna dados de um celular de ponto."""
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            row = fetch_one(cur, "SELECT * FROM celulares_ponto WHERE id_ativo=%s", (id_ativo,))
+            from auth_utils import get_fazenda_nome_filter
+            fazenda_nome = get_fazenda_nome_filter()
+            if fazenda_nome:
+                row = fetch_one(cur, "SELECT * FROM celulares_ponto WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
+            else:
+                row = fetch_one(cur, "SELECT * FROM celulares_ponto WHERE id_ativo=%s", (id_ativo,))
     if row is None:
         return jsonify({"ok": False, "msg": "Celular Ponto não encontrado"}), 404
     return jsonify(row)
@@ -317,7 +327,12 @@ def get_celular_inspecao(id_ativo: str) -> tuple[Response, int] | Response:
     """Retorna dados de um celular de inspeção."""
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            row = fetch_one(cur, "SELECT * FROM celulares_inspecao WHERE id_ativo=%s", (id_ativo,))
+            from auth_utils import get_fazenda_nome_filter
+            fazenda_nome = get_fazenda_nome_filter()
+            if fazenda_nome:
+                row = fetch_one(cur, "SELECT * FROM celulares_inspecao WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
+            else:
+                row = fetch_one(cur, "SELECT * FROM celulares_inspecao WHERE id_ativo=%s", (id_ativo,))
     if row is None:
         return jsonify({"ok": False, "msg": "Celular Inspeção não encontrado"}), 404
     return jsonify(row)
@@ -406,7 +421,12 @@ def get_celular_turma(id_ativo: str) -> tuple[Response, int] | Response:
     """Retorna dados de um celular de turma."""
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            row = fetch_one(cur, "SELECT * FROM celulares_turma WHERE id_ativo=%s", (id_ativo,))
+            from auth_utils import get_fazenda_nome_filter
+            fazenda_nome = get_fazenda_nome_filter()
+            if fazenda_nome:
+                row = fetch_one(cur, "SELECT * FROM celulares_turma WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
+            else:
+                row = fetch_one(cur, "SELECT * FROM celulares_turma WHERE id_ativo=%s", (id_ativo,))
     if row is None:
         return jsonify({"ok": False, "msg": "Celular Turma não encontrado"}), 404
     return jsonify(row)

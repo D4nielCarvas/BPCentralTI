@@ -1081,6 +1081,36 @@
       color: var(--text3);
       font-size: 11px;
     }
+
+    /* ── Skeleton Loader ──────────────────────────────────────── */
+    .skeleton-row td { padding: 10px 12px; }
+    .skeleton-cell {
+      height: 14px; border-radius: 6px;
+      background: linear-gradient(90deg, var(--surface2) 25%, rgba(255,255,255,.06) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.4s infinite;
+    }
+    @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* ── Botão Carregar Mais ──────────────────────────────────── */
+    .load-more-btn {
+      display: block; width: 100%; margin: 8px 0 4px;
+      border: 1px dashed var(--border); color: var(--text2);
+      border-radius: 8px; padding: 8px;
+      font-size: 13px; cursor: pointer; background: transparent;
+      transition: background .2s, color .2s;
+    }
+    .load-more-btn:hover { background: var(--surface2); color: var(--text1); }
+
+    /* ── Spinner de botão (anti-double-click) ─────────────────── */
+    .btn-spinner {
+      display: inline-block; width: 12px; height: 12px;
+      border: 2px solid currentColor; border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle; margin-right: 4px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 
@@ -1891,6 +1921,93 @@
       }
     }
 
+    // ─── UX: LOADING / SPINNER ────────────────────────────────────────────────
+    /**
+     * Bloqueia/desbloqueia um botão com spinner para evitar duplo clique.
+     * @param {HTMLButtonElement} btn
+     * @param {boolean} isLoading
+     */
+    function toggleLoading(btn, isLoading) {
+      if (!btn) return;
+      if (isLoading) {
+        btn.dataset.origHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-spinner"></span> Aguarde...';
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = btn.dataset.origHtml || btn.innerHTML;
+        delete btn.dataset.origHtml;
+      }
+    }
+
+    /**
+     * Exibe skeleton loader em um tbody enquanto carrega.
+     * @param {string} tbodyId
+     * @param {number} cols - numero de colunas
+     */
+    function showTableSkeleton(tbodyId, cols) {
+      const tb = document.getElementById(tbodyId);
+      if (!tb) return;
+      tb.innerHTML = Array(4).fill(0).map(() =>
+        `<tr class="skeleton-row">${Array(cols).fill('<td><div class="skeleton-cell"></div></td>').join('')}</tr>`
+      ).join('');
+    }
+
+    // ─── PAGINACAO ────────────────────────────────────────────────────────────
+    const pageState = {};
+    const PAGE_LIMIT = 50;
+
+    /**
+     * Carrega dados paginados de uma entidade com skeleton loader e botao 'Carregar mais'.
+     */
+    async function loadWithPagination({ tbodyId, apiPath, queryParams = '', rowTemplate, emptyMsg, emptyIcon = '📋', emptyCols = 6, page = null, append = false, entityKey = null }) {
+      const key = entityKey || tbodyId;
+      const currentPage = page !== null ? page : (pageState[key] || 1);
+      pageState[key] = currentPage;
+
+      if (!append) showTableSkeleton(tbodyId, emptyCols);
+
+      const sep = queryParams ? '&' : '';
+      const url = `${apiPath}?${queryParams}${sep}page=${currentPage}&limit=${PAGE_LIMIT}`;
+      const result = await api(url);
+
+      const tb = document.getElementById(tbodyId);
+      if (!tb) return;
+
+      // Suporta tanto resposta paginada { data, has_more } quanto array legado
+      const rows = Array.isArray(result) ? result : (result.data || []);
+      const hasMore = Array.isArray(result) ? false : (result.has_more || false);
+
+      // Remove botao anterior
+      const existingBtn = document.getElementById(`load-more-${key}`);
+      if (existingBtn) existingBtn.remove();
+
+      if (rows.length === 0 && !append) {
+        tb.innerHTML = emptyRow(emptyCols, emptyMsg, emptyIcon);
+        return;
+      }
+
+      if (append) {
+        tb.insertAdjacentHTML('beforeend', rows.map(rowTemplate).join(''));
+      } else {
+        tb.innerHTML = rows.map(rowTemplate).join('');
+      }
+
+      if (hasMore) {
+        const nextPage = currentPage + 1;
+        const tableWrapper = tb.closest('.table-wrap') || tb.closest('table') || tb.parentElement;
+        const btn = document.createElement('button');
+        btn.id = `load-more-${key}`;
+        btn.className = 'load-more-btn';
+        btn.textContent = '↓ Carregar mais';
+        btn.onclick = () => {
+          btn.remove();
+          loadWithPagination({ tbodyId, apiPath, queryParams, rowTemplate, emptyMsg, emptyIcon, emptyCols, page: nextPage, append: true, entityKey: key });
+        };
+        tableWrapper.insertAdjacentElement('afterend', btn);
+      }
+    }
+
     // ─── FORMATAÇÃO DE TELEFONE ───────────────────────────────────────────────
     function formatPhone(el) {
       let v = el.value.replace(/\D/g, '');
@@ -2062,8 +2179,10 @@
 
     // ─── LOADERS ─────────────────────────────────────────────────────────────────
     async function loadCelulares() {
+      showTableSkeleton('tb-celulares', 9);
       const q = globalSearchFilter || '';
-      const rows = await api(`/api/celulares?status=${filterState.celulares || ''}&q=${encodeURIComponent(q)}`);
+      const _res_tb_celulares = await api(`/api/celulares?status=${filterState.celulares || ''}&q=${encodeURIComponent(q)}`);
+      const rows = Array.isArray(_res_tb_celulares) ? _res_tb_celulares : (_res_tb_celulares.data || []);
       const tb = document.getElementById('tb-celulares');
       if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular cadastrado', '📱'); return; }
       tb.innerHTML = rows.map(r => `<tr>
@@ -2080,8 +2199,10 @@
     }
 
     async function loadCelularesPonto() {
+      showTableSkeleton('tb-celulares_ponto', 9);
       const q = globalSearchFilter || '';
-      const rows = await api(`/api/celulares_ponto?status=${filterState.celulares_ponto || ''}&q=${encodeURIComponent(q)}`);
+      const _res_tb_celulares_ponto = await api(`/api/celulares_ponto?status=${filterState.celulares_ponto || ''}&q=${encodeURIComponent(q)}`);
+      const rows = Array.isArray(_res_tb_celulares_ponto) ? _res_tb_celulares_ponto : (_res_tb_celulares_ponto.data || []);
       const tb = document.getElementById('tb-celulares_ponto');
       if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular de ponto cadastrado', '🕐'); return; }
       tb.innerHTML = rows.map(r => `<tr>
@@ -2098,8 +2219,10 @@
     }
 
     async function loadCelularesInspecao() {
+      showTableSkeleton('tb-celulares_inspecao', 10);
       const q = globalSearchFilter || '';
-      const rows = await api(`/api/celulares_inspecao?status=${filterState.celulares_inspecao || ''}&q=${encodeURIComponent(q)}`);
+      const _res_tb_celulares_inspecao = await api(`/api/celulares_inspecao?status=${filterState.celulares_inspecao || ''}&q=${encodeURIComponent(q)}`);
+      const rows = Array.isArray(_res_tb_celulares_inspecao) ? _res_tb_celulares_inspecao : (_res_tb_celulares_inspecao.data || []);
       const tb = document.getElementById('tb-celulares_inspecao');
       if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular de inspeção cadastrado', '🔍'); return; }
       tb.innerHTML = rows.map(r => `<tr>
@@ -2119,8 +2242,10 @@
     }
 
     async function loadComputadores() {
+      showTableSkeleton('tb-computadores', 11);
       const q = globalSearchFilter || '';
-      const rows = await api(`/api/computadores?status=${filterState.computadores || ''}&q=${encodeURIComponent(q)}`);
+      const _res_tb_computadores = await api(`/api/computadores?status=${filterState.computadores || ''}&q=${encodeURIComponent(q)}`);
+      const rows = Array.isArray(_res_tb_computadores) ? _res_tb_computadores : (_res_tb_computadores.data || []);
       const tb = document.getElementById('tb-computadores');
       if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum computador cadastrado', '💻'); return; }
       tb.innerHTML = rows.map(r => {
@@ -2144,8 +2269,10 @@
     }
 
     async function loadImpressoras() {
+      showTableSkeleton('tb-impressoras', 8);
       const q = globalSearchFilter || '';
-      const rows = await api(`/api/impressoras?status=${filterState.impressoras || ''}&q=${encodeURIComponent(q)}`);
+      const _res_tb_impressoras = await api(`/api/impressoras?status=${filterState.impressoras || ''}&q=${encodeURIComponent(q)}`);
+      const rows = Array.isArray(_res_tb_impressoras) ? _res_tb_impressoras : (_res_tb_impressoras.data || []);
       const tb = document.getElementById('tb-impressoras');
       if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhuma impressora cadastrada', '🖨️'); return; }
       tb.innerHTML = rows.map(r => `<tr>
@@ -2160,8 +2287,10 @@
     }
 
     async function loadEstabilizadores() {
+      showTableSkeleton('tb-estabilizadores', 8);
       const q = globalSearchFilter || '';
-      const rows = await api(`/api/estabilizadores?status=${filterState.estabilizadores || ''}&q=${encodeURIComponent(q)}`);
+      const _res_tb_estabilizadores = await api(`/api/estabilizadores?status=${filterState.estabilizadores || ''}&q=${encodeURIComponent(q)}`);
+      const rows = Array.isArray(_res_tb_estabilizadores) ? _res_tb_estabilizadores : (_res_tb_estabilizadores.data || []);
       const tb = document.getElementById('tb-estabilizadores');
       if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhum estabilizador cadastrado', '🔌'); return; }
       tb.innerHTML = rows.map(r => `<tr>
@@ -2175,8 +2304,10 @@
     }
 
     async function loadStarlink() {
+      showTableSkeleton('tb-starlink', 12);
       const q = globalSearchFilter || '';
-      const rows = await api(`/api/starlink?status=${filterState.starlink || ''}&q=${encodeURIComponent(q)}`);
+      const _res_tb_starlink = await api(`/api/starlink?status=${filterState.starlink || ''}&q=${encodeURIComponent(q)}`);
+      const rows = Array.isArray(_res_tb_starlink) ? _res_tb_starlink : (_res_tb_starlink.data || []);
       const tb = document.getElementById('tb-starlink');
       if (!rows.length) { tb.innerHTML = emptyRow(11, 'Nenhuma antena cadastrada', '🛰️'); return; }
       tb.innerHTML = rows.map(r => `<tr>
@@ -2192,6 +2323,7 @@
     }
 
     async function loadEstoque() {
+      showTableSkeleton('tb-estoque', 6);
       const rows = await api('/api/estoque');
       const tb = document.getElementById('tb-estoque');
       if (!rows.length) { tb.innerHTML = emptyRow(6, 'Nenhum item no estoque', '📦'); return; }
@@ -2211,6 +2343,7 @@
     }
 
     async function loadEstoqueEquipamentos() {
+      showTableSkeleton('tb-estoque_equipamentos', 6);
       const rows = await api('/api/estoque_equipamentos');
       const tb = document.getElementById('tb-estoque_equipamentos');
       if (!rows.length) { tb.innerHTML = emptyRow(6, 'Nenhum equipamento em estoque', '\uD83C\uDFE2'); return; }
@@ -2228,8 +2361,10 @@
     }
 
     async function loadToners() {
+      showTableSkeleton('tb-toners', 7);
       const q = globalSearchFilter || '';
-      const rows = await api(`/api/toners?q=${encodeURIComponent(q)}`);
+      const _res_tb_toners = await api(`/api/toners?q=${encodeURIComponent(q)}`);
+      const rows = Array.isArray(_res_tb_toners) ? _res_tb_toners : (_res_tb_toners.data || []);
       const tb = document.getElementById('tb-toners');
       if (!rows.length) { tb.innerHTML = emptyRow(7, 'Nenhum toner cadastrado', '🖨️'); return; }
       tb.innerHTML = rows.map(r => {
@@ -2251,7 +2386,9 @@
     }
 
     async function loadManutencoes() {
-      const rows = await api(`/api/manutencoes?status=${filterState.manutencoes || ''}`);
+      showTableSkeleton('tb-manutencoes', 11);
+      const _res_tb_manutencoes = await api(`/api/manutencoes?status=${filterState.manutencoes || ''}`);
+      const rows = Array.isArray(_res_tb_manutencoes) ? _res_tb_manutencoes : (_res_tb_manutencoes.data || []);
       const tb = document.getElementById('tb-manutencoes');
       if (!rows.length) { tb.innerHTML = emptyRow(11, 'Nenhuma manutenção', '🔧'); return; }
       tb.innerHTML = rows.map(r => `<tr>
@@ -2267,6 +2404,7 @@
     }
 
     async function loadDescartes() {
+      showTableSkeleton('tb-descartes', 7);
       const rows = await api('/api/descartes');
       const tb = document.getElementById('tb-descartes');
       if (!rows.length) { tb.innerHTML = emptyRow(7, 'Nenhum descarte registrado', '🗑️'); return; }
@@ -2277,6 +2415,7 @@
     }
 
     async function loadTransferencias() {
+      showTableSkeleton('tb-transferencias', 8);
       const rows = await api('/api/transferencias');
       const tb = document.getElementById('tb-transferencias');
       if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhuma transferência registrada', '🔄'); return; }
@@ -2290,8 +2429,10 @@
     }
 
     async function loadPedidos() {
+      showTableSkeleton('tb-pedidos', 10);
       const q = filterState.pedidos_q || '';
-      const rows = await api(`/api/pedidos?status=${filterState.pedidos || ''}&q=${encodeURIComponent(q)}`);
+      const _res_tb_pedidos = await api(`/api/pedidos?status=${filterState.pedidos || ''}&q=${encodeURIComponent(q)}`);
+      const rows = Array.isArray(_res_tb_pedidos) ? _res_tb_pedidos : (_res_tb_pedidos.data || []);
       const tb = document.getElementById('tb-pedidos');
       if (!rows.length) { tb.innerHTML = emptyRow(10, 'Nenhum pedido registrado', '📋'); return; }
       tb.innerHTML = rows.map(r => `<tr>
@@ -2307,6 +2448,7 @@
     }
 
     async function loadHistorico() {
+      showTableSkeleton('tb-historico', 8);
       const rows = await api('/api/historico');
       const tb = document.getElementById('tb-historico');
       if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhum evento registrado', '📜'); return; }
@@ -2323,6 +2465,7 @@
 
     // Item 4 — Celulares Turma (ID no formato CL-TRM-NN)
     async function loadCelularesTurma() {
+      showTableSkeleton('tb-celulares_turma', 9);
       const q = globalSearchFilter || '';
       const rows = await api(`/api/celulares_turma?status=${filterState.celulares_turma || ''}&q=${encodeURIComponent(q)}`);
       const tb = document.getElementById('tb-celulares_turma');
@@ -2362,34 +2505,42 @@
       const form = document.getElementById('modal-form');
       if (!form) return;
       if (!form.reportValidity()) return;
+      
+      const saveBtn = document.getElementById('modal-save');
+      toggleLoading(saveBtn, true);
+
       const data = {};
       form.querySelectorAll('[name]').forEach(el => {
         data[el.name] = el.value === "" ? null : el.value;
       });
       let res;
-      if (type === 'manutencao') res = mode === 'new' ? await api('/api/manutencoes', 'POST', data) : await api(`/api/manutencoes/${id}`, 'PUT', data);
-      else if (type === 'descarte') res = await api('/api/descartes', 'POST', data);
-      else if (type === 'estoque') {
-        if (mode === 'new') res = await api('/api/estoque', 'POST', data);
-        else res = await api(`/api/estoque/${id}`, 'PUT', data);
-      } else if (type === 'toner') {
-        if (mode === 'new') res = await api('/api/toners', 'POST', data);
-        else res = await api(`/api/toners/${id}`, 'PUT', data);
-      } else if (type === 'pedido') {
-        if (mode === 'new') {
-          res = await api('/api/pedidos', 'POST', data);
-          // Item 9: se forma_envio=CD e há arquivo, faz upload da nota
-          if (res && res.ok && res.id) {
-            const fileInput = document.getElementById('ped-nota-file');
-            if (fileInput && fileInput.files && fileInput.files[0]) {
-              const fmData = new FormData();
-              fmData.append('file', fileInput.files[0]);
-              await fetch(`/api/pedidos/${res.id}/upload-nota`, { method: 'POST', body: fmData });
+      try {
+        if (type === 'manutencao') res = mode === 'new' ? await api('/api/manutencoes', 'POST', data) : await api(`/api/manutencoes/${id}`, 'PUT', data);
+        else if (type === 'descarte') res = await api('/api/descartes', 'POST', data);
+        else if (type === 'estoque') {
+          if (mode === 'new') res = await api('/api/estoque', 'POST', data);
+          else res = await api(`/api/estoque/${id}`, 'PUT', data);
+        } else if (type === 'toner') {
+          if (mode === 'new') res = await api('/api/toners', 'POST', data);
+          else res = await api(`/api/toners/${id}`, 'PUT', data);
+        } else if (type === 'pedido') {
+          if (mode === 'new') {
+            res = await api('/api/pedidos', 'POST', data);
+            // Item 9: se forma_envio=CD e há arquivo, faz upload da nota
+            if (res && res.ok && res.id) {
+              const fileInput = document.getElementById('ped-nota-file');
+              if (fileInput && fileInput.files && fileInput.files[0]) {
+                const fmData = new FormData();
+                fmData.append('file', fileInput.files[0]);
+                await fetch(`/api/pedidos/${res.id}/upload-nota`, { method: 'POST', body: fmData });
+              }
             }
-          }
-        } else res = await api(`/api/pedidos/${id}`, 'PUT', data);
-      } else {
-        res = mode === 'new' ? await api(`/api/${type}`, 'POST', data) : await api(`/api/${type}/${id}`, 'PUT', data);
+          } else res = await api(`/api/pedidos/${id}`, 'PUT', data);
+        } else {
+          res = mode === 'new' ? await api(`/api/${type}`, 'POST', data) : await api(`/api/${type}/${id}`, 'PUT', data);
+        }
+      } finally {
+        toggleLoading(saveBtn, false);
       }
       if (res && res.ok) { toast(res.msg, 'success'); closeModal(); loadPage(currentPage); }
       else toast((res && res.msg) || 'Erro ao salvar', 'error');
@@ -2986,12 +3137,18 @@
   </form>`;
       openModal(`${label} — ${item}`, html, { type: '__movimentar__', eid, tipo });
       document.getElementById('modal-save').onclick = async () => {
-        const form = document.getElementById('modal-form');
-        const data = { tipo };
-        form.querySelectorAll('[name]').forEach(el => data[el.name] = el.value);
-        const res = await api(`/api/estoque/${eid}/movimentar`, 'POST', data);
-        if (res.ok) { toast(res.msg, 'success'); closeModal(); loadEstoque(); }
-        else toast(res.msg, 'error');
+        const saveBtn = document.getElementById('modal-save');
+        toggleLoading(saveBtn, true);
+        try {
+          const form = document.getElementById('modal-form');
+          const data = { tipo };
+          form.querySelectorAll('[name]').forEach(el => data[el.name] = el.value);
+          const res = await api(`/api/estoque/${eid}/movimentar`, 'POST', data);
+          if (res.ok) { toast(res.msg, 'success'); closeModal(); loadEstoque(); }
+          else toast(res.msg, 'error');
+        } finally {
+          toggleLoading(saveBtn, false);
+        }
       };
     }
 
@@ -3057,15 +3214,21 @@
   </form>`;
       openModal(`🔄 Registrar Troca — ${toner}`, html, {});
       document.getElementById('modal-save').onclick = async () => {
-        const form = document.getElementById('modal-form');
-        const data = {};
-        form.querySelectorAll('[name]').forEach(el => { if (el.name !== 'impressora_id_ativo_manual') data[el.name] = el.value; });
-        // Prioriza valor manual se preenchido
-        const manual = form.querySelector('[name="impressora_id_ativo_manual"]')?.value;
-        if (manual) data.impressora_id_ativo = manual;
-        const res = await api(`/api/toners/${tid}/troca`, 'POST', data);
-        if (res.ok) { toast(res.msg, 'success'); closeModal(); loadToners(); }
-        else toast(res.msg, 'error');
+        const saveBtn = document.getElementById('modal-save');
+        toggleLoading(saveBtn, true);
+        try {
+          const form = document.getElementById('modal-form');
+          const data = {};
+          form.querySelectorAll('[name]').forEach(el => { if (el.name !== 'impressora_id_ativo_manual') data[el.name] = el.value; });
+          // Prioriza valor manual se preenchido
+          const manual = form.querySelector('[name="impressora_id_ativo_manual"]')?.value;
+          if (manual) data.impressora_id_ativo = manual;
+          const res = await api(`/api/toners/${tid}/troca`, 'POST', data);
+          if (res.ok) { toast(res.msg, 'success'); closeModal(); loadToners(); }
+          else toast(res.msg, 'error');
+        } finally {
+          toggleLoading(saveBtn, false);
+        }
       };
     }
 
