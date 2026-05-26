@@ -10,8 +10,14 @@ werkzeug==3.1.3
 # ── Banco de dados PostgreSQL (Supabase) ──────────────────────
 psycopg2-binary==2.9.12
 
-# ── Variáveis de ambiente ─────────────────────────────────────
+# ── Variáveis de ambiente ─────────────────────────────────────────────────────
 python-dotenv==1.0.1
+
+# ── Criptografia de campos sensíveis (Fernet/AES-128-CBC) ────────────────────
+cryptography>=42.0.0
+
+# ── Rate limiting de rotas de API ─────────────────────────────────────────────
+Flask-Limiter>=3.5.0
 
 
 # ── Empacotamento .exe (opcional, apenas para build) ──────────

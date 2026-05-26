@@ -91,17 +91,35 @@ def login_required(f):
 
 def viewer_required(f):
     """
-    Exige que o usuário esteja autenticado (viewer ou admin).
+    Exige autenticação E role 'viewer' ou 'admin' (ou is_admin_master).
 
-    Viewers e admins podem acessar as rotas decoradas com este decorator.
-    Redireciona para login se não houver sessão.
+    P10 CORRIGIDO (Opção B): diferencia viewers de usuários autenticados sem role válida.
+        - Não autenticado → redireciona para /login.
+        - Autenticado mas sem role 'viewer'/'admin' → abort(403) Forbidden.
+        - viewer ou admin → acesso liberado.
+
+    Uso semântico: rotas acessíveis por qualquer usuário do sistema,
+    mas não por sessões anônimas ou com roles desconhecidas.
+
+    Args:
+        f: Função de view a decorar.
+
+    Returns:
+        View decorada com verificação de autenticação e role.
     """
     @wraps(f)
     def decorated(*args, **kwargs):
         if "usuario_id" not in session:
             return redirect(url_for("auth.login"))
+        # P10: verifica role explicitamente — sem role válida → 403 Forbidden
+        if (
+            session.get("role") not in ("viewer", "admin")
+            and not session.get("is_admin_master")
+        ):
+            abort(403)
         return f(*args, **kwargs)
     return decorated
+
 
 
 def admin_required(f):

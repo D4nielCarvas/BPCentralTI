@@ -29,6 +29,14 @@ get_db = acquire_conn
 _fetch_all = fetch_all
 _fetch_one = fetch_one
 
+# ── Autenticação e controle de acesso ────────────────────────────────────────
+# P7: importação no topo para uso nos decorators das rotas de API
+from auth_utils import login_required, admin_required, viewer_required, get_usuario_id
+
+# ── Criptografia de campos sensíveis ─────────────────────────────────────────
+# P1: Fernet (AES-128-CBC + HMAC-SHA256) para senhas de Starlink e Celulares Turma
+from crypto_utils import encrypt_field, decrypt_field
+
 # ── Importações dos módulos internos ──────────────────────────────────────────
 from id_generator import (
     gerar_id_ativo, proximo_sequencial, sugerir_id,
@@ -68,9 +76,19 @@ def resource_path(relative_path: str) -> str:
 app = Flask(__name__, template_folder=resource_path("templates"))
 
 # SECRET_KEY obrigatória para sessões Flask (cookies assinados).
-# Deve ser uma string aleatória longa em produção — lida do .env.
+# RISCO CRÍTICO: um fallback fixo/previsível permite ao atacante forjar cookies de sessão.
+# P3 CORRIGIDO: usa os.environ[] — falha rápido se a variável não estiver configurada.
 # Gere com: python -c "import secrets; print(secrets.token_hex(32))"
-app.secret_key = os.environ.get("SECRET_KEY", "dev-inseguro-troque-em-producao")
+try:
+    app.secret_key = os.environ["SECRET_KEY"]  # P3: sem fallback inseguro
+except KeyError:
+    raise RuntimeError(
+        "\n\nSECRET_KEY não definida no ambiente.\n"
+        "Configure no .env antes de iniciar o servidor:\n"
+        "  SECRET_KEY=<chave aleatória de 64+ caracteres>\n"
+        "Gere com: python -c \"import secrets; print(secrets.token_hex(32))\"\n"
+        "RISCO: sem SECRET_KEY forte, cookies de sessão são falsificáveis."
+    ) from None
 
 if getattr(sys, "frozen", False):
     application_path = os.path.dirname(sys.executable)
@@ -88,6 +106,20 @@ with app.app_context():
 
 import atexit
 atexit.register(close_pool)
+
+# ── Rate limiting (P12) ───────────────────────────────────────────────────────
+# Protege rotas de polling e APIs públicas contra abuso/DoS.
+# storage_uri="memory://" é adequado para single-process (gunicorn -w 1).
+# Em multi-worker, substitua por Redis: storage_uri="redis://localhost:6379"
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=[],   # P12: sem limite global — aplicado rota a rota
+    storage_uri="memory://",
+)
 
 # Blueprints existentes
 from blueprints.celulares import celulares_bp
@@ -138,30 +170,61 @@ def inject_permissions():
 
 @app.context_processor
 def injetar_notificacoes():
-    """Injeta notificações não lidas no template global (para usuários autorizados)."""
+    """Injeta notificações não lidas no template global (para usuários autorizados).
+
+    P11 CORRIGIDO: implementa cache de sessão com TTL de 30 segundos.
+    Sem cache, esta função executava uma query ao banco em CADA requisição
+    (inclusive assets, APIs, etc.), criando carga desnecessária no Supabase.
+    Com cache, a query é reexecutada apenas quando o TTL expirar.
+
+    Complexidade: O(1) em cache hit; O(1) na query (índice em usuario_id + lida).
+    """
     is_master = session.get("is_admin_master")
     perms = session.get("permissoes") or {}
     pode_ver = is_master or perms.get("responder_chamados") or session.get("role") == "admin"
-    
+
     if session.get("usuario_id") and pode_ver:
+        # P11: verifica cache de sessão — atualiza apenas se TTL de 30s expirou
+        agora = datetime.utcnow()
+        cache_ts_raw = session.get("_notif_cache_ts")
+        cache_valido = (
+            cache_ts_raw is not None
+            and (agora - datetime.fromisoformat(cache_ts_raw)).total_seconds() < 30
+            and "_notif_cache" in session
+        )
+
+        if cache_valido:
+            cached = session["_notif_cache"]
+            return dict(
+                qtd_notificacoes=cached["qtd"],
+                notificacoes_lista=cached["lista"],
+            )
+
+        # Cache expirado ou ausente — executa query e atualiza cache de sessão
         with get_db() as conn:
             with conn.cursor() as cur:
-                # Contagem
+                # Contagem de não lidas
                 cur.execute(
                     "SELECT COUNT(*) as qtd FROM notificacoes WHERE usuario_id = %s AND lida = FALSE",
                     (session.get("usuario_id"),)
                 )
                 qtd_notificacoes = cur.fetchone()["qtd"]
-                
+
                 # Lista das últimas 5 não lidas
                 ultimas = _fetch_all(
                     cur,
-                    """SELECT id, chamado_id, mensagem, criado_em 
-                       FROM notificacoes 
-                       WHERE usuario_id = %s AND lida = FALSE 
+                    """SELECT id, chamado_id, mensagem, criado_em
+                       FROM notificacoes
+                       WHERE usuario_id = %s AND lida = FALSE
                        ORDER BY id DESC LIMIT 5""",
                     (session.get("usuario_id"),)
                 )
+
+        # Armazena resultado no cache de sessão com timestamp
+        session["_notif_cache"] = {"qtd": qtd_notificacoes, "lista": ultimas}
+        session["_notif_cache_ts"] = agora.isoformat()
+        session.modified = True  # Força persistência do cache na sessão
+
         return dict(qtd_notificacoes=qtd_notificacoes, notificacoes_lista=ultimas)
     return dict(qtd_notificacoes=0, notificacoes_lista=[])
 
@@ -197,16 +260,10 @@ def rows_to_list(rows: list[psycopg2.extras.RealDictRow]) -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def _fetch_all(cur: psycopg2.extensions.cursor, query: str, params: tuple = ()) -> list[dict]:
-    """Executa query e retorna todos os resultados como lista de dicts."""
-    cur.execute(query, params)
-    return rows_to_list(cur.fetchall())
-
-
-def _fetch_one(cur: psycopg2.extensions.cursor, query: str, params: tuple = ()) -> Optional[dict]:
-    """Executa query e retorna o primeiro resultado como dict ou None."""
-    cur.execute(query, params)
-    return row_to_dict(cur.fetchone())
+# P4 CORRIGIDO: redefinições locais de _fetch_all/_fetch_one removidas.
+# Os aliases _fetch_all = fetch_all e _fetch_one = fetch_one (definidos acima, linha ~29)
+# têm a mesma assinatura (cur, query, params) e são importados de db_layer.
+# Manter duas definições causava shadowing silencioso e mascarava divergências futuras.
 
 
 # ── Helper: log de histórico ──────────────────────────────────────────────────
@@ -517,12 +574,14 @@ def dashboard() -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/computadores", methods=["GET"])
+@login_required  # P7: exige autenticação para listar
 def listar_computadores() -> Response:
     """Lista computadores/notebooks com filtros."""
     return _list_table("computadores", ["id_ativo", "responsavel", "modelo", "marca"])
 
 
 @app.route("/api/computadores", methods=["POST"])
+@admin_required  # P7: apenas admin pode criar
 def criar_computador() -> tuple[Response, int] | Response:
     """Cadastra um novo computador ou notebook."""
     d = request.json
@@ -553,6 +612,7 @@ def criar_computador() -> tuple[Response, int] | Response:
 
 
 @app.route("/api/computadores/<id_ativo>", methods=["GET"])
+@login_required  # P7: exige autenticação para consultar
 def get_computador(id_ativo: str) -> Response:
     """Retorna dados de um computador pelo ID do ativo."""
     with get_db() as conn:
@@ -562,6 +622,7 @@ def get_computador(id_ativo: str) -> Response:
 
 
 @app.route("/api/computadores/<id_ativo>", methods=["PUT"])
+@admin_required  # P7: apenas admin pode editar
 def atualizar_computador(id_ativo: str) -> Response:
     """Atualiza dados de um computador existente."""
     d = request.json
@@ -594,12 +655,14 @@ def atualizar_computador(id_ativo: str) -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/impressoras", methods=["GET"])
+@login_required  # P7: exige autenticação para listar
 def listar_impressoras() -> Response:
     """Lista impressoras com filtros."""
     return _list_table("impressoras", ["id_ativo", "responsavel", "modelo", "marca"])
 
 
 @app.route("/api/impressoras", methods=["POST"])
+@admin_required  # P7: apenas admin pode criar
 def criar_impressora() -> tuple[Response, int] | Response:
     """Cadastra uma nova impressora."""
     d = request.json
@@ -627,6 +690,7 @@ def criar_impressora() -> tuple[Response, int] | Response:
 
 
 @app.route("/api/impressoras/<id_ativo>", methods=["GET"])
+@login_required  # P7: exige autenticação para consultar
 def get_impressora(id_ativo: str) -> Response:
     """Retorna dados de uma impressora."""
     with get_db() as conn:
@@ -636,6 +700,7 @@ def get_impressora(id_ativo: str) -> Response:
 
 
 @app.route("/api/impressoras/<id_ativo>", methods=["PUT"])
+@admin_required  # P7: apenas admin pode editar
 def atualizar_impressora(id_ativo: str) -> Response:
     """Atualiza dados de uma impressora."""
     d = request.json
@@ -664,12 +729,14 @@ def atualizar_impressora(id_ativo: str) -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/estabilizadores", methods=["GET"])
+@login_required  # P7: exige autenticação para listar
 def listar_estabilizadores() -> Response:
     """Lista estabilizadores/nobreakes com filtros."""
     return _list_table("estabilizadores", ["id_ativo", "fazenda", "modelo", "setor"])
 
 
 @app.route("/api/estabilizadores", methods=["POST"])
+@admin_required  # P7: apenas admin pode criar
 def criar_estabilizador() -> tuple[Response, int] | Response:
     """Cadastra um novo estabilizador ou nobreak."""
     d = request.json
@@ -691,6 +758,7 @@ def criar_estabilizador() -> tuple[Response, int] | Response:
 
 
 @app.route("/api/estabilizadores/<id_ativo>", methods=["GET"])
+@login_required  # P7: exige autenticação para consultar
 def get_estabilizador(id_ativo: str) -> Response:
     """Retorna dados de um estabilizador."""
     with get_db() as conn:
@@ -700,6 +768,7 @@ def get_estabilizador(id_ativo: str) -> Response:
 
 
 @app.route("/api/estabilizadores/<id_ativo>", methods=["PUT"])
+@admin_required  # P7: apenas admin pode editar
 def atualizar_estabilizador(id_ativo: str) -> Response:
     """Atualiza dados de um estabilizador."""
     d = request.json
@@ -723,12 +792,14 @@ def atualizar_estabilizador(id_ativo: str) -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/starlink", methods=["GET"])
+@login_required  # P7: exige autenticação para listar
 def listar_starlink() -> Response:
     """Lista antenas Starlink com filtros."""
     return _list_table("starlink", ["id_ativo", "fazenda", "responsavel", "num_serie"])
 
 
 @app.route("/api/starlink", methods=["POST"])
+@admin_required  # P7: apenas admin pode criar
 def criar_starlink() -> tuple[Response, int] | Response:
     """Cadastra uma nova antena Starlink. Item 7: inclui campos de login."""
     d = request.json
@@ -747,7 +818,7 @@ def criar_starlink() -> tuple[Response, int] | Response:
                         d.get("status", "Ativo"), d.get("data_instalacao"), d.get("data_aquisicao"),
                         d.get("plano"), d.get("observacoes"),
                         d.get("id_starlink"), d.get("numero_kit"),
-                        d.get("email_login"), d.get("senha_login"),
+                        d.get("email_login"), encrypt_field(d.get("senha_login")),  # P1: criptografa antes de gravar
                     ),
                 )
                 log_historico(cur, d["id_ativo"], "Starlink", "Cadastro")
@@ -757,15 +828,19 @@ def criar_starlink() -> tuple[Response, int] | Response:
 
 
 @app.route("/api/starlink/<id_ativo>", methods=["GET"])
+@login_required  # P7: exige autenticação para consultar
 def get_starlink(id_ativo: str) -> Response:
-    """Retorna dados de uma antena Starlink."""
+    """Retorna dados de uma antena Starlink. P1: descriptografa senha_login antes de retornar."""
     with get_db() as conn:
         with conn.cursor() as cur:
             row = _fetch_one(cur, "SELECT * FROM starlink WHERE id_ativo=%s", (id_ativo,))
+    if row and row.get("senha_login"):
+        row["senha_login"] = decrypt_field(row["senha_login"])  # P1: descriptografa para exibição
     return jsonify(row)
 
 
 @app.route("/api/starlink/<id_ativo>", methods=["PUT"])
+@admin_required  # P7: apenas admin pode editar
 def atualizar_starlink(id_ativo: str) -> Response:
     """Atualiza dados de uma antena Starlink. Item 7: inclui campos de login."""
     d = request.json
@@ -783,7 +858,7 @@ def atualizar_starlink(id_ativo: str) -> Response:
                     d.get("data_instalacao"), d.get("data_aquisicao"), d.get("plano"),
                     d.get("observacoes"),
                     d.get("id_starlink"), d.get("numero_kit"),
-                    d.get("email_login"), d.get("senha_login"),
+                    d.get("email_login"), encrypt_field(d.get("senha_login")),  # P1: criptografa antes de gravar
                     id_ativo,
                 ),
             )
@@ -796,6 +871,7 @@ def atualizar_starlink(id_ativo: str) -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/celulares_turma", methods=["GET"])
+@login_required  # P7: exige autenticação para listar
 def listar_celulares_turma() -> Response:
     """Lista celulares de turma com filtros de status e busca textual."""
     return _list_table(
@@ -805,6 +881,7 @@ def listar_celulares_turma() -> Response:
 
 
 @app.route("/api/celulares_turma", methods=["POST"])
+@admin_required  # P7: apenas admin pode criar
 def criar_celular_turma() -> tuple[Response, int] | Response:
     """Cadastra um novo celular de turma (ID no formato CL-TRM-NN)."""
     d = request.json
@@ -823,7 +900,7 @@ def criar_celular_turma() -> tuple[Response, int] | Response:
                         d.get("fazenda"), d.get("setor"), d.get("modelo"), d.get("tipo"),
                         d.get("status", "Ativo"), d.get("uso_celular"), d.get("carregador"),
                         d.get("termo_assinado"), d.get("data_entrega"), d.get("data_devolucao"),
-                        d.get("gmail_clockin"), d.get("senha"), d.get("usuario_anterior"),
+                        d.get("gmail_clockin"), encrypt_field(d.get("senha")), d.get("usuario_anterior"),  # P1: criptografa senha
                         d.get("imei_1"), d.get("imei_2"), d.get("num_serie"),
                         d.get("armazenamento"), d.get("observacoes"),
                     ),
@@ -835,15 +912,19 @@ def criar_celular_turma() -> tuple[Response, int] | Response:
 
 
 @app.route("/api/celulares_turma/<id_ativo>", methods=["GET"])
+@login_required  # P7: exige autenticação para consultar
 def get_celular_turma(id_ativo: str) -> Response:
-    """Retorna dados de um celular de turma."""
+    """Retorna dados de um celular de turma. P1: descriptografa senha antes de retornar."""
     with get_db() as conn:
         with conn.cursor() as cur:
             row = _fetch_one(cur, "SELECT * FROM celulares_turma WHERE id_ativo=%s", (id_ativo,))
+    if row and row.get("senha"):
+        row["senha"] = decrypt_field(row["senha"])  # P1: descriptografa para exibição
     return jsonify(row)
 
 
 @app.route("/api/celulares_turma/<id_ativo>", methods=["PUT"])
+@admin_required  # P7: apenas admin pode editar
 def atualizar_celular_turma(id_ativo: str) -> Response:
     """Atualiza dados de um celular de turma."""
     d = request.json
@@ -860,7 +941,7 @@ def atualizar_celular_turma(id_ativo: str) -> Response:
                     d.get("num_turma"), d.get("responsavel"), d.get("fazenda"), d.get("setor"),
                     d.get("modelo"), d.get("tipo"), d.get("status"), d.get("uso_celular"),
                     d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
-                    d.get("data_devolucao"), d.get("gmail_clockin"), d.get("senha"),
+                    d.get("data_devolucao"), d.get("gmail_clockin"), encrypt_field(d.get("senha")),  # P1: criptografa senha
                     d.get("usuario_anterior"), d.get("imei_1"), d.get("imei_2"),
                     d.get("num_serie"), d.get("armazenamento"), d.get("observacoes"),
                     id_ativo,
@@ -875,6 +956,7 @@ def atualizar_celular_turma(id_ativo: str) -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/estoque", methods=["GET"])
+@login_required
 def listar_estoque() -> Response:
     """Lista itens do estoque geral com busca opcional."""
     busca = request.args.get("q", "")
@@ -891,6 +973,7 @@ def listar_estoque() -> Response:
 
 
 @app.route("/api/estoque_equipamentos", methods=["GET"])
+@login_required
 def listar_estoque_equipamentos() -> Response:
     """Lista todos os equipamentos com status 'Em Estoque' de todas as tabelas."""
     tabelas = [
@@ -917,6 +1000,7 @@ def listar_estoque_equipamentos() -> Response:
 
 
 @app.route("/api/localidades", methods=["GET"])
+@login_required
 def api_listar_localidades() -> Response:
     """Retorna todas as localidades para selects."""
     with get_db() as conn:
@@ -926,6 +1010,7 @@ def api_listar_localidades() -> Response:
 
 
 @app.route("/api/estoque", methods=["POST"])
+@admin_required
 def criar_estoque() -> Response:
     """Cadastra um novo item no estoque geral."""
     d = request.json
@@ -945,6 +1030,7 @@ def criar_estoque() -> Response:
 
 
 @app.route("/api/estoque/<int:eid>", methods=["GET"])
+@login_required
 def get_estoque(eid: int) -> Response:
     """Retorna dados de um item de estoque pelo ID."""
     with get_db() as conn:
@@ -954,6 +1040,7 @@ def get_estoque(eid: int) -> Response:
 
 
 @app.route("/api/estoque/<int:eid>", methods=["PUT"])
+@admin_required
 def atualizar_estoque(eid: int) -> Response:
     """Atualiza dados cadastrais de um item de estoque (não altera quantidade)."""
     d = request.json
@@ -970,6 +1057,7 @@ def atualizar_estoque(eid: int) -> Response:
 
 
 @app.route("/api/estoque/<int:eid>/movimentar", methods=["POST"])
+@admin_required
 def movimentar_estoque(eid: int) -> tuple[Response, int] | Response:
     """
     Registra entrada ou saída de um item de estoque.
@@ -1021,6 +1109,7 @@ def movimentar_estoque(eid: int) -> tuple[Response, int] | Response:
 
 
 @app.route("/api/estoque/<int:eid>/movimentacoes", methods=["GET"])
+@login_required
 def historico_estoque(eid: int) -> Response:
     """Retorna o histórico de movimentações de um item de estoque."""
     with get_db() as conn:
@@ -1038,6 +1127,7 @@ def historico_estoque(eid: int) -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/pedidos", methods=["GET"])
+@login_required
 def listar_pedidos() -> Response:
     """Lista pedidos com filtros de status e busca."""
     filtro = request.args.get("status", "")
@@ -1061,6 +1151,7 @@ def listar_pedidos() -> Response:
 
 
 @app.route("/api/pedidos", methods=["POST"])
+@admin_required
 def criar_pedido() -> Response:
     """Cadastra um novo pedido. Item 9: inclui responsavel_envio, retorna id para upload de nota."""
     d = request.json
@@ -1086,6 +1177,7 @@ def criar_pedido() -> Response:
 
 
 @app.route("/api/pedidos/<int:pid>", methods=["GET"])
+@login_required
 def get_pedido(pid: int) -> Response:
     """Retorna dados de um pedido."""
     with get_db() as conn:
@@ -1095,6 +1187,7 @@ def get_pedido(pid: int) -> Response:
 
 
 @app.route("/api/pedidos/<int:pid>", methods=["PUT"])
+@admin_required
 def atualizar_pedido(pid: int) -> tuple[Response, int] | Response:
     """Atualiza status e dados de um pedido. Ao finalizar, desconta do estoque se houver estoque_id."""
     d = request.json
@@ -1131,7 +1224,8 @@ def atualizar_pedido(pid: int) -> tuple[Response, int] | Response:
                 eid = d.get("estoque_id") or pedido["estoque_id"]
                 qtd = int(d.get("quantidade") or pedido["quantidade"])
                 if eid:
-                    item_est = _fetch_one(cur, "SELECT * FROM estoque WHERE id=%s", (eid,))
+                    cur.execute("SELECT * FROM estoque WHERE id=%s FOR UPDATE", (eid,))
+                    item_est = row_to_dict(cur.fetchone())
                     if item_est:
                         nova_qtd = item_est["quantidade"] - qtd
                         if nova_qtd < 0:
@@ -1151,6 +1245,7 @@ def atualizar_pedido(pid: int) -> tuple[Response, int] | Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/impressoras/por_fazenda")
+@login_required
 def impressoras_por_fazenda() -> Response:
     """Retorna impressoras filtradas por fazenda para uso no módulo de toners."""
     fazenda = request.args.get("fazenda", "Central")
@@ -1169,6 +1264,7 @@ def impressoras_por_fazenda() -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/toners", methods=["GET"])
+@login_required
 def listar_toners() -> Response:
     """Lista toners cadastrados com busca opcional."""
     busca = request.args.get("q", "")
@@ -1185,6 +1281,7 @@ def listar_toners() -> Response:
 
 
 @app.route("/api/toners", methods=["POST"])
+@admin_required
 def criar_toner() -> Response:
     """Cadastra um novo toner."""
     d = request.json
@@ -1206,6 +1303,7 @@ def criar_toner() -> Response:
 
 
 @app.route("/api/toners/<int:tid>", methods=["GET"])
+@login_required
 def get_toner(tid: int) -> Response:
     """Retorna dados de um toner pelo ID."""
     with get_db() as conn:
@@ -1215,6 +1313,7 @@ def get_toner(tid: int) -> Response:
 
 
 @app.route("/api/toners/<int:tid>", methods=["PUT"])
+@admin_required
 def atualizar_toner(tid: int) -> Response:
     """Atualiza dados de um toner."""
     d = request.json
@@ -1234,6 +1333,7 @@ def atualizar_toner(tid: int) -> Response:
 
 
 @app.route("/api/toners/<int:tid>/troca", methods=["POST"])
+@admin_required
 def registrar_troca_toner(tid: int) -> tuple[Response, int] | Response:
     """
     Registra uma troca de toner, debitando o estoque e atualizando data da última troca.
@@ -1269,6 +1369,7 @@ def registrar_troca_toner(tid: int) -> tuple[Response, int] | Response:
 
 
 @app.route("/api/toners/<int:tid>/trocas", methods=["GET"])
+@login_required
 def historico_trocas(tid: int) -> Response:
     """Retorna o histórico de trocas de um toner."""
     with get_db() as conn:
@@ -1286,6 +1387,7 @@ def historico_trocas(tid: int) -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/manutencoes", methods=["GET"])
+@login_required
 def listar_manutencoes() -> Response:
     """Lista manutenções com filtros de status, tipo e busca textual."""
     filtro = request.args.get("status", "")
@@ -1313,6 +1415,7 @@ def listar_manutencoes() -> Response:
 
 
 @app.route("/api/manutencoes", methods=["POST"])
+@admin_required
 def criar_manutencao() -> Response:
     """Registra uma nova ocorrência de manutenção."""
     d = request.json
@@ -1341,6 +1444,7 @@ def criar_manutencao() -> Response:
 
 
 @app.route("/api/manutencoes/<int:mid>", methods=["GET"])
+@login_required
 def get_manutencao(mid: int) -> Response:
     """Retorna dados de uma manutenção pelo ID."""
     with get_db() as conn:
@@ -1350,6 +1454,7 @@ def get_manutencao(mid: int) -> Response:
 
 
 @app.route("/api/manutencoes/<int:mid>", methods=["PUT"])
+@admin_required
 def atualizar_manutencao(mid: int) -> Response:
     """Atualiza dados de uma manutenção existente."""
     d = request.json
@@ -1380,6 +1485,7 @@ def atualizar_manutencao(mid: int) -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/descartes", methods=["GET"])
+@login_required
 def listar_descartes() -> Response:
     """Lista todos os descartes registrados."""
     with get_db() as conn:
@@ -1389,6 +1495,7 @@ def listar_descartes() -> Response:
 
 
 @app.route("/api/pedidos/<int:pid>/upload-nota", methods=["POST"])
+@admin_required
 def upload_nota_pedido(pid: int) -> tuple[Response, int] | Response:
     """
     Item 9: Recebe e salva o PDF/imagem de nota fiscal de um pedido.
@@ -1422,6 +1529,7 @@ def upload_nota_pedido(pid: int) -> tuple[Response, int] | Response:
 
 
 @app.route("/api/descartes", methods=["POST"])
+@admin_required
 def criar_descarte() -> Response:
     """Registra o descarte de um ativo e atualiza seu status na tabela de origem."""
     d = request.json
@@ -1463,6 +1571,7 @@ def criar_descarte() -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/historico")
+@login_required
 def historico_global() -> Response:
     """Retorna o histórico completo (últimos 500 registros) para a aba Histórico."""
     with get_db() as conn:
@@ -1472,6 +1581,7 @@ def historico_global() -> Response:
 
 
 @app.route("/api/historico/<id_ativo>")
+@login_required
 def historico_ativo(id_ativo: str) -> Response:
     """Retorna o histórico de alterações de um ativo específico."""
     with get_db() as conn:
@@ -1485,6 +1595,7 @@ def historico_ativo(id_ativo: str) -> Response:
 
 
 @app.route("/api/exportar/<tabela>")
+@login_required
 def exportar(tabela: str) -> tuple[Response, int] | Response:
     """Exporta todos os dados de uma tabela em formato CSV. Datas em DD/MM/AAAA."""
     tabelas_validas = {
@@ -1568,39 +1679,11 @@ def exportar(tabela: str) -> tuple[Response, int] | Response:
 # ITEM 3 — GERADOR DE ID / IMPORTAÇÃO DE COLETA
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@app.route("/api/gerar_id")
-def api_gerar_id() -> tuple[Response, int] | Response:
-    """
-    Sugere o próximo ID disponível para um ativo no padrão TIPO-LOCAL-SETOR-NN.
-
-    Query params:
-        tipo: Sigla do tipo (ex.: NT, DK, CL)
-        localidade: Sigla da localidade (ex.: CEN, SMN)
-        setor: Sigla do setor (ex.: ADM, TI)
-
-    Returns:
-        JSON com o ID sugerido e o próximo sequencial.
-    """
-    tipo = request.args.get("tipo", "").upper()
-    localidade = request.args.get("localidade", "").upper()
-    setor = request.args.get("setor", "").upper()
-
-    if tipo not in SIGLAS_TIPO:
-        return jsonify({"ok": False, "msg": f"Tipo inválido. Válidos: {list(SIGLAS_TIPO)}"}), 400
-    if localidade not in SIGLAS_LOCAL:
-        return jsonify({"ok": False, "msg": f"Localidade inválida. Válidas: {list(SIGLAS_LOCAL)}"}), 400
-    if setor not in SIGLAS_SETOR:
-        return jsonify({"ok": False, "msg": f"Setor inválido. Válidos: {list(SIGLAS_SETOR)}"}), 400
-
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            id_sugerido = sugerir_id(cur, tipo, localidade, setor)
-            seq = proximo_sequencial(cur, tipo, localidade, setor)
-
-    return jsonify({"ok": True, "id_sugerido": id_sugerido, "sequencial": seq})
+# DEPRECATED: A rota /api/gerar_id foi removida (P13). Use /api/utils/gerar-id.
 
 
 @app.route("/api/siglas")
+@login_required
 def api_siglas() -> Response:
     """Retorna os dicionários de siglas válidas para geração de IDs."""
     return jsonify({
@@ -1611,6 +1694,7 @@ def api_siglas() -> Response:
 
 
 @app.route("/api/importar_coleta", methods=["POST"])
+@admin_required
 def importar_coleta() -> tuple[Response, int] | Response:
     """
     Importa dados coletados automaticamente pelo COLETAR_PC.bat.
@@ -1772,6 +1856,7 @@ _STATUS_BLOQUEADOS = {"Manutenção", "Descartado"}
 
 
 @app.route("/api/transferencias", methods=["POST"])
+@admin_required
 def criar_transferencia() -> tuple[Response, int] | Response:
     """
     Registra uma transferência de ativo entre responsáveis/fazendas/setores.
@@ -1815,6 +1900,8 @@ def criar_transferencia() -> tuple[Response, int] | Response:
         return jsonify({"ok": False, "msg": "responsavel_destino é obrigatório para 'Estoque para Usuario'"}), 400
     if tipo_transf == "Usuario para Estoque" and not d.get("data_devolucao"):
         return jsonify({"ok": False, "msg": "data_devolucao é obrigatório para 'Usuario para Estoque'"}), 400
+    if tipo_transf == "Usuario para Usuario" and not d.get("responsavel_destino"):
+        return jsonify({"ok": False, "msg": "responsavel_destino é obrigatório para transferência entre usuários"}), 400
 
     hoje = date.today().isoformat()
 
@@ -1938,13 +2025,19 @@ def criar_transferencia() -> tuple[Response, int] | Response:
                             (novo_id, id_ativo),
                         )
                         id_ativo = novo_id  # Atualiza variável local
-                    except ValueError:
-                        pass  # Sigla inválida — mantém ID original
+                    except ValueError as e:
+                        app.logger.warning(f"Regen ID falhou para {id_ativo}: {e}")
+                        return jsonify({
+                            "ok": True,
+                            "msg": "Transferência registrada com sucesso!",
+                            "aviso": f"Aviso: Não foi possível gerar novo ID automaticamente. Erro: {e}"
+                        })
 
     return jsonify({"ok": True, "msg": "Transferência registrada com sucesso!"})
 
 
 @app.route("/api/transferencias", methods=["GET"])
+@login_required
 def listar_transferencias() -> Response:
     """
     Lista transferências com filtros opcionais.
@@ -1986,6 +2079,7 @@ def listar_transferencias() -> Response:
 
 
 @app.route("/api/transferencias/<id_ativo>/historico")
+@login_required
 def historico_transferencias(id_ativo: str) -> Response:
     """
     Retorna o histórico paginado de transferências de um ativo.
@@ -2022,6 +2116,7 @@ def historico_transferencias(id_ativo: str) -> Response:
 
 
 @app.route("/api/transferencias/estoque")
+@login_required
 def ativos_em_estoque() -> Response:
     """
     Lista todos os ativos com status 'Estoque' em todas as tabelas de equipamentos.
@@ -2033,14 +2128,14 @@ def ativos_em_estoque() -> Response:
 
     with get_db() as conn:
         with conn.cursor() as cur:
-            for tbl, tipo in _TABELA_POR_TIPO.items():
+            for tipo_nome, nome_tabela in _TABELA_POR_TIPO.items():
                 rows = _fetch_all(
                     cur,
                     f"SELECT id_ativo, modelo, fazenda, setor, updated_at "
-                    f"FROM {tipo} WHERE status='Estoque' ORDER BY updated_at DESC",
+                    f"FROM {nome_tabela} WHERE status='Estoque' ORDER BY updated_at DESC",
                 )
                 for r in rows:
-                    resultado.append({**r, "tipo_equipamento": tbl})
+                    resultado.append({**r, "tipo_equipamento": tipo_nome})
 
     return jsonify(resultado)
 
@@ -2050,6 +2145,7 @@ def ativos_em_estoque() -> Response:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/busca")
+@login_required
 def busca_global() -> Response:
     """Busca global em todas as tabelas principais de equipamentos."""
     q = request.args.get("q", "").strip()
@@ -2224,10 +2320,14 @@ def handle_exception(e):
     except Exception as log_err:
         print(f"Failed to write crash log: {log_err}")
     
-    # RETURN TRACEBACK DIRECTLY FOR DEBUGGING ON RENDER
-    tb = traceback.format_exc()
-    html = f"<h3>Internal Server Error</h3><pre style='background:#f4f4f4;padding:15px;border-radius:8px;overflow-x:auto;'>{tb}</pre>"
-    return html, 500
+    # P2 CORRIGIDO: Retorna traceback apenas se FLASK_ENV=development ou debug=True
+    is_dev = app.debug or os.environ.get("FLASK_ENV") == "development"
+    if is_dev:
+        tb = traceback.format_exc()
+        html = f"<h3>Internal Server Error</h3><pre style='background:#f4f4f4;padding:15px;border-radius:8px;overflow-x:auto;'>{tb}</pre>"
+        return html, 500
+    else:
+        return jsonify({"ok": False, "msg": "Erro interno do servidor."}), 500
 
 
 # ── Polling de mensagens (admin + usuário) ────────────────────────────────────
@@ -2235,6 +2335,7 @@ import traceback as _tb_mod
 from auth_utils import viewer_required, admin_required, get_usuario_id
 
 @app.route("/chamados/<int:chamado_id>/poll")
+@limiter.limit("60/minute")  # P12: rate limiting
 def poll_chamado(chamado_id: int):
     """Retorna as mensagens do chamado como JSON para o cliente fazer polling."""
     if not session.get("usuario_id"):
@@ -2295,7 +2396,9 @@ def poll_chamado(chamado_id: int):
             "nome_arquivo": m["nome_arquivo"],
         })
 
-    return jsonify(resultado)
+    response = jsonify(resultado)
+    response.headers["X-Poll-Interval"] = "5"  # P12: informa o intervalo ao client
+    return response
 
 
 if __name__ == "__main__":
