@@ -2,8 +2,6 @@
 
 > Sistema de gerenciamento e inventário de ativos de TI para empresas agrícolas, desenvolvido com **Flask + Supabase (PostgreSQL)** e interface web integrada.
 
-🌐 **Acesso online:** [https://inventario-ti-v3.onrender.com](https://inventario-ti-v3.onrender.com)
-
 ---
 
 ## 📋 Sumário
