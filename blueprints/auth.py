@@ -32,11 +32,19 @@ from email.mime.text import MIMEText
 from flask import (Blueprint, flash, redirect, render_template,
                    request, session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
+from flask_limiter.util import get_remote_address
+from app import limiter
 
 from db_layer import acquire_conn, fetch_all, fetch_one
 
 auth_bp = Blueprint("auth", __name__)
 
+
+# Handler para erro 429 Too Many Requests (Brute Force/Abuso)
+@auth_bp.errorhandler(429)
+def ratelimit_handler(e):
+    flash("Muitas tentativas de acesso. Por favor, aguarde alguns instantes antes de tentar novamente.", "warning")
+    return redirect(url_for("auth.login"))
 
 # ── Utilitario de e-mail ──────────────────────────────────────────────────────
 
@@ -123,6 +131,7 @@ def enviar_email_recuperacao(email_destino: str, token: str, base_url: str = "")
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @auth_bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def login():
     """
     GET  — Renderiza formulario de login.
@@ -159,7 +168,11 @@ def login():
                     (login_input, login_input),
                 )
 
-        if not usuario or not check_password_hash(usuario["senha_hash"], senha_input):
+        _DUMMY_HASH = generate_password_hash("__dummy_timing_protection__")
+        senha_hash = usuario["senha_hash"] if usuario else _DUMMY_HASH
+        senha_ok = check_password_hash(senha_hash, senha_input)
+
+        if not usuario or not senha_ok:
             flash("E-mail/usuario ou senha invalidos.", "danger")
             return render_template("auth/login.html")
 
@@ -275,6 +288,7 @@ def cadastro():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @auth_bp.route("/recuperar-senha", methods=["GET", "POST"])
+@limiter.limit("5 per hour", key_func=lambda: request.form.get("email", get_remote_address()))
 def recuperar_senha():
     """
     GET  — Formulario pedindo apenas o e-mail.

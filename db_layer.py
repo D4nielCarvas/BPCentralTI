@@ -61,6 +61,7 @@ def init_pool(minconn: int = 2, maxconn: int = 10) -> None:
         maxconn,
         _DATABASE_URL,
         cursor_factory=psycopg2.extras.RealDictCursor,
+        options="-c timezone=America/Sao_Paulo"
     )
 
 

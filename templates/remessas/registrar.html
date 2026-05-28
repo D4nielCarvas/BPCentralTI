@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Registrar Evento de Remessa</h2>
+    <div class="card mt-3 shadow-sm">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('remessas.registrar_remessa') }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>ID do Ativo *</label>
+                        <input type="text" name="id_ativo" class="form-control" value="{{ id_ativo }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Vincular a Chamado # (Opcional)</label>
+                        <input type="number" name="chamado_id" class="form-control" value="{{ chamado_id }}">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Evento *</label>
+                        <select name="evento" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            {% if role == 'viewer' %}
+                            <option value="saida_fazenda">Saída da Fazenda</option>
+                            <option value="chegada_fazenda">Chegada na Fazenda</option>
+                            {% else %}
+                            <option value="chegada_ti">Chegada na TI</option>
+                            <option value="saida_ti">Saída da TI</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Forma de Envio</label>
+                        <select name="forma_envio" class="form-select">
+                            <option value="">Selecione...</option>
+                            <option value="CD">CD (Centro de Distribuição)</option>
+                            <option value="APOIO">Apoio (Motociclista/Motorista)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Entregue Por</label>
+                        <input type="text" name="entregue_por" class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Recebido Por</label>
+                        <input type="text" name="recebido_por" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label>Observações/Condições Físicas</label>
+                    <textarea name="observacoes" class="form-control" rows="2"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-success">Registrar Movimentação</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

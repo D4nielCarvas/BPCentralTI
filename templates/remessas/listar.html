@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Rastreabilidade de Remessas</h2>
+        <a href="{{ url_for('remessas.registrar_remessa') }}" class="btn btn-primary">Registrar Novo Evento</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>ID Ativo</th>
+                    <th>Evento</th>
+                    <th>Chamado</th>
+                    <th>Forma Envio</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in remessas %}
+                <tr>
+                    <td>{{ r.data_hora | fdt }}</td>
+                    <td><a href="{{ url_for('remessas.timeline', id_ativo=r.id_ativo) }}"><strong>{{ r.id_ativo }}</strong></a></td>
+                    <td>
+                        {% if r.evento == 'saida_fazenda' %}<span class="badge bg-warning text-dark">Saída Fazenda</span>
+                        {% elif r.evento == 'chegada_ti' %}<span class="badge bg-info">Chegada TI</span>
+                        {% elif r.evento == 'saida_ti' %}<span class="badge bg-primary">Saída TI</span>
+                        {% elif r.evento == 'chegada_fazenda' %}<span class="badge bg-success">Chegada Fazenda</span>
+                        {% endif %}
+                    </td>
+                    <td>{% if r.chamado_id %}#{{ r.chamado_id }}{% else %}-{% endif %}</td>
+                    <td>{{ r.forma_envio }}</td>
+                    <td>
+                        <a href="{{ url_for('remessas.timeline', id_ativo=r.id_ativo) }}" class="btn btn-sm btn-outline-dark">Timeline</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center">Nenhum registro logístico encontrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

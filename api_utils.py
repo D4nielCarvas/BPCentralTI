@@ -71,7 +71,7 @@ def log_historico(
     """
     cur.execute(
         """INSERT INTO historico 
-           (id_ativo, tipo_equipamento, acao, campo, valor_anterior, valor_novo)
+           (id_ativo, tipo_equipamento, acao, campo_alterado, valor_anterior, valor_novo)
            VALUES (%s, %s, %s, %s, %s, %s)""",
         (id_ativo, tipo, acao, campo, anterior, novo),
     )

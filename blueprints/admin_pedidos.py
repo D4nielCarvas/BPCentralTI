@@ -24,6 +24,61 @@ admin_pedidos_bp = Blueprint("admin_pedidos", __name__, url_prefix="/admin")
 
 _STATUS_VALIDOS = frozenset({"pendente", "em_analise", "aprovado", "recusado", "concluido"})
 
+import re
+
+def _tentar_baixa_estoque(cur, pedido_id: int, descricao: str, localidade_id: int, admin_id: int) -> str:
+    """
+    Complexidade: O(1) de tempo (considerando índice em item/localidade) e O(1) espaço.
+    """
+    # Exige `:` como separador obrigatório para evitar captura parcial (ex: "item do estoque")
+    match_item = re.search(r'(?i)(?:item do estoque|produto do estoque|item|produto|estoque)\s*:\s*([^\n\r]+)', descricao)
+    match_qtd = re.search(r'(?i)(?:quantidade|qtd|quant)\s*:\s*(\d+)', descricao)
+    
+    if not match_item:
+        return "Baixa não realizada: Item não identificado (Use o padrão 'Item: nome')."
+        
+    item_nome = match_item.group(1).strip().rstrip('\r')
+    quantidade = int(match_qtd.group(1)) if match_qtd else 1
+    
+    if quantidade <= 0:
+        return "Baixa não realizada: Quantidade inválida."
+
+    cur.execute(
+        "SELECT id, item, quantidade FROM estoque WHERE item ILIKE %s AND (localidade_id = %s OR localidade_id IS NULL) FOR UPDATE",
+        (f"%{item_nome}%", localidade_id)
+    )
+    itens = cur.fetchall()
+    
+    if not itens:
+        return f"Baixa não realizada: Item '{item_nome}' não encontrado nesta localidade."
+    
+    estoque_item = None
+    if len(itens) > 1:
+        exatos = [i for i in itens if i["item"].lower() == item_nome.lower()]
+        if len(exatos) == 1:
+            estoque_item = exatos[0]
+        else:
+            return f"Baixa não realizada: Ambiguidade para '{item_nome}'."
+    else:
+        estoque_item = itens[0]
+        
+    nova_qtd = estoque_item["quantidade"] - quantidade
+    if nova_qtd < 0:
+        return f"Baixa não realizada: Saldo insuficiente de '{estoque_item['item']}' (Req: {quantidade}, Disp: {estoque_item['quantidade']})."
+        
+    cur.execute(
+        "UPDATE estoque SET quantidade = %s, updated_at = NOW() WHERE id = %s",
+        (nova_qtd, estoque_item["id"])
+    )
+    
+    cur.execute(
+        """INSERT INTO estoque_movimentacoes (estoque_id, tipo, quantidade, motivo, responsavel)
+           VALUES (%s, 'saida', %s, %s, %s)""",
+        (estoque_item["id"], quantidade, f"Baixa auto - Pedido #{pedido_id}", f"Admin ID {admin_id}")
+    )
+    return f"Baixa automática realizada: {quantidade}x '{estoque_item['item']}'. Saldo atual: {nova_qtd}."
+
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LISTAGEM GERAL DE PEDIDOS
@@ -167,7 +222,7 @@ def atualizar_status_pedido(pedido_id: int):
             # 2. Lê status anterior (do banco — nunca do body)
             pedido = fetch_one(
                 cur,
-                "SELECT id, status FROM pedidos_viewer WHERE id = %s",
+                "SELECT id, status, descricao, localidade_id FROM pedidos_viewer WHERE id = %s",
                 (pedido_id,),
             )
             if not pedido:
@@ -182,6 +237,14 @@ def atualizar_status_pedido(pedido_id: int):
                     url_for("admin_pedidos.detalhe_pedido_admin", pedido_id=pedido_id)
                 )
 
+            if status_anterior != "concluido" and novo_status == "concluido":
+                msg_baixa = _tentar_baixa_estoque(cur, pedido_id, pedido["descricao"], pedido["localidade_id"], admin_id)
+                observacao_final = observacao or ""
+                observacao_final += f"\n[Estoque] {msg_baixa}"
+                observacao_final = observacao_final.strip()
+            else:
+                observacao_final = observacao
+
             # 3. Insere histórico
             cur.execute(
                 """
@@ -189,7 +252,7 @@ def atualizar_status_pedido(pedido_id: int):
                     (pedido_id, status_anterior, status_novo, observacao, alterado_por)
                 VALUES (%s, %s, %s, %s, %s)
                 """,
-                (pedido_id, status_anterior, novo_status, observacao, admin_id),
+                (pedido_id, status_anterior, novo_status, observacao_final, admin_id),
             )
 
             # 4. Atualiza o pedido (trigger atualiza atualizado_em automaticamente)

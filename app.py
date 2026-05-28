@@ -146,6 +146,7 @@ from blueprints.admin import admin_bp
 from blueprints.chamados import chamados_bp
 from blueprints.admin_chamados import admin_chamados_bp
 from blueprints.apoio import apoio_bp
+from blueprints.remessas import remessas_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(fazenda_bp)
@@ -154,12 +155,16 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(chamados_bp)
 app.register_blueprint(admin_chamados_bp)
 app.register_blueprint(apoio_bp)
+app.register_blueprint(remessas_bp)
 
 
 # ── Filtro Jinja2: formata data em horário de Brasília (UTC-3) ────────────────
 @app.template_filter('fdt')
 def formata_data_br(dt):
-    """Converte datetime UTC → BRT (UTC-3) e formata como dd/mm/aa HH:MM."""
+    """Converte datetime UTC → BRT (America/Sao_Paulo) e formata como dd/mm/aa HH:MM."""
+    from zoneinfo import ZoneInfo
+    BRT = ZoneInfo("America/Sao_Paulo")
+
     if not dt:
         return ''
     if isinstance(dt, str):
@@ -167,13 +172,14 @@ def formata_data_br(dt):
             dt = datetime.fromisoformat(dt.replace('Z', '+00:00'))
         except Exception:
             return dt[:16].replace('T', ' ')
-    if dt.tzinfo is not None:
-        # aware → converte para UTC e subtrai 3h
-        import datetime as _dt
-        utc = dt.utctimetuple()
-        dt = datetime(*utc[:6])
-    dt_local = dt - timedelta(hours=3)
-    return dt_local.strftime('%d/%m/%y %H:%M')
+
+    # Garante que tem tzinfo; se vier naive, assume UTC
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=ZoneInfo("UTC"))
+
+    # Converte para BRT independente de qual timezone veio
+    dt = dt.astimezone(BRT)
+    return dt.strftime('%d/%m/%y %H:%M')
 
 
 @app.context_processor
@@ -214,31 +220,35 @@ def injetar_notificacoes():
             )
 
         # Cache expirado ou ausente — executa query e atualiza cache de sessão
-        with get_db() as conn:
-            with conn.cursor() as cur:
-                # Contagem de não lidas
-                cur.execute(
-                    "SELECT COUNT(*) as qtd FROM notificacoes WHERE usuario_id = %s AND lida = FALSE",
-                    (session.get("usuario_id"),)
-                )
-                qtd_notificacoes = cur.fetchone()["qtd"]
+        try:
+            with get_db() as conn:
+                with conn.cursor() as cur:
+                    # Contagem de não lidas
+                    cur.execute(
+                        "SELECT COUNT(*) as qtd FROM notificacoes WHERE usuario_id = %s AND lida = FALSE",
+                        (session.get("usuario_id"),)
+                    )
+                    qtd_notificacoes = cur.fetchone()["qtd"]
 
-                # Lista das últimas 5 não lidas
-                ultimas = _fetch_all(
-                    cur,
-                    """SELECT id, chamado_id, mensagem, criado_em
-                       FROM notificacoes
-                       WHERE usuario_id = %s AND lida = FALSE
-                       ORDER BY id DESC LIMIT 5""",
-                    (session.get("usuario_id"),)
-                )
+                    # Lista das últimas 5 não lidas
+                    ultimas = _fetch_all(
+                        cur,
+                        """SELECT id, chamado_id, mensagem, criado_em
+                           FROM notificacoes
+                           WHERE usuario_id = %s AND lida = FALSE
+                           ORDER BY id DESC LIMIT 5""",
+                        (session.get("usuario_id"),)
+                    )
 
-        # Armazena resultado no cache de sessão com timestamp
-        session["_notif_cache"] = {"qtd": qtd_notificacoes, "lista": ultimas}
-        session["_notif_cache_ts"] = agora.isoformat()
-        session.modified = True  # Força persistência do cache na sessão
+            # Armazena resultado no cache de sessão com timestamp
+            session["_notif_cache"] = {"qtd": qtd_notificacoes, "lista": ultimas}
+            session["_notif_cache_ts"] = agora.isoformat()
+            session.modified = True  # Força persistência do cache na sessão
 
-        return dict(qtd_notificacoes=qtd_notificacoes, notificacoes_lista=ultimas)
+            return dict(qtd_notificacoes=qtd_notificacoes, notificacoes_lista=ultimas)
+        except Exception:
+            # Banco indisponível — retorna silenciosamente sem quebrar a renderização da página
+            return dict(qtd_notificacoes=0, notificacoes_lista=[])
     return dict(qtd_notificacoes=0, notificacoes_lista=[])
 
 # ── Conexão com banco de dados (delegado ao db_layer com pool) ───────────────
@@ -282,6 +292,15 @@ def rows_to_list(rows: list[psycopg2.extras.RealDictRow]) -> list[dict]:
 # ── Helper: log de histórico ──────────────────────────────────────────────────
 
 # ── Helper: validação de arquivo ──────────────────────────────────────────────
+
+import magic
+
+def validate_file_mime(file, allowed_mimes: set) -> bool:
+    """Detecta o MIME real baseado na assinatura binária do arquivo."""
+    header = file.read(2048)
+    file.seek(0)
+    mime = magic.from_buffer(header, mime=True)
+    return mime in allowed_mimes
 
 def allowed_file(filename: str) -> bool:
     """Verifica se o arquivo possui extensão PDF permitida."""
@@ -402,8 +421,8 @@ def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
         return jsonify({"ok": False, "msg": "Nenhum arquivo enviado"}), 400
 
     file = request.files["file"]
-    if not file.filename or not allowed_file(file.filename):
-        return jsonify({"ok": False, "msg": "Envie um arquivo PDF"}), 400
+    if not file.filename or not validate_file_mime(file, {"application/pdf"}):
+        return jsonify({"ok": False, "msg": "Tipo de arquivo não permitido. Envie apenas PDF."}), 400
 
     safe_name = f"{tipo}_{secure_filename(id_ativo)}.pdf"
     file.save(os.path.join(UPLOAD_FOLDER, safe_name))
@@ -441,7 +460,7 @@ def health_check() -> Response:
         with get_db() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT 1")
-        return jsonify({"ok": True, "msg": "Conexão com Supabase OK", "database": DATABASE_URL.split('@')[-1]})
+        return jsonify({"ok": True, "msg": "Banco OK"})
     except Exception as e:
         return jsonify({"ok": False, "msg": f"Erro de conexão: {str(e)}"}), 500
 
@@ -544,12 +563,12 @@ def upload_nota_pedido(pid: int) -> tuple[Response, int] | Response:
         return jsonify({"ok": False, "msg": "Nenhum arquivo enviado"}), 400
 
     file = request.files["file"]
-    if not file.filename:
-        return jsonify({"ok": False, "msg": "Arquivo vazio"}), 400
+    
+    allowed_mimes = {"application/pdf", "image/jpeg", "image/png"}
+    if not file.filename or not validate_file_mime(file, allowed_mimes):
+        return jsonify({"ok": False, "msg": "Tipo de arquivo não permitido. Envie apenas PDF ou imagens JPG/PNG."}), 400
 
     ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
-    if ext not in {"pdf", "jpg", "jpeg", "png"}:
-        return jsonify({"ok": False, "msg": "Extensão não permitida. Use PDF, JPG ou PNG"}), 400
 
     safe_name = f"pedido_{pid}_nota.{ext}"
     file.save(os.path.join(UPLOAD_FOLDER, safe_name))

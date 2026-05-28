@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Timeline Logística: {{ id_ativo }}</h2>
+    <a href="{{ url_for('remessas.registrar_remessa', id_ativo=id_ativo) }}" class="btn btn-sm btn-primary mb-3">Adicionar Etapa</a>
+    
+    <div class="timeline mt-3">
+        {% for e in eventos %}
+        <div class="card mb-3 border-left-primary shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                    <h5 class="card-title text-primary m-0">
+                        {% if e.evento == 'saida_fazenda' %}<i class="bi bi-box-arrow-right"></i> Saída da Fazenda
+                        {% elif e.evento == 'chegada_ti' %}<i class="bi bi-building"></i> Chegada na TI
+                        {% elif e.evento == 'saida_ti' %}<i class="bi bi-truck"></i> Saída da TI
+                        {% elif e.evento == 'chegada_fazenda' %}<i class="bi bi-check-circle"></i> Chegada na Fazenda
+                        {% endif %}
+                    </h5>
+                    <small class="text-muted">{{ e.data_hora | fdt }}</small>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Lançado por:</strong> {{ e.usuario_nome }}</p>
+                        {% if e.forma_envio %}<p class="mb-1"><strong>Transporte:</strong> {{ e.forma_envio }}</p>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {% if e.entregue_por %}<p class="mb-1"><strong>De:</strong> {{ e.entregue_por }}</p>{% endif %}
+                        {% if e.recebido_por %}<p class="mb-1"><strong>Para:</strong> {{ e.recebido_por }}</p>{% endif %}
+                    </div>
+                </div>
+                {% if e.observacoes %}
+                <div class="mt-2 p-2 bg-light rounded text-muted"><em>"{{ e.observacoes }}"</em></div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">Nenhuma movimentação física registrada para este equipamento.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

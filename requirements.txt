@@ -23,3 +23,6 @@ Flask-Limiter>=3.5.0
 # ── Empacotamento .exe (opcional, apenas para build) ──────────
 # pyinstaller==6.11.1
 gunicorn==21.2.0
+
+# ── Validação de Arquivos (Uploads) ───────────────────────────────────────────
+python-magic>=0.4.27
