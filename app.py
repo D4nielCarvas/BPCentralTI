@@ -465,6 +465,38 @@ def health_check() -> Response:
         return jsonify({"ok": False, "msg": f"Erro de conexão: {str(e)}"}), 500
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# NOTIFICAÇÕES (POLLING PUSH DESKTOP)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/api/notificacoes/poll")
+def poll_notificacoes() -> Response:
+    """
+    Retorna as notificações não lidas mais recentes.
+    Usado pelo frontend para disparar notificações push desktop.
+    """
+    is_master = session.get("is_admin_master")
+    perms = session.get("permissoes") or {}
+    pode_ver = is_master or perms.get("responder_chamados") or session.get("role") == "admin"
+    
+    if not (session.get("usuario_id") and pode_ver):
+        return jsonify({"ok": False, "notificacoes": []}), 403
+
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                ultimas = _fetch_all(
+                    cur,
+                    """SELECT id, chamado_id, mensagem, criado_em
+                       FROM notificacoes
+                       WHERE usuario_id = %s AND lida = FALSE
+                       ORDER BY id DESC LIMIT 5""",
+                    (session.get("usuario_id"),)
+                )
+        return jsonify({"ok": True, "notificacoes": ultimas})
+    except Exception as e:
+        return jsonify({"ok": False, "msg": str(e), "notificacoes": []}), 500
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # DASHBOARD
 # ═══════════════════════════════════════════════════════════════════════════════
 

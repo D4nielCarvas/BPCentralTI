@@ -3307,7 +3307,71 @@
       setTimeout(() => el.remove(), 3500);
     }
 
+    // ─── NOTIFICAÇÕES DESKTOP PUSH ───────────────────────────────────────────────
+    let lastNotifId = parseInt(localStorage.getItem('lastNotifId')) || 0;
+    
+    function initDesktopNotifications() {
+      // Verifica se o navegador suporta notificações
+      if (!("Notification" in window)) {
+        console.log("Este navegador não suporta notificações de desktop.");
+        return;
+      }
+
+      // Solicita permissão se ainda não foi concedida/negada
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") {
+            toast("Notificações de desktop ativadas!", "success");
+          }
+        });
+      }
+
+      // Polling a cada 30 segundos
+      setInterval(async () => {
+        if (Notification.permission !== "granted") return;
+
+        try {
+          const res = await api('/api/notificacoes/poll');
+          if (res.ok && res.notificacoes && res.notificacoes.length > 0) {
+            // Pegar as notificações mais recentes que ainda não mostramos
+            const newNotifs = res.notificacoes.filter(n => n.id > lastNotifId);
+            
+            if (newNotifs.length > 0) {
+              // Atualiza o lastNotifId para o maior recebido
+              const maxId = Math.max(...newNotifs.map(n => n.id));
+              lastNotifId = maxId;
+              localStorage.setItem('lastNotifId', maxId);
+
+              // Dispara as notificações
+              newNotifs.forEach(n => {
+                const title = "BP Central TI - Novo Chamado";
+                const options = {
+                  body: n.mensagem,
+                  icon: '/static/img/logo.png', // Fallback caso não exista logo, o SO ignora silenciosamente
+                  requireInteraction: true // Mantém a notificação até o usuário interagir
+                };
+                const notif = new Notification(title, options);
+                
+                notif.onclick = function() {
+                  window.focus();
+                  if (n.chamado_id) {
+                    window.location.href = `/fazenda/chamados/${n.chamado_id}`;
+                  } else {
+                    showPage('dashboard');
+                  }
+                  notif.close();
+                };
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Erro no polling de notificações:", e);
+        }
+      }, 30000); // 30 segundos
+    }
+
     loadDashboard();
+    initDesktopNotifications();
   </script>
 </body>
 

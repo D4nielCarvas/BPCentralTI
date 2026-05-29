@@ -366,5 +366,55 @@
   </div>
 </div>
 
+{% if session.role == 'admin' or session.is_admin_master %}
+<script>
+  // ─── NOTIFICAÇÕES DESKTOP PUSH ───────────────────────────────────────────────
+  (function() {
+    let lastNotifId = parseInt(localStorage.getItem('lastNotifId')) || 0;
+    
+    if (!("Notification" in window)) return;
+
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    setInterval(async () => {
+      if (Notification.permission !== "granted") return;
+      try {
+        const res = await fetch('/api/notificacoes/poll');
+        const data = await res.json();
+        if (data.ok && data.notificacoes && data.notificacoes.length > 0) {
+          const newNotifs = data.notificacoes.filter(n => n.id > lastNotifId);
+          if (newNotifs.length > 0) {
+            const maxId = Math.max(...newNotifs.map(n => n.id));
+            lastNotifId = maxId;
+            localStorage.setItem('lastNotifId', maxId);
+
+            newNotifs.forEach(n => {
+              const notif = new Notification("BP Central TI - Novo Chamado", {
+                body: n.mensagem,
+                icon: '/static/img/logo.png',
+                requireInteraction: true
+              });
+              notif.onclick = function() {
+                window.focus();
+                if (n.chamado_id) {
+                  window.location.href = `/fazenda/chamados/${n.chamado_id}`;
+                } else {
+                  window.location.href = '/';
+                }
+                notif.close();
+              };
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Erro no polling de notificações:", e);
+      }
+    }, 30000);
+  })();
+</script>
+{% endif %}
+
 </body>
 </html>
