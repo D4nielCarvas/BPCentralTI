@@ -28,21 +28,24 @@ import re
 
 def _tentar_baixa_estoque(cur, pedido_id: int, descricao: str, localidade_id: int, admin_id: int) -> str:
     """
-    Complexidade: O(1) de tempo (considerando índice em item/localidade) e O(1) espaço.
+    Tenta realizar a baixa automática de itens de estoque analisando o corpo da descrição de um pedido.
+    Complexidade: O(1) tempo | O(1) espaço.
     """
-    # Exige `:` como separador obrigatório para evitar captura parcial (ex: "item do estoque")
+    # 1. Regex para extração (limpeza aprimorada do dado recebido)
     match_item = re.search(r'(?i)(?:item do estoque|produto do estoque|item|produto|estoque)\s*:\s*([^\n\r]+)', descricao)
     match_qtd = re.search(r'(?i)(?:quantidade|qtd|quant)\s*:\s*(\d+)', descricao)
     
     if not match_item:
-        return "Baixa não realizada: Item não identificado (Use o padrão 'Item: nome')."
+        return "Baixa não realizada: Item não identificado (Use o formato padronizado 'Item: Nome do Produto')."
         
-    item_nome = match_item.group(1).strip().rstrip('\r')
+    # Tratamento da string isolando lixo e formatações indesejadas que poderiam burlar o match
+    item_nome = match_item.group(1).strip()
     quantidade = int(match_qtd.group(1)) if match_qtd else 1
     
     if quantidade <= 0:
-        return "Baixa não realizada: Quantidade inválida."
+        return "Baixa não realizada: Quantidade informada é inválida."
 
+    # 2. Busca e Lock da tabela (Boas Práticas de Transação)
     cur.execute(
         "SELECT id, item, quantidade FROM estoque WHERE item ILIKE %s AND (localidade_id = %s OR localidade_id IS NULL) FOR UPDATE",
         (f"%{item_nome}%", localidade_id)
@@ -50,22 +53,32 @@ def _tentar_baixa_estoque(cur, pedido_id: int, descricao: str, localidade_id: in
     itens = cur.fetchall()
     
     if not itens:
-        return f"Baixa não realizada: Item '{item_nome}' não encontrado nesta localidade."
+        return f"Baixa não realizada: Item '{item_nome}' sem saldo ou inexistente na localidade."
     
+    # 3. Resolução Estratégica de Ambiguidade
     estoque_item = None
-    if len(itens) > 1:
-        exatos = [i for i in itens if i["item"].lower() == item_nome.lower()]
-        if len(exatos) == 1:
-            estoque_item = exatos[0]
-        else:
-            return f"Baixa não realizada: Ambiguidade para '{item_nome}'."
-    else:
+    exatos = [i for i in itens if i["item"].lower() == item_nome.lower()]
+    
+    if len(exatos) == 1:
+        # Match Perfeito foi encontrado.
+        estoque_item = exatos[0]
+    elif len(itens) == 1:
+        # Só encontrou um resultado com a string parcial.
+        # REGRA DE NEGÓCIO: Se a string parcial tem menos que 4 caracteres, rejeitamos por segurança.
+        if len(item_nome) < 4 and item_nome.lower() not in itens[0]["item"].lower():
+             return f"Baixa não realizada: O termo '{item_nome}' é genérico demais. Especifique melhor."
         estoque_item = itens[0]
+    else:
+        # Encontrou vários semelhantes e nenhum é o 'nome exato'.
+        nomes_sugestoes = ", ".join([i["item"] for i in itens[:3]]) # Limitamos a mostrar até 3 opções
+        return f"Baixa não realizada: Ambiguidade para '{item_nome}'. Qual deles? (Encontrados: {nomes_sugestoes}...)"
         
+    # 4. Checagem de Saldo (Princípio de Early Return)
     nova_qtd = estoque_item["quantidade"] - quantidade
     if nova_qtd < 0:
-        return f"Baixa não realizada: Saldo insuficiente de '{estoque_item['item']}' (Req: {quantidade}, Disp: {estoque_item['quantidade']})."
+        return f"Baixa não realizada: Saldo insuficiente do produto '{estoque_item['item']}' (Requerido: {quantidade}, Disponível: {estoque_item['quantidade']})."
         
+    # 5. Persistência
     cur.execute(
         "UPDATE estoque SET quantidade = %s, updated_at = NOW() WHERE id = %s",
         (nova_qtd, estoque_item["id"])
@@ -74,9 +87,10 @@ def _tentar_baixa_estoque(cur, pedido_id: int, descricao: str, localidade_id: in
     cur.execute(
         """INSERT INTO estoque_movimentacoes (estoque_id, tipo, quantidade, motivo, responsavel)
            VALUES (%s, 'saida', %s, %s, %s)""",
-        (estoque_item["id"], quantidade, f"Baixa auto - Pedido #{pedido_id}", f"Admin ID {admin_id}")
+        (estoque_item["id"], quantidade, f"Baixa via Pedido #{pedido_id}", f"Admin ID {admin_id}")
     )
-    return f"Baixa automática realizada: {quantidade}x '{estoque_item['item']}'. Saldo atual: {nova_qtd}."
+    
+    return f"Baixa automática com sucesso: {quantidade}x '{estoque_item['item']}' (Saldo restante: {nova_qtd})."
 
 
 
