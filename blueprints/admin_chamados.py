@@ -58,6 +58,7 @@ _QUERY_CHAMADOS = """
     SELECT
         c.id, c.titulo, c.descricao, c.prioridade, c.status,
         c.criado_em, c.atualizado_em, c.id_ativo,
+        c.data_saida_fazenda, c.data_chegada_ti, c.data_saida_ti, c.data_chegada_fazenda,
         l.nome  AS localidade_nome,
         uc.nome AS criado_por_nome,
         ua.nome AS tecnico_nome,
@@ -301,6 +302,52 @@ def gerenciar_etiquetas_chamado(chamado_id: int):
                         )
 
     flash("Etiquetas atualizadas com sucesso.", "success")
+    return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# REGISTRAR MOVIMENTAÇÃO DO EQUIPAMENTO
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@admin_chamados_bp.route("/<int:chamado_id>/movimentacao", methods=["POST"])
+@admin_required
+def movimentacao_equipamento(chamado_id: int):
+    """Registra uma etapa de movimentação do equipamento associado ao chamado."""
+    usuario_id = get_usuario_id()
+    etapa = request.form.get("etapa")
+
+    coluna_map = {
+        "saida_fazenda": ("data_saida_fazenda", "Saída da Fazenda"),
+        "chegada_ti": ("data_chegada_ti", "Chegada no TI"),
+        "saida_ti": ("data_saida_ti", "Saída do TI"),
+        "chegada_fazenda": ("data_chegada_fazenda", "Chegada na Fazenda")
+    }
+
+    if etapa not in coluna_map:
+        flash("Etapa de movimentação inválida.", "danger")
+        return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
+
+    coluna_db, nome_etapa = coluna_map[etapa]
+
+    with acquire_conn() as conn:
+        with conn.cursor() as cur:
+            # Verifica se já está registrado para evitar sobreposições indevidas (opcional)
+            chamado = fetch_one(cur, "SELECT id, id_ativo FROM chamados WHERE id = %s", (chamado_id,))
+            if not chamado or not chamado["id_ativo"]:
+                flash("Chamado não encontrado ou sem equipamento vinculado.", "danger")
+                return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
+
+            # Atualiza a data
+            cur.execute(f"UPDATE chamados SET {coluna_db} = now() WHERE id = %s", (chamado_id,))
+
+            # Registra mensagem automática no chat
+            msg = f"Equipamento {chamado['id_ativo']} registrado como: {nome_etapa}"
+            cur.execute(
+                "INSERT INTO chamado_mensagens (chamado_id, usuario_id, mensagem, is_sistema) VALUES (%s, %s, %s, TRUE)",
+                (chamado_id, usuario_id, msg)
+            )
+
+    flash(f"Movimentação '{nome_etapa}' registrada com sucesso.", "success")
     return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
 
 

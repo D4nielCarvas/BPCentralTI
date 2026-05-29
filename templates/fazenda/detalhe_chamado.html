@@ -162,6 +162,34 @@
         </div>
       </div>
     </div>
+
+    {# Movimentação Física do Equipamento #}
+    {% if chamado.id_ativo %}
+    <div style="margin-top:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">📦 Movimentação Física</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        {% for etapa_id, etapa_nome, data_val in [
+          ('saida_fazenda', 'Saída da Fazenda', chamado.data_saida_fazenda),
+          ('chegada_ti', 'Chegada no TI', chamado.data_chegada_ti),
+          ('saida_ti', 'Saída do TI', chamado.data_saida_ti),
+          ('chegada_fazenda', 'Chegada na Fazenda', chamado.data_chegada_fazenda)
+        ] %}
+        <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;border-bottom:1px solid var(--border);padding-bottom:6px">
+          <span style="color:var(--text2)">{{ loop.index }}. {{ etapa_nome }}</span>
+          {% if data_val %}
+          <span style="color:var(--green);font-size:11px;font-weight:600">✓ {{ data_val | fdt if data_val is not string else data_val[:16] | replace('T', ' ') }}</span>
+          {% else %}
+          <form method="POST" action="{{ url_for('chamados.movimentacao_equipamento', chamado_id=chamado.id) }}" style="margin:0">
+            <input type="hidden" name="etapa" value="{{ etapa_id }}">
+            <button type="submit" class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px">Registrar</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     {% if chamado.status == 'pendente_usuario' %}
     <div style="margin-top:12px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:14px;font-size:12px;color:var(--yellow)">
       ⚠️ A TI aguarda sua resposta para retomar o atendimento.

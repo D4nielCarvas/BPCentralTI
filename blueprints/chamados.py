@@ -265,6 +265,7 @@ def detalhe_chamado(chamado_id: int):
                 cur,
                 """
                 SELECT c.*,
+                       c.data_saida_fazenda, c.data_chegada_ti, c.data_saida_ti, c.data_chegada_fazenda,
                        l.nome AS localidade_nome,
                        uc.nome AS criado_por_nome,
                        ua.nome AS tecnico_nome
@@ -345,3 +346,54 @@ def detalhe_chamado(chamado_id: int):
         usuario_id=usuario_id,
         status_validos=sorted(_STATUS_VALIDOS),
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# REGISTRAR MOVIMENTAÇÃO DO EQUIPAMENTO (FAZENDA)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@chamados_bp.route("/<int:chamado_id>/movimentacao", methods=["POST"])
+@viewer_required
+def movimentacao_equipamento(chamado_id: int):
+    """Registra uma etapa de movimentação do equipamento associado ao chamado."""
+    localidade_id = get_localidade_filter()
+    usuario_id = get_usuario_id()
+    etapa = request.form.get("etapa")
+    role = session.get("role")
+
+    coluna_map = {
+        "saida_fazenda": ("data_saida_fazenda", "Saída da Fazenda"),
+        "chegada_ti": ("data_chegada_ti", "Chegada no TI"),
+        "saida_ti": ("data_saida_ti", "Saída do TI"),
+        "chegada_fazenda": ("data_chegada_fazenda", "Chegada na Fazenda")
+    }
+
+    if etapa not in coluna_map:
+        flash("Etapa de movimentação inválida.", "danger")
+        return redirect(url_for("chamados.detalhe_chamado", chamado_id=chamado_id))
+
+    coluna_db, nome_etapa = coluna_map[etapa]
+
+    with acquire_conn() as conn:
+        with conn.cursor() as cur:
+            chamado = fetch_one(cur, "SELECT id, id_ativo, localidade_id FROM chamados WHERE id = %s", (chamado_id,))
+            if not chamado or not chamado["id_ativo"]:
+                flash("Chamado não encontrado ou sem equipamento vinculado.", "danger")
+                return redirect(url_for("chamados.detalhe_chamado", chamado_id=chamado_id))
+
+            # Anti-IDOR: viewer só pode registrar movimentação na sua própria localidade
+            if role == "viewer" and chamado["localidade_id"] != localidade_id:
+                abort(403)
+
+            # Atualiza a data
+            cur.execute(f"UPDATE chamados SET {coluna_db} = now() WHERE id = %s", (chamado_id,))
+
+            # Registra mensagem automática no chat
+            msg = f"Equipamento {chamado['id_ativo']} registrado como: {nome_etapa}"
+            cur.execute(
+                "INSERT INTO chamado_mensagens (chamado_id, usuario_id, mensagem, is_sistema) VALUES (%s, %s, %s, TRUE)",
+                (chamado_id, usuario_id, msg)
+            )
+
+    flash(f"Movimentação '{nome_etapa}' registrada com sucesso.", "success")
+    return redirect(url_for("chamados.detalhe_chamado", chamado_id=chamado_id))
