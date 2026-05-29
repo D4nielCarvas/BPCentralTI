@@ -383,7 +383,54 @@
       try {
         const res = await fetch('/api/notificacoes/poll');
         const data = await res.json();
-        if (data.ok && data.notificacoes && data.notificacoes.length > 0) {
+        if (data.ok && data.notificacoes) {
+          // Atualiza a UI em tempo real
+          const totalUnread = data.notificacoes.length;
+          const bellIcon = document.querySelector('.notif-bell');
+          if (bellIcon) {
+            let badge = bellIcon.querySelector('.notif-badge');
+            if (totalUnread > 0) {
+              if (!badge) {
+                badge = document.createElement('div');
+                badge.className = 'notif-badge';
+                bellIcon.appendChild(badge);
+              }
+              badge.innerText = totalUnread;
+            } else if (badge) {
+              badge.remove();
+            }
+          }
+
+          const header = document.querySelector('.notif-header');
+          if (header) {
+            let badgeDesc = header.querySelector('.badge-desc');
+            if (totalUnread > 0) {
+              if (!badgeDesc) {
+                badgeDesc = document.createElement('span');
+                badgeDesc.className = 'badge badge-desc';
+                header.appendChild(badgeDesc);
+              }
+              badgeDesc.innerText = totalUnread;
+            } else if (badgeDesc) {
+              badgeDesc.remove();
+            }
+          }
+
+          const listContainer = document.querySelector('.notif-list');
+          if (listContainer) {
+            if (totalUnread > 0) {
+              listContainer.innerHTML = data.notificacoes.map(n => {
+                const dt = n.criado_em ? new Date(n.criado_em).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'}) : '';
+                return `<a href="/admin/chamados/notificacao/${n.id}/ler" class="notif-item">
+                  <div class="notif-item-title">${n.mensagem}</div>
+                  <div style="font-size:10px; color:var(--text3);">${dt}</div>
+                </a>`;
+              }).join('');
+            } else {
+              listContainer.innerHTML = '<div class="notif-empty">Nenhuma notificação nova.</div>';
+            }
+          }
+
           const newNotifs = data.notificacoes.filter(n => n.id > lastNotifId);
           if (newNotifs.length > 0) {
             const maxId = Math.max(...newNotifs.map(n => n.id));
@@ -399,7 +446,7 @@
               notif.onclick = function() {
                 window.focus();
                 if (n.chamado_id) {
-                  window.location.href = `/fazenda/chamados/${n.chamado_id}`;
+                  window.location.href = `/admin/chamados/${n.chamado_id}`;
                 } else {
                   window.location.href = '/';
                 }
