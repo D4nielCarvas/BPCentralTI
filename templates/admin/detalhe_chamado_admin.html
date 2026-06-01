@@ -18,7 +18,7 @@
         {% set s = chamado.status | lower | replace(' ','_') %}
         <span class="badge badge-{{ s }}">{{ chamado.status | replace('_',' ') | title }}</span>
         {% set cor_p = {'urgente':'var(--red)','alta':'var(--orange)','media':'#818cf8','baixa':'var(--text3)'}[chamado.prioridade] %}
-        <span style="font-size:11px;font-weight:800;color:{{ cor_p }}">{{ chamado.prioridade | upper }}</span>
+        <span class="dynamic-color-span" data-color="{{ cor_p }}" style="font-size:11px;font-weight:800;">{{ chamado.prioridade | upper }}</span>
       </div>
       <div class="form-card-body">
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px">
@@ -226,7 +226,7 @@
       {% if etiquetas_chamado %}
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
         {% for et in etiquetas_chamado %}
-        <span style="padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;background:{{ et.cor_hex }}20;color:{{ et.cor_hex }}">
+        <span class="dynamic-color-span" data-bg="{{ et.cor_hex }}20" data-color="{{ et.cor_hex }}" style="padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;">
           {{ et.nome }}
         </span>
         {% endfor %}
@@ -241,8 +241,9 @@
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:400">
             <input type="checkbox" name="etiqueta_ids" value="{{ et.id }}"
                    {% if et.id in ids_vinculados %}checked{% endif %}
-                   style="width:auto;accent-color:{{ et.cor_hex }}">
-            <span style="padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600;background:{{ et.cor_hex }}20;color:{{ et.cor_hex }}">
+                   class="dynamic-accent-checkbox" data-accent="{{ et.cor_hex }}"
+                   style="width:auto;">
+            <span class="dynamic-color-span" data-bg="{{ et.cor_hex }}20" data-color="{{ et.cor_hex }}" style="padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600;">
               {{ et.nome }}
             </span>
           </label>
@@ -352,10 +353,19 @@
     }
   });
 
+  // Aplica cores dinâmicas para evitar erros do linter (Jinja no CSS)
+  document.querySelectorAll('.dynamic-color-span').forEach(el => {
+    if (el.dataset.bg) el.style.background = el.dataset.bg;
+    if (el.dataset.color) el.style.color = el.dataset.color;
+  });
+  document.querySelectorAll('.dynamic-accent-checkbox').forEach(el => {
+    if (el.dataset.accent) el.style.accentColor = el.dataset.accent;
+  });
+
   // ── Polling de mensagens a cada 5 segundos ──────────────────────────────────
-  const CHAMADO_ID = {{ chamado.id }};
-  const MEU_ID = {{ usuario_id }};
-  let ultimoId = {{ mensagens[-1].id if mensagens else 0 }};
+  const CHAMADO_ID = Number("{{ chamado.id }}");
+  const MEU_ID = Number("{{ usuario_id }}");
+  let ultimoId = Number("{{ mensagens[-1].id if mensagens else 0 }}");
 
   function buildMsg(m) {
     const img_exts = ['jpg','jpeg','png','gif','webp'];
