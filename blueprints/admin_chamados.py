@@ -23,6 +23,7 @@ from flask import (
 
 from auth_utils import admin_required, get_usuario_id
 from db_layer import acquire_conn, fetch_all, fetch_one
+import psycopg2
 
 admin_chamados_bp = Blueprint("admin_chamados", __name__, url_prefix="/admin/chamados")
 
@@ -41,10 +42,18 @@ def save_anexo(arquivo, chamado_id, mensagem_id, usuario_id, cur):
     if arquivo and arquivo.filename and allowed_file(arquivo.filename):
         filename = secure_filename(arquivo.filename)
         unique_name = f"{uuid.uuid4().hex[:8]}_{filename}"
-        caminho = os.path.join(UPLOAD_FOLDER, unique_name)
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-        arquivo.save(caminho)
-        caminho_db = f"/{UPLOAD_FOLDER.replace(os.sep, '/')}/{unique_name}"
+        
+        arquivo.seek(0)
+        file_bytes = arquivo.read()
+        
+        cur.execute(
+            """INSERT INTO arquivos_storage (nome_arquivo, dados, mimetype) 
+               VALUES (%s, %s, %s)
+               ON CONFLICT (nome_arquivo) DO NOTHING""",
+            (unique_name, psycopg2.Binary(file_bytes), arquivo.mimetype)
+        )
+        
+        caminho_db = f"/arquivos/{unique_name}"
         cur.execute(
             """
             INSERT INTO chamado_anexos (chamado_id, mensagem_id, usuario_id, nome_arquivo, caminho_arquivo)

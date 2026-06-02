@@ -337,20 +337,21 @@ def index():
 
 
 @app.route("/termos/<filename>")
+@app.route("/arquivos/<filename>")
 def serve_termo(filename: str) -> tuple[str, int] | Response:
-    """Serve arquivos PDF de termos de responsabilidade com tratamento de erro seguro."""
-    file_path = os.path.join(UPLOAD_FOLDER, filename)
-    if not os.path.exists(file_path):
+    """Serve arquivos (PDF/imagens) diretamente do banco de dados (arquivos_storage)."""
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            row = _fetch_one(cur, "SELECT dados, mimetype FROM arquivos_storage WHERE nome_arquivo=%s", (filename,))
+    
+    if not row:
         return (
             f"<h3>Arquivo não encontrado</h3>"
-            f"<p>O PDF do termo de responsabilidade ({filename}) não está disponível no servidor no momento.</p>"
-            f"<p>Isso pode ocorrer se o sistema foi reiniciado e o arquivo estava em armazenamento temporário.</p>",
+            f"<p>O arquivo ({filename}) não está disponível no servidor.</p>",
             404,
         )
-    try:
-        return send_from_directory(UPLOAD_FOLDER, filename)
-    except Exception:
-        return "<h3>Erro ao acessar o arquivo PDF.</h3>", 404
+    
+    return Response(row["dados"], mimetype=row["mimetype"])
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -425,7 +426,18 @@ def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
         return jsonify({"ok": False, "msg": "Tipo de arquivo não permitido. Envie apenas PDF."}), 400
 
     safe_name = f"{tipo}_{secure_filename(id_ativo)}.pdf"
-    file.save(os.path.join(UPLOAD_FOLDER, safe_name))
+    
+    file.seek(0)
+    file_bytes = file.read()
+    
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO arquivos_storage (nome_arquivo, dados, mimetype) 
+                   VALUES (%s, %s, %s)
+                   ON CONFLICT (nome_arquivo) DO UPDATE SET dados=EXCLUDED.dados, criado_em=CURRENT_TIMESTAMP""",
+                (safe_name, psycopg2.Binary(file_bytes), file.mimetype)
+            )
 
     tabela_map = {
         "celular": "celulares",
@@ -603,7 +615,18 @@ def upload_nota_pedido(pid: int) -> tuple[Response, int] | Response:
     ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
 
     safe_name = f"pedido_{pid}_nota.{ext}"
-    file.save(os.path.join(UPLOAD_FOLDER, safe_name))
+    
+    file.seek(0)
+    file_bytes = file.read()
+    
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO arquivos_storage (nome_arquivo, dados, mimetype) 
+                   VALUES (%s, %s, %s)
+                   ON CONFLICT (nome_arquivo) DO UPDATE SET dados=EXCLUDED.dados, criado_em=CURRENT_TIMESTAMP""",
+                (safe_name, psycopg2.Binary(file_bytes), file.mimetype)
+            )
 
     with get_db() as conn:
         with conn.cursor() as cur:
