@@ -60,6 +60,7 @@
   </div>
 
   {% if chamados %}
+  <div class="table-responsive">
   <table>
     <thead>
       <tr>
@@ -77,7 +78,7 @@
       {% for c in chamados %}
       {% set prioridade_cor = {'urgente':'var(--red)','alta':'var(--orange)','media':'#818cf8','baixa':'var(--text3)'}[c.prioridade] %}
       <tr>
-        <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">#{{ c.id }}</td>
+        <td class="td-id">#{{ c.id }}</td>
         <td style="font-weight:500;color:var(--text);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
           {{ c.titulo }}
         </td>
@@ -91,11 +92,11 @@
           <span class="badge badge-{{ s }}">{{ c.status | replace('_',' ') | title }}</span>
         </td>
         <td style="font-size:12px;color:var(--text2)">{{ c.tecnico_nome or '—' }}</td>
-        <td style="font-size:11px;color:var(--text3)">
+        <td style="font-size:12px;color:var(--text3)">
           {{ c.criado_em.strftime('%d/%m/%y %H:%M') if c.criado_em is not string
              else c.criado_em[:16] | replace('T',' ') }}
         </td>
-        <td style="font-size:11px;color:var(--text3)">
+        <td style="font-size:12px;color:var(--text3)">
           {{ c.atualizado_em.strftime('%d/%m/%y %H:%M') if c.atualizado_em is not string
              else c.atualizado_em[:16] | replace('T',' ') }}
         </td>
@@ -107,6 +108,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <div style="padding:50px;text-align:center;color:var(--text3)">
     <div style="font-size:32px;margin-bottom:10px">🎫</div>

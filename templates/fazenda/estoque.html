@@ -26,6 +26,7 @@
   </div>
 
   {% if itens %}
+  <div class="table-responsive">
   <table>
     <thead>
       <tr>
@@ -42,7 +43,7 @@
     <tbody>
       {% for it in itens %}
       <tr>
-        <td style="color:var(--text3);font-size:11px">{{ it.id }}</td>
+        <td class="td-id">{{ it.id }}</td>
         <td style="color:var(--text);font-weight:500">{{ it.item }}</td>
         <td style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--cyan)">{{ it.cod_pedido or '—' }}</td>
         <td style="text-align:center">
@@ -66,6 +67,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <div style="padding:40px;text-align:center;color:var(--text3)">
     Nenhum item de estoque encontrado para a sua localidade.

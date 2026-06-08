@@ -161,6 +161,7 @@
     </div>
 
     {% if itens %}
+    <div class="table-responsive">
     <table id="tbl-{{ tid }}">
       <thead>
         <tr>
@@ -254,6 +255,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
 
     {% else %}
     <div style="padding:44px; text-align:center; color:var(--text3);">

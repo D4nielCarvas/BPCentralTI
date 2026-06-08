@@ -48,6 +48,7 @@
   </div>
 
   {% if pedidos %}
+  <div class="table-responsive">
   <table>
     <thead>
       <tr>
@@ -64,7 +65,7 @@
       {% for p in pedidos %}
       {% set s = p.status | lower %}
       <tr>
-        <td style="color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:11px">#{{ p.id }}</td>
+        <td class="td-id">#{{ p.id }}</td>
         <td style="color:var(--text2)">{{ p.localidade_nome }}</td>
         <td style="max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ p.descricao }}">
           {{ p.descricao | truncate(80, True, '…') }}
@@ -91,6 +92,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <div style="padding:40px;text-align:center;color:var(--text3)">
     Nenhum pedido encontrado.
