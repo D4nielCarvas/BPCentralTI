@@ -12,7 +12,6 @@ Complexidade: O(n) para listagem; O(1) para criação e envio de mensagem.
 from __future__ import annotations
 
 from typing import Any
-import os
 import uuid
 from werkzeug.utils import secure_filename
 
@@ -36,7 +35,6 @@ _TABELAS_EQUIPAMENTOS = [
     "estabilizadores", "starlink", "celulares_ponto",
 ]
 
-UPLOAD_FOLDER = os.path.join('static', 'uploads', 'chamados')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'zip', 'rar', 'txt', 'csv'}
 
 def allowed_file(filename):

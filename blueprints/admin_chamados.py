@@ -12,7 +12,6 @@ Segurança: admin_required em todas as rotas. Nunca confia em IDs do body.
 from __future__ import annotations
 
 from typing import Any
-import os
 import uuid
 from werkzeug.utils import secure_filename
 
@@ -32,7 +31,6 @@ _STATUS_VALIDOS = frozenset({
 })
 _PRIORIDADES = ["baixa", "media", "alta", "urgente"]
 
-UPLOAD_FOLDER = os.path.join('static', 'uploads', 'chamados')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'zip', 'rar', 'txt', 'csv'}
 
 def allowed_file(filename):
