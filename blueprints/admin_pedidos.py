@@ -17,8 +17,8 @@ from __future__ import annotations
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
-from auth_utils import admin_required, get_usuario_id
-from db_layer import acquire_conn, fetch_all, fetch_one
+from utils.auth_utils import admin_required, get_usuario_id
+from utils.db_layer import acquire_conn, fetch_all, fetch_one
 
 admin_pedidos_bp = Blueprint("admin_pedidos", __name__, url_prefix="/admin")
 

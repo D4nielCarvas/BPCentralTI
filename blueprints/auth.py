@@ -35,7 +35,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from flask_limiter.util import get_remote_address
 from app import limiter
 
-from db_layer import acquire_conn, fetch_all, fetch_one
+from utils.db_layer import acquire_conn, fetch_all, fetch_one
 
 auth_bp = Blueprint("auth", __name__)
 

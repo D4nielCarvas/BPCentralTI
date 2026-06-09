@@ -22,8 +22,8 @@ from typing import Any
 import psycopg2
 from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 
-from auth_utils import get_localidade_filter, get_usuario_id, has_permission, viewer_required
-from db_layer import acquire_conn, fetch_all, fetch_one
+from utils.auth_utils import get_localidade_filter, get_usuario_id, has_permission, viewer_required
+from utils.db_layer import acquire_conn, fetch_all, fetch_one
 
 fazenda_bp = Blueprint("fazenda", __name__, url_prefix="/fazenda")
 

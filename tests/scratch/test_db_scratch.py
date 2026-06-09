@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 import traceback
-from db_layer import acquire_conn
+from utils.db_layer import acquire_conn
 import app as _a
 
 _a.app.app_context().push()

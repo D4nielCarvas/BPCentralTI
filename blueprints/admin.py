@@ -19,8 +19,8 @@ from __future__ import annotations
 from werkzeug.security import generate_password_hash
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
-from auth_utils import admin_required
-from db_layer import acquire_conn, fetch_all, fetch_one
+from utils.auth_utils import admin_required
+from utils.db_layer import acquire_conn, fetch_all, fetch_one
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 

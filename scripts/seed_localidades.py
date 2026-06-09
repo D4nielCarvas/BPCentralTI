@@ -32,7 +32,7 @@ load_dotenv()
 
 from werkzeug.security import generate_password_hash
 
-from db_layer import acquire_conn, fetch_all, fetch_one, init_pool
+from utils.db_layer import acquire_conn, fetch_all, fetch_one, init_pool
 
 
 # Localidades padrao - alinhadas com SIGLAS_LOCAL de id_generator.py

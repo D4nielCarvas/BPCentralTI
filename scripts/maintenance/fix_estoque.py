@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import psycopg2
 import unicodedata
-from db_layer import acquire_conn
+from utils.db_layer import acquire_conn
 
 def normalize_str(s):
     if not s: return ""

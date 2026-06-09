@@ -1,7 +1,7 @@
 from typing import Any
 from flask import jsonify, request, Response
-from db_layer import acquire_conn, fetch_all
-from auth_utils import get_fazenda_nome_filter
+from utils.db_layer import acquire_conn, fetch_all
+from utils.auth_utils import get_fazenda_nome_filter
 
 def _list_table(tabela: str, colunas_busca: list[str]) -> Response:
     """
@@ -75,3 +75,18 @@ def log_historico(
            VALUES (%s, %s, %s, %s, %s, %s)""",
         (id_ativo, tipo, acao, campo, anterior, novo),
     )
+
+
+import magic
+
+def validate_file_mime(file, allowed_mimes: set) -> bool:
+    """Detecta o MIME real baseado na assinatura binária do arquivo."""
+    header = file.read(2048)
+    file.seek(0)
+    mime = magic.from_buffer(header, mime=True)
+    return mime in allowed_mimes
+
+def allowed_file(filename: str) -> bool:
+    """Verifica se o arquivo possui extensão PDF permitida."""
+    return "." in filename and filename.rsplit(".", 1)[1].lower() == "pdf"
+

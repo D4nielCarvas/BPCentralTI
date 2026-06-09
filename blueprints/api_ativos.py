@@ -3,10 +3,10 @@ from typing import Any
 from datetime import date
 import psycopg2
 
-from db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetch_one as _fetch_one, row_to_dict
-from auth_utils import login_required, admin_required, get_fazenda_nome_filter
-from crypto_utils import encrypt_field, decrypt_field
-from api_utils import _list_table, log_historico
+from utils.db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetch_one as _fetch_one, row_to_dict
+from utils.auth_utils import login_required, admin_required, get_fazenda_nome_filter
+from utils.crypto_utils import encrypt_field, decrypt_field
+from utils.api_utils import _list_table, log_historico
 
 bp = Blueprint('api_ativos', __name__, url_prefix='')
 
@@ -417,3 +417,90 @@ def atualizar_celular_turma(id_ativo: str) -> Response:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+
+
+@bp.route("/api/ativos/<id_ativo>")
+def get_ativo_universal(id_ativo: str) -> tuple[Response, int] | Response:
+    """
+    Busca um ativo em todas as tabelas de equipamentos pelo ID.
+
+    Usado pela aba de Manutenção para autopreenchimento de campos.
+    Complexidade: O(k) onde k = número de tabelas (~8 queries no pior caso).
+
+    Args:
+        id_ativo: ID do ativo no padrão TIPO-LOCAL-SETOR-NN ou CL-TRM-NN.
+
+    Returns:
+        JSON com os dados do ativo + campo 'tipo_equipamento', ou 404.
+    """
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            for tabela, tipo_nome in _TABELAS_ATIVO_BUSCA:
+                row = _fetch_one(
+                    cur,
+                    f"SELECT * FROM {tabela} WHERE id_ativo=%s",
+                    (id_ativo,),
+                )
+                if row:
+                    row["tipo_equipamento"] = tipo_nome
+                    return jsonify(row)
+
+    return jsonify({"ok": False, "msg": f"Ativo '{id_ativo}' não encontrado"}), 404
+
+
+@bp.route("/api/upload_termo/<tipo>/<id_ativo>", methods=["POST"])
+def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
+    """
+    Recebe e salva o PDF do termo de responsabilidade de um ativo.
+
+    Atualiza o campo termo_pdf na tabela correspondente ao tipo informado.
+
+    Args:
+        tipo: Tipo do ativo ('celular', 'celular_ponto', 'computador').
+        id_ativo: Identificador único do ativo.
+
+    Returns:
+        JSON com resultado da operação.
+    """
+    if "file" not in request.files:
+        return jsonify({"ok": False, "msg": "Nenhum arquivo enviado"}), 400
+
+    file = request.files["file"]
+    if not file.filename or not validate_file_mime(file, {"application/pdf"}):
+        return jsonify({"ok": False, "msg": "Tipo de arquivo não permitido. Envie apenas PDF."}), 400
+
+    safe_name = f"{tipo}_{secure_filename(id_ativo)}.pdf"
+    
+    file.seek(0)
+    file_bytes = file.read()
+    
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO arquivos_storage (nome_arquivo, dados, mimetype) 
+                   VALUES (%s, %s, %s)
+                   ON CONFLICT (nome_arquivo) DO UPDATE SET dados=EXCLUDED.dados, criado_em=CURRENT_TIMESTAMP""",
+                (safe_name, psycopg2.Binary(file_bytes), file.mimetype)
+            )
+
+    tabela_map = {
+        "celular": "celulares",
+        "celular_ponto": "celulares_ponto",
+        "celular_inspecao": "celulares_inspecao",
+        "celular_turma": "celulares_turma",
+        "computador": "computadores",
+        "starlink": "starlink",
+    }
+    tabela = tabela_map.get(tipo)
+
+    if tabela:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"UPDATE {tabela} SET termo_pdf=%s WHERE id_ativo=%s",
+                    (safe_name, id_ativo),
+                )
+                log_historico(cur, id_ativo, tipo, "PDF Termo Anexado")
+ 
+    return jsonify({"ok": True, "msg": "PDF anexado!", "filename": safe_name})
+

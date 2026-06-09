@@ -3,10 +3,10 @@ from typing import Any
 from datetime import date
 import psycopg2
 
-from db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetch_one as _fetch_one, row_to_dict
-from auth_utils import login_required, admin_required, get_fazenda_nome_filter
-from crypto_utils import encrypt_field, decrypt_field
-from api_utils import _list_table, log_historico
+from utils.db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetch_one as _fetch_one, row_to_dict
+from utils.auth_utils import login_required, admin_required, get_fazenda_nome_filter
+from utils.crypto_utils import encrypt_field, decrypt_field
+from utils.api_utils import _list_table, log_historico
 
 bp = Blueprint('api_pedidos', __name__, url_prefix='')
 
@@ -128,3 +128,50 @@ def atualizar_pedido(pid: int) -> tuple[Response, int] | Response:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+
+
+@bp.route("/api/pedidos/<int:pid>/upload-nota", methods=["POST"])
+@login_required
+@admin_required
+def upload_nota_pedido(pid: int) -> tuple[Response, int] | Response:
+    """
+    Item 9: Recebe e salva o PDF/imagem de nota fiscal de um pedido.
+
+    Aceita: .pdf, .jpg, .jpeg, .png
+    Salva em: database/termos/pedido_{id}_nota.{ext}
+    Atualiza: campo nota_fiscal_pdf na tabela pedidos.
+    """
+    if "file" not in request.files:
+        return jsonify({"ok": False, "msg": "Nenhum arquivo enviado"}), 400
+
+    file = request.files["file"]
+    
+    allowed_mimes = {"application/pdf", "image/jpeg", "image/png"}
+    if not file.filename or not validate_file_mime(file, allowed_mimes):
+        return jsonify({"ok": False, "msg": "Tipo de arquivo não permitido. Envie apenas PDF ou imagens JPG/PNG."}), 400
+
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+
+    safe_name = f"pedido_{pid}_nota.{ext}"
+    
+    file.seek(0)
+    file_bytes = file.read()
+    
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO arquivos_storage (nome_arquivo, dados, mimetype) 
+                   VALUES (%s, %s, %s)
+                   ON CONFLICT (nome_arquivo) DO UPDATE SET dados=EXCLUDED.dados, criado_em=CURRENT_TIMESTAMP""",
+                (safe_name, psycopg2.Binary(file_bytes), file.mimetype)
+            )
+
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE pedidos SET nota_fiscal_pdf=%s,updated_at=NOW() WHERE id=%s",
+                (safe_name, pid),
+            )
+
+    return jsonify({"ok": True, "msg": "Nota fiscal anexada!", "filename": safe_name})
+

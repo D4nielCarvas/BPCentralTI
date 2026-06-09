@@ -1,7 +1,7 @@
 from __future__ import annotations
 from flask import Blueprint, flash, redirect, render_template, request, url_for, session
-from auth_utils import login_required, get_usuario_id, get_localidade_filter
-from db_layer import acquire_conn, fetch_all
+from utils.auth_utils import login_required, get_usuario_id, get_localidade_filter
+from utils.db_layer import acquire_conn, fetch_all
 
 remessas_bp = Blueprint("remessas", __name__, url_prefix="/remessas")
 

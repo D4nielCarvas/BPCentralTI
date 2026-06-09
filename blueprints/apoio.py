@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from flask import Blueprint, flash, render_template, request, session, redirect, url_for
 
-from db_layer import acquire_conn, fetch_all, fetch_one
+from utils.db_layer import acquire_conn, fetch_all, fetch_one
 
 apoio_bp = Blueprint("apoio", __name__, url_prefix="/apoio")
 
@@ -197,3 +197,33 @@ def editar_celular_inspecao(id_ativo: str):
         "apoio/editar_celular_inspecao.html",
         celular=celular,
     )
+
+
+@apoio_bp.route("/api/notificacoes/poll")
+def poll_notificacoes() -> Response:
+    """
+    Retorna as notificações não lidas mais recentes.
+    Usado pelo frontend para disparar notificações push desktop.
+    """
+    is_master = session.get("is_admin_master")
+    perms = session.get("permissoes") or {}
+    pode_ver = is_master or perms.get("responder_chamados") or session.get("role") == "admin"
+    
+    if not (session.get("usuario_id") and pode_ver):
+        return jsonify({"ok": False, "notificacoes": []}), 403
+
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                ultimas = _fetch_all(
+                    cur,
+                    """SELECT id, chamado_id, mensagem, criado_em
+                       FROM notificacoes
+                       WHERE usuario_id = %s AND lida = FALSE
+                       ORDER BY id DESC LIMIT 5""",
+                    (session.get("usuario_id"),)
+                )
+        return jsonify({"ok": True, "notificacoes": ultimas})
+    except Exception as e:
+        return jsonify({"ok": False, "msg": str(e), "notificacoes": []}), 500
+

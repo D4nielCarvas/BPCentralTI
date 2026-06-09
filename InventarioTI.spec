@@ -10,15 +10,30 @@ a = Analysis(
         ('templates', 'templates'),   # Jinja2 templates
         ('static', 'static'),         # Arquivos estáticos (CSS, JS, imagens, uploads)
         ('blueprints', 'blueprints'), # Pacote de blueprints Flask
+        ('utils', 'utils'),           # Pacote de utils
         ('.env', '.'),                # Variáveis de ambiente (Supabase URL)
     ],
     hiddenimports=[
         # ── Módulos internos ──────────────────────────────────────
-        'id_generator',
-        'db_layer',
-        'auth_utils',
+        'utils',
+        'utils.id_generator',
+        'utils.db_layer',
+        'utils.auth_utils',
+        'utils.api_utils',
+        'utils.crypto_utils',
         # ── Blueprints (rotas modulares) ──────────────────────────
         'blueprints',
+        'blueprints.core',
+        'blueprints.api_dashboard',
+        'blueprints.api_descartes',
+        'blueprints.api_transferencias',
+        'blueprints.api_historico',
+        'blueprints.api_import_export',
+        'blueprints.api_busca',
+        'blueprints.api_ativos',
+        'blueprints.api_estoque',
+        'blueprints.api_pedidos',
+        'blueprints.api_manutencoes',
         'blueprints.celulares',
         'blueprints.auth',
         'blueprints.fazenda',
@@ -26,6 +41,8 @@ a = Analysis(
         'blueprints.admin',
         'blueprints.chamados',
         'blueprints.admin_chamados',
+        'blueprints.apoio',
+        'blueprints.remessas',
         # ── PostgreSQL / psycopg2 ─────────────────────────────────
         'psycopg2',
         'psycopg2.extras',

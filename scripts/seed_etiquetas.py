@@ -11,7 +11,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from db_layer import acquire_conn
+from utils.db_layer import acquire_conn
 
 ETIQUETAS_PADRAO = [
     ("Impressora",    "#f59e0b"),

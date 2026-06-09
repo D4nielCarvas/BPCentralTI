@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 from dotenv import load_dotenv
 load_dotenv()
-from db_layer import acquire_conn
+from utils.db_layer import acquire_conn
 import app as _a
 
 with _a.app.app_context():

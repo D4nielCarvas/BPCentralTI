@@ -20,8 +20,8 @@ from flask import (
     render_template, request, session, url_for,
 )
 
-from auth_utils import get_localidade_filter, get_usuario_id, viewer_required
-from db_layer import acquire_conn, fetch_all, fetch_one
+from utils.auth_utils import get_localidade_filter, get_usuario_id, viewer_required
+from utils.db_layer import acquire_conn, fetch_all, fetch_one
 import psycopg2
 
 chamados_bp = Blueprint("chamados", __name__, url_prefix="/fazenda/chamados")
@@ -404,3 +404,71 @@ def movimentacao_equipamento(chamado_id: int):
 
     flash(f"Movimentação '{nome_etapa}' registrada com sucesso.", "success")
     return redirect(url_for("chamados.detalhe_chamado", chamado_id=chamado_id))
+
+
+@chamados_bp.route("/chamados/<int:chamado_id>/poll")
+# limiter.limit("60/minute")  # P12: rate limiting
+def poll_chamado(chamado_id: int):
+    """Retorna as mensagens do chamado como JSON para o cliente fazer polling."""
+    if not session.get("usuario_id"):
+        return jsonify({"error": "auth"}), 401
+
+    usuario_id = get_usuario_id()
+    role = session.get("role", "")
+
+    with acquire_conn() as conn:
+        with conn.cursor() as cur:
+            chamado = fetch_one(cur, "SELECT localidade_id, criado_por FROM chamados WHERE id = %s", (chamado_id,))
+            if not chamado:
+                return jsonify({"error": "not_found"}), 404
+            # Viewer só acessa o próprio chamado da sua localidade
+            if role == "viewer":
+                if chamado["localidade_id"] != session.get("localidade_id") and chamado["criado_por"] != usuario_id:
+                    return jsonify({"error": "forbidden"}), 403
+
+            msgs = fetch_all(
+                cur,
+                """
+                SELECT cm.id, cm.mensagem, cm.is_sistema,
+                       u.nome AS autor_nome, u.role AS autor_role, u.id AS autor_id,
+                       cm.criado_em,
+                       ca.caminho_arquivo, ca.nome_arquivo
+                FROM chamado_mensagens cm
+                JOIN usuarios u ON u.id = cm.usuario_id
+                LEFT JOIN chamado_anexos ca ON ca.mensagem_id = cm.id
+                WHERE cm.chamado_id = %s
+                ORDER BY cm.criado_em ASC
+                """,
+                (chamado_id,),
+            )
+
+    resultado = []
+    for m in msgs:
+        dt = m["criado_em"]
+        if dt and hasattr(dt, "strftime"):
+            if dt.tzinfo is not None:
+                utc = dt.utctimetuple()
+                dt = datetime(*utc[:6])
+            dt = dt - timedelta(hours=3)
+            dt_str = dt.strftime("%d/%m/%y %H:%M")
+        elif isinstance(dt, str):
+            dt_str = dt[:16].replace("T", " ")
+        else:
+            dt_str = ""
+
+        resultado.append({
+            "id": m["id"],
+            "mensagem": m["mensagem"],
+            "is_sistema": m["is_sistema"],
+            "autor_nome": m["autor_nome"],
+            "autor_role": m["autor_role"],
+            "autor_id": m["autor_id"],
+            "criado_em": dt_str,
+            "caminho_arquivo": m["caminho_arquivo"],
+            "nome_arquivo": m["nome_arquivo"],
+        })
+
+    response = jsonify(resultado)
+    response.headers["X-Poll-Interval"] = "5"  # P12: informa o intervalo ao client
+    return response
+

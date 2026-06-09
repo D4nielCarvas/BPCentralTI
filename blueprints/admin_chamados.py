@@ -20,8 +20,8 @@ from flask import (
     render_template, request, session, url_for,
 )
 
-from auth_utils import admin_required, get_usuario_id
-from db_layer import acquire_conn, fetch_all, fetch_one
+from utils.auth_utils import admin_required, get_usuario_id
+from utils.db_layer import acquire_conn, fetch_all, fetch_one
 import psycopg2
 
 admin_chamados_bp = Blueprint("admin_chamados", __name__, url_prefix="/admin/chamados")

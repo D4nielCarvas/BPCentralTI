@@ -15,7 +15,7 @@ from typing import Any
 import psycopg2
 from flask import Blueprint, Response, jsonify, request, session
 
-from db_layer import acquire_conn, fetch_all, fetch_one
+from utils.db_layer import acquire_conn, fetch_all, fetch_one
 
 celulares_bp = Blueprint("celulares", __name__, url_prefix="/api")
 
