@@ -11,6 +11,7 @@ import io
 import os
 import sys
 import threading
+import traceback
 import webbrowser
 from datetime import date, datetime, timedelta
 from typing import Any, Optional
@@ -202,7 +203,7 @@ def formata_data_br(dt):
 
 @app.context_processor
 def inject_permissions():
-    from auth_utils import has_permission
+    from utils.auth_utils import has_permission
     return dict(has_permission=has_permission)
 
 @app.context_processor

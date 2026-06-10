@@ -1,0 +1,20 @@
+# render.yaml — Configuração de deploy para o Render.com
+# Documentação: https://render.com/docs/render-yaml-spec
+
+services:
+  - type: web
+    name: inventario-ti-v3
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn app:app --workers 1 --threads 2 --bind 0.0.0.0:$PORT --timeout 120"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+      - key: SECRET_KEY
+        sync: false          # Definida manualmente no painel do Render
+      - key: SUPABASE_DATABASE_URL
+        sync: false          # Definida manualmente no painel do Render
+      - key: FERNET_KEY
+        sync: false          # Definida manualmente no painel do Render (se usado)
+      - key: FLASK_ENV
+        value: production
