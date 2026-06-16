@@ -1953,7 +1953,7 @@
       const html = `<form id="modal-form"><div class="form-grid" style="grid-template-columns: 1fr">
     ${d ? fld('ID', '<input name="_id" value="' + d.id + '" readonly style="display:none">') : ''}
     ${fazendaFld(d, 'fazenda_solicitante', 'Fazenda Solicitante *')}
-    <div class="form-group">${fld('Vincular a Estoque', `<select name="estoque_id" onchange="const opt=this.options[this.selectedIndex]; if(opt.value){document.getElementById('ped-item').value=opt.dataset.item;}">${optsEstoque}</select>`)}</div>
+    ${fld('Vincular a Estoque', `<select name="estoque_id" onchange="const opt=this.options[this.selectedIndex]; if(opt.value){document.getElementById('ped-item').value=opt.dataset.item;}">${optsEstoque}</select>`)}
     ${fld('Item *', `<input id="ped-item" name="item" value="${d?.item || ''}" required placeholder="Nome do item de TI">`)}
     ${fld('Quantidade *', `<input type="number" name="quantidade" value="${d?.quantidade || 1}" min="1" required>`)}
     ${fld('Nº Requisição', `<input name="num_requisicao" value="${d?.num_requisicao || ''}" placeholder="REQ-001">`)}
@@ -1971,7 +1971,7 @@
       ${d?.nota_fiscal_pdf ? `<small style="color:var(--text3)">Arquivo atual: ${d.nota_fiscal_pdf}</small>` : ''}
     </div>
     <!-- Item 9: Campo condicional - responsável envio (visível somente para Apoio) -->
-    <div id="div-resp-envio" class="form-group" style="display:${formaEnvioAtual === 'Apoio' ? '' : 'none'}">
+    <div id="div-resp-envio" style="display:${formaEnvioAtual === 'Apoio' ? '' : 'none'}">
       ${fld('Responsável pelo Envio *', `<input name="responsavel_envio" value="${d?.responsavel_envio || ''}" placeholder="Nome do responsável">`)}
     </div>
     ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel || ''}">`)}

@@ -6,7 +6,7 @@ import psycopg2
 from utils.db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetch_one as _fetch_one, row_to_dict
 from utils.auth_utils import login_required, admin_required, get_fazenda_nome_filter
 from utils.crypto_utils import encrypt_field, decrypt_field
-from utils.api_utils import _list_table, log_historico
+from utils.api_utils import _list_table, log_historico, validate_file_mime
 
 bp = Blueprint('api_pedidos', __name__, url_prefix='')
 
@@ -14,13 +14,19 @@ bp = Blueprint('api_pedidos', __name__, url_prefix='')
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @bp.route("/api/pedidos", methods=["GET"])
-@admin_required
+@login_required
 def listar_pedidos() -> Response:
-    """Lista pedidos com filtros de status e busca."""
+    """Lista pedidos com filtros de status e busca, filtrado por fazenda para usuários normais."""
     filtro = request.args.get("status", "")
     busca = request.args.get("q", "")
     query = "SELECT * FROM pedidos WHERE 1=1"
     params: list[Any] = []
+    
+    fazenda_nome = get_fazenda_nome_filter()
+    if fazenda_nome:
+        query += " AND fazenda_solicitante = %s"
+        params.append(fazenda_nome)
+        
     if filtro:
         query += " AND status=%s"
         params.append(filtro)
@@ -38,7 +44,7 @@ def listar_pedidos() -> Response:
 
 
 @bp.route("/api/pedidos", methods=["POST"])
-@admin_required
+@login_required
 def criar_pedido() -> Response:
     """Cadastra um novo pedido. Item 9: inclui responsavel_envio, retorna id para upload de nota."""
     d = request.json
@@ -64,7 +70,7 @@ def criar_pedido() -> Response:
 
 
 @bp.route("/api/pedidos/<int:pid>", methods=["GET"])
-@admin_required
+@login_required
 def get_pedido(pid: int) -> Response:
     """Retorna dados de um pedido."""
     with get_db() as conn:
@@ -74,7 +80,7 @@ def get_pedido(pid: int) -> Response:
 
 
 @bp.route("/api/pedidos/<int:pid>", methods=["PUT"])
-@admin_required
+@login_required
 def atualizar_pedido(pid: int) -> tuple[Response, int] | Response:
     """Atualiza status e dados de um pedido. Ao finalizar, desconta do estoque se houver estoque_id."""
     d = request.json
@@ -132,7 +138,6 @@ def atualizar_pedido(pid: int) -> tuple[Response, int] | Response:
 
 @bp.route("/api/pedidos/<int:pid>/upload-nota", methods=["POST"])
 @login_required
-@admin_required
 def upload_nota_pedido(pid: int) -> tuple[Response, int] | Response:
     """
     Item 9: Recebe e salva o PDF/imagem de nota fiscal de um pedido.
