@@ -18,15 +18,15 @@
   </div>
 </div>
 
-<!-- Modal Container (mesmo estilo do index) -->
-<div class="modal-backdrop" id="modal-backdrop" style="display: none; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000;">
-  <div class="modal" style="background: var(--bg2); width: 100%; max-width: 500px; border-radius: 12px; overflow: hidden;">
-    <div class="modal-head" style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-      <h3 id="modal-title" style="margin: 0;">Modal</h3>
-      <button class="modal-close" onclick="closeModal()" style="background: none; border: none; color: var(--text2); cursor: pointer; font-size: 18px;">✕</button>
+<!-- Modal Container -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modal-title">Modal</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
-    <div class="modal-body" id="modal-body" style="padding: 20px; max-height: 70vh; overflow-y: auto;"></div>
-    <div class="modal-foot" id="modal-foot" style="padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: var(--bg3);">
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" id="modal-save">Salvar</button>
     </div>
@@ -48,12 +48,14 @@
   function openModal(title, html, ctx = {}) {
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-body').innerHTML = html;
-    document.getElementById('modal-backdrop').style.display = 'flex';
+    document.getElementById('modal-backdrop').classList.add('open');
   }
 
   function closeModal() {
-    document.getElementById('modal-backdrop').style.display = 'none';
-    document.getElementById('modal-body').innerHTML = '';
+    document.getElementById('modal-backdrop').classList.remove('open');
+    setTimeout(() => {
+      document.getElementById('modal-body').innerHTML = '';
+    }, 200);
   }
 
   function toggleLoading(btn, isLoading) {
