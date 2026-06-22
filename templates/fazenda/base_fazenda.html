@@ -52,6 +52,12 @@
       <span class="icon">🎫</span> Suporte TI
     </a>
 
+    <div class="nav-label">Ajuda</div>
+    <a href="{{ url_for('fazenda.tutoriais') }}"
+       class="nav-item {% if request.endpoint == 'fazenda.tutoriais' %}active{% endif %}">
+      <span class="icon">🎓</span> Tutoriais
+    </a>
+
     {% if session.role == 'apoio' %}
     <div class="nav-label" style="margin-top:8px">Administração</div>
     <a href="{{ url_for('apoio.celulares_inspecao') }}"

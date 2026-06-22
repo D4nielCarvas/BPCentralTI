@@ -1,0 +1,173 @@
+{% extends "fazenda/base_fazenda.html" %}
+
+{% block page_title %}🎓 Tutoriais{% endblock %}
+
+{% block topbar_actions %}
+  {% if session.role == 'admin' or session.is_admin_master %}
+  <button class="btn btn-primary" onclick="newTutorial()">+ Novo Tutorial</button>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="table-card">
+  <div style="padding: 16px;">
+    <div id="tutoriais-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+      <!-- Cards preenchidos via JS -->
+      <p>Carregando tutoriais...</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Container (mesmo estilo do index) -->
+<div class="modal-backdrop" id="modal-backdrop" style="display: none; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000;">
+  <div class="modal" style="background: var(--bg2); width: 100%; max-width: 500px; border-radius: 12px; overflow: hidden;">
+    <div class="modal-head" style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-title" style="margin: 0;">Modal</h3>
+      <button class="modal-close" onclick="closeModal()" style="background: none; border: none; color: var(--text2); cursor: pointer; font-size: 18px;">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body" style="padding: 20px; max-height: 70vh; overflow-y: auto;"></div>
+    <div class="modal-foot" id="modal-foot" style="padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: var(--bg3);">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="modal-save">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>
+
+<script>
+  function toast(msg, type = 'info') {
+    const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<span>${icons[type]}</span> ${msg}`;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+
+  function openModal(title, html, ctx = {}) {
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-body').innerHTML = html;
+    document.getElementById('modal-backdrop').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('modal-backdrop').style.display = 'none';
+    document.getElementById('modal-body').innerHTML = '';
+  }
+
+  function toggleLoading(btn, isLoading) {
+    if (isLoading) {
+      btn.dataset.original = btn.textContent;
+      btn.textContent = 'Aguarde...';
+      btn.disabled = true;
+    } else {
+      btn.textContent = btn.dataset.original || 'Salvar';
+      btn.disabled = false;
+    }
+  }
+
+  async function loadTutoriais() {
+    const grid = document.getElementById('tutoriais-grid');
+    grid.innerHTML = '<p>Carregando tutoriais...</p>';
+    try {
+      const res = await fetch('/api/tutoriais');
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        grid.innerHTML = `<div class="empty"><p>${data.msg || 'Erro ao carregar tutoriais.'}</p></div>`;
+        return;
+      }
+      if (data.data.length === 0) {
+        grid.innerHTML = '<div class="empty"><p>Nenhum tutorial encontrado.</p></div>';
+        return;
+      }
+      const isMaster = {{ 'true' if session.is_admin_master else 'false' }};
+      const isAdmin = "{{ session.role }}" === "admin";
+      const canDelete = isMaster || isAdmin;
+      
+      grid.innerHTML = data.data.map(t => {
+        let mediaHtml = '';
+        if (t.mimetype && t.mimetype.startsWith('video/')) {
+          mediaHtml = `<video controls src="${t.url_arquivo}" style="width:100%; border-radius:8px; background:#000; max-height:200px;"></video>`;
+        } else if (t.mimetype && t.mimetype.startsWith('image/')) {
+          mediaHtml = `<img src="${t.url_arquivo}" style="width:100%; border-radius:8px; max-height:200px; object-fit:cover;" />`;
+        } else {
+          mediaHtml = `<a href="${t.url_arquivo}" target="_blank" class="btn btn-ghost">Baixar Arquivo</a>`;
+        }
+        const delBtn = canDelete ? 
+          `<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteTutorial('${t.id}')">Excluir</button>` : '';
+        return `
+          <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+            <h4 style="margin:0; font-size:16px; color:var(--text);">${t.titulo}</h4>
+            <div style="font-size:12px; color:var(--text3);">Adicionado por ${t.autor || 'Desconhecido'} em ${t.criado_em}</div>
+            ${mediaHtml}
+            <p style="font-size:13px; color:var(--text2); margin:0; flex-grow:1;">${t.descricao || ''}</p>
+            <div style="text-align:right; margin-top:8px;">${delBtn}</div>
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      grid.innerHTML = `<div class="empty"><p>Erro na conexão ao carregar tutoriais.</p></div>`;
+    }
+  }
+
+  function newTutorial() {
+    const html = `<form id="modal-form">
+      <div class="form-group full" style="margin-bottom: 12px;"><label style="display:block;margin-bottom:4px;color:var(--text2);font-size:13px">Título</label><input name="titulo" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)" required></div>
+      <div class="form-group full" style="margin-bottom: 12px;"><label style="display:block;margin-bottom:4px;color:var(--text2);font-size:13px">Descrição</label><textarea name="descricao" rows="3" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)"></textarea></div>
+      <div class="form-group full" style="margin-bottom: 12px;">
+        <label style="display:block;margin-bottom:4px;color:var(--text2);font-size:13px">Arquivo (Vídeo ou Imagem, max 50MB)</label>
+        <input type="file" name="file" accept="video/mp4,video/webm,image/png,image/jpeg" required style="width:100%;color:var(--text)">
+      </div>
+    </form>`;
+    openModal('Novo Tutorial', html);
+    document.getElementById('modal-save').onclick = async () => {
+      const form = document.getElementById('modal-form');
+      if (!form.reportValidity()) return;
+      const saveBtn = document.getElementById('modal-save');
+      toggleLoading(saveBtn, true);
+      try {
+        const formData = new FormData();
+        formData.append('titulo', form.querySelector('[name="titulo"]').value);
+        formData.append('descricao', form.querySelector('[name="descricao"]').value);
+        formData.append('file', form.querySelector('[name="file"]').files[0]);
+
+        const response = await fetch('/api/tutoriais/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.json();
+        if (result.ok) {
+          toast(result.msg, 'success');
+          closeModal();
+          loadTutoriais();
+        } else {
+          toast(result.msg, 'error');
+        }
+      } catch (e) {
+        toast('Erro na conexão', 'error');
+      } finally {
+        toggleLoading(saveBtn, false);
+      }
+    };
+  }
+
+  async function deleteTutorial(id) {
+    if (!confirm('Deseja realmente excluir este tutorial?')) return;
+    try {
+      const response = await fetch(`/api/tutoriais/${id}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (result.ok) {
+        toast(result.msg, 'success');
+        loadTutoriais();
+      } else {
+        toast(result.msg, 'error');
+      }
+    } catch (e) {
+      toast('Erro na conexão ao deletar', 'error');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadTutoriais);
+</script>
+{% endblock %}

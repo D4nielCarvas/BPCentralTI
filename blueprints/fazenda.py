@@ -301,6 +301,20 @@ def listar_manutencoes():
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# TUTORIAIS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@fazenda_bp.route("/tutoriais")
+@viewer_required
+def tutoriais():
+    """
+    Página de tutoriais do portal fazenda. Apenas renderiza o template.
+    O carregamento e as ações de tutoriais ocorrem via AJAX chamando a api_tutoriais.
+    """
+    return render_template("fazenda/tutoriais.html")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # PEDIDOS DO VIEWER
 # ═══════════════════════════════════════════════════════════════════════════════
 

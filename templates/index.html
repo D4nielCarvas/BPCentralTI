@@ -45,9 +45,6 @@
           id="badge-ped" style="display:none">0</span></div>
       <div class="nav-item" data-page="historico"><span class="icon">📜</span> Histórico</div>
 
-      <div class="nav-label">Ajuda</div>
-      <div class="nav-item" data-page="tutoriais"><span class="icon">🎓</span> Tutoriais</div>
-
       {% if session.role == 'admin' %}
       <div class="nav-label" style="margin-top:8px">Administração</div>
       <a href="{{ url_for('admin.listar_usuarios') }}" class="nav-item" style="text-decoration:none">
