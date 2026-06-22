@@ -14,7 +14,7 @@ def get_supabase_storage_url() -> Optional[str]:
 
 def get_supabase_headers() -> dict:
     """Retorna os headers necessários para a API REST do Supabase."""
-    supabase_key = os.environ.get("SUPABASE_KEY")
+    supabase_key = os.environ.get("SUPABASE_KEY", "")
     return {
         "Authorization": f"Bearer {supabase_key}",
         "apikey": supabase_key,
@@ -37,7 +37,8 @@ def upload_file_to_supabase(bucket: str, file_path: str, file_bytes: bytes, cont
     """
     base_url = get_supabase_storage_url()
     if not base_url:
-        raise ValueError("SUPABASE_URL não configurado no .env")
+        print("Erro: SUPABASE_URL não configurado no .env")
+        return False
         
     url = f"{base_url}/{bucket}/{file_path}"
     headers = get_supabase_headers()
