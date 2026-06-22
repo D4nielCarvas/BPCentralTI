@@ -45,6 +45,9 @@
           id="badge-ped" style="display:none">0</span></div>
       <div class="nav-item" data-page="historico"><span class="icon">📜</span> Histórico</div>
 
+      <div class="nav-label">Ajuda</div>
+      <div class="nav-item" data-page="tutoriais"><span class="icon">🎓</span> Tutoriais</div>
+
       {% if session.role == 'admin' %}
       <div class="nav-label" style="margin-top:8px">Administração</div>
       <a href="{{ url_for('admin.listar_usuarios') }}" class="nav-item" style="text-decoration:none">
@@ -644,6 +647,20 @@
         </div>
       </div>
 
+      <!-- TUTORIAIS -->
+      <div class="page" id="page-tutoriais">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>🎓 Tutoriais</h3>
+          </div>
+          <div style="padding: 16px;">
+            <div id="tutoriais-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+              <!-- Cards preenchidos via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -753,14 +770,15 @@
         impressoras: 'Impressoras', estabilizadores: 'Estabilizadores / Nobreakes',
         starlink: 'Antenas Starlink', estoque: 'Estoque Geral', estoque_equipamentos: 'Estoque Equipamentos',
         toners: 'Controle de Toner', manutencoes: 'Manutenções', descartes: 'Descartes',
-        transferencias: 'Transferências', pedidos: 'Pedidos de TI', historico: 'Histórico de Transações'
+        transferencias: 'Transferências', pedidos: 'Pedidos de TI', historico: 'Histórico de Transações',
+        tutoriais: 'Tutoriais e Manuais'
       };
       document.getElementById('page-title').textContent = titles[page] || page;
       const noNew = ['dashboard', 'descartes', 'historico', 'estoque_equipamentos'];
       const btn = document.getElementById('btn-new');
 
       // Esconder botão +Novo se estiver nestas telas ou se não tiver permissão
-      btn.style.display = (noNew.includes(page) || !canEditarEquip) ? 'none' : '';
+      btn.style.display = (noNew.includes(page) || (!canEditarEquip && page !== 'tutoriais') || (page === 'tutoriais' && (!isMaster && "{{ session.role }}" !== "admin"))) ? 'none' : '';
       if (page === 'celulares_turma' && canEditarEquip) btn.style.display = '';
 
       const lbls = {
@@ -768,7 +786,7 @@
         celulares_inspecao: '+ Cel. Inspeção',
         computadores: '+ Computador', impressoras: '+ Impressora', estabilizadores: '+ Estabilizador',
         starlink: '+ Starlink', estoque: '+ Item', toners: '+ Toner', manutencoes: '+ Manutenção',
-        transferencias: '+ Transferência', pedidos: '+ Pedido'
+        transferencias: '+ Transferência', pedidos: '+ Pedido', tutoriais: '+ Tutorial'
       };
       btn.textContent = lbls[page] || '+ Novo';
       loadPage(page);
@@ -782,7 +800,8 @@
         impressoras: loadImpressoras, estabilizadores: loadEstabilizadores,
         starlink: loadStarlink, estoque: loadEstoque, estoque_equipamentos: loadEstoqueEquipamentos,
         toners: loadToners, manutencoes: loadManutencoes, descartes: loadDescartes,
-        transferencias: loadTransferencias, pedidos: loadPedidos, historico: loadHistorico
+        transferencias: loadTransferencias, pedidos: loadPedidos, historico: loadHistorico,
+        tutoriais: loadTutoriais
       };
       loaders[page]?.();
     }
@@ -1453,7 +1472,8 @@
         estabilizadores: () => openEstabilizadorModal(null), starlink: () => openStarlinkModal(null),
         estoque: () => openEstoqueModal(null), toners: () => openTonerModal(null),
         manutencoes: () => openManutModal(null), descartes: () => openDescarteModal(null),
-        transferencias: () => openTransferenciaModal(null), pedidos: () => openPedidoModal(null)
+        transferencias: () => openTransferenciaModal(null), pedidos: () => openPedidoModal(null),
+        tutoriais: () => newTutorial()
       };
       map[page]?.();
     }
@@ -2127,6 +2147,94 @@
           toggleLoading(saveBtn, false);
         }
       };
+    }
+
+    // ─── TUTORIAIS ───────────────────────────────────────────────────────────────
+    async function loadTutoriais() {
+      const grid = document.getElementById('tutoriais-grid');
+      grid.innerHTML = '<p>Carregando tutoriais...</p>';
+      const res = await api('/api/tutoriais');
+      if (!res.ok) {
+        grid.innerHTML = `<div class="empty"><p>${res.msg || 'Erro ao carregar tutoriais.'}</p></div>`;
+        return;
+      }
+      if (res.data.length === 0) {
+        grid.innerHTML = '<div class="empty"><p>Nenhum tutorial encontrado.</p></div>';
+        return;
+      }
+      grid.innerHTML = res.data.map(t => {
+        let mediaHtml = '';
+        if (t.mimetype && t.mimetype.startsWith('video/')) {
+          mediaHtml = `<video controls src="${t.url_arquivo}" style="width:100%; border-radius:8px; background:#000; max-height:200px;"></video>`;
+        } else if (t.mimetype && t.mimetype.startsWith('image/')) {
+          mediaHtml = `<img src="${t.url_arquivo}" style="width:100%; border-radius:8px; max-height:200px; object-fit:cover;" />`;
+        } else {
+          mediaHtml = `<a href="${t.url_arquivo}" target="_blank" class="btn btn-ghost">Baixar Arquivo</a>`;
+        }
+        const delBtn = (isMaster || "{{ session.role }}" === "admin") ? 
+          `<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteTutorial('${t.id}')">Excluir</button>` : '';
+        return `
+          <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+            <h4 style="margin:0; font-size:16px; color:var(--text);">${t.titulo}</h4>
+            <div style="font-size:12px; color:var(--text3);">Adicionado por ${t.autor || 'Desconhecido'} em ${t.criado_em}</div>
+            ${mediaHtml}
+            <p style="font-size:13px; color:var(--text2); margin:0; flex-grow:1;">${t.descricao || ''}</p>
+            <div style="text-align:right; margin-top:8px;">${delBtn}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function newTutorial() {
+      const html = `<form id="modal-form">
+        <div class="form-group full"><label>Título</label><input name="titulo" required></div>
+        <div class="form-group full"><label>Descrição</label><textarea name="descricao" rows="3"></textarea></div>
+        <div class="form-group full">
+          <label>Arquivo (Vídeo ou Imagem, max 50MB)</label>
+          <input type="file" name="file" accept="video/mp4,video/webm,image/png,image/jpeg" required>
+        </div>
+      </form>`;
+      openModal('Novo Tutorial', html, {});
+      document.getElementById('modal-save').onclick = async () => {
+        const form = document.getElementById('modal-form');
+        if (!form.reportValidity()) return;
+        const saveBtn = document.getElementById('modal-save');
+        toggleLoading(saveBtn, true);
+        try {
+          const formData = new FormData();
+          formData.append('titulo', form.querySelector('[name="titulo"]').value);
+          formData.append('descricao', form.querySelector('[name="descricao"]').value);
+          formData.append('file', form.querySelector('[name="file"]').files[0]);
+
+          const response = await fetch('/api/tutoriais/upload', {
+            method: 'POST',
+            body: formData
+          });
+          const result = await response.json();
+          if (result.ok) {
+            toast(result.msg, 'success');
+            closeModal();
+            loadTutoriais();
+          } else {
+            toast(result.msg, 'error');
+          }
+        } catch (e) {
+          toast('Erro na conexão', 'error');
+        } finally {
+          toggleLoading(saveBtn, false);
+        }
+      };
+    }
+
+    async function deleteTutorial(id) {
+      if (!confirm('Deseja realmente excluir este tutorial?')) return;
+      const res = await api(`/api/tutoriais/${id}`, 'DELETE');
+      if (res.ok) {
+        toast(res.msg, 'success');
+        loadTutoriais();
+      } else {
+        toast(res.msg, 'error');
+      }
     }
 
     // ─── ATALHOS ─────────────────────────────────────────────────────────────────

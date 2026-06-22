@@ -165,6 +165,7 @@ from blueprints.api_transferencias import api_transferencias_bp
 from blueprints.api_historico import api_historico_bp
 from blueprints.api_import_export import api_import_export_bp
 from blueprints.api_busca import api_busca_bp
+from blueprints.api_tutoriais import bp as api_tutoriais_bp
 
 
 app.register_blueprint(core_bp)
@@ -174,6 +175,7 @@ app.register_blueprint(api_transferencias_bp)
 app.register_blueprint(api_historico_bp)
 app.register_blueprint(api_import_export_bp)
 app.register_blueprint(api_busca_bp)
+app.register_blueprint(api_tutoriais_bp)
 
 
 
