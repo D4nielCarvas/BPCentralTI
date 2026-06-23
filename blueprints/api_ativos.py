@@ -55,10 +55,9 @@ def criar_computador() -> tuple[Response, int] | Response:
 @login_required  # P7: exige autenticação para consultar
 def get_computador(id_ativo: str) -> Response:
     """Retorna dados de um computador pelo ID do ativo."""
+    fazenda_nome = get_fazenda_nome_filter()
     with get_db() as conn:
         with conn.cursor() as cur:
-            from auth_utils import get_fazenda_nome_filter
-            fazenda_nome = get_fazenda_nome_filter()
             if fazenda_nome:
                 row = _fetch_one(cur, "SELECT * FROM computadores WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
             else:
@@ -138,10 +137,9 @@ def criar_impressora() -> tuple[Response, int] | Response:
 @login_required  # P7: exige autenticação para consultar
 def get_impressora(id_ativo: str) -> Response:
     """Retorna dados de uma impressora."""
+    fazenda_nome = get_fazenda_nome_filter()
     with get_db() as conn:
         with conn.cursor() as cur:
-            from auth_utils import get_fazenda_nome_filter
-            fazenda_nome = get_fazenda_nome_filter()
             if fazenda_nome:
                 row = _fetch_one(cur, "SELECT * FROM impressoras WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
             else:
@@ -211,10 +209,9 @@ def criar_estabilizador() -> tuple[Response, int] | Response:
 @login_required  # P7: exige autenticação para consultar
 def get_estabilizador(id_ativo: str) -> Response:
     """Retorna dados de um estabilizador."""
+    fazenda_nome = get_fazenda_nome_filter()
     with get_db() as conn:
         with conn.cursor() as cur:
-            from auth_utils import get_fazenda_nome_filter
-            fazenda_nome = get_fazenda_nome_filter()
             if fazenda_nome:
                 row = _fetch_one(cur, "SELECT * FROM estabilizadores WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
             else:
@@ -286,10 +283,9 @@ def criar_starlink() -> tuple[Response, int] | Response:
 @login_required  # P7: exige autenticação para consultar
 def get_starlink(id_ativo: str) -> Response:
     """Retorna dados de uma antena Starlink. P1: descriptografa senha_login antes de retornar."""
+    fazenda_nome = get_fazenda_nome_filter()
     with get_db() as conn:
         with conn.cursor() as cur:
-            from auth_utils import get_fazenda_nome_filter
-            fazenda_nome = get_fazenda_nome_filter()
             if fazenda_nome:
                 row = _fetch_one(cur, "SELECT * FROM starlink WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
             else:
@@ -375,10 +371,9 @@ def criar_celular_turma() -> tuple[Response, int] | Response:
 @login_required  # P7: exige autenticação para consultar
 def get_celular_turma(id_ativo: str) -> Response:
     """Retorna dados de um celular de turma. P1: descriptografa senha antes de retornar."""
+    fazenda_nome = get_fazenda_nome_filter()
     with get_db() as conn:
         with conn.cursor() as cur:
-            from auth_utils import get_fazenda_nome_filter
-            fazenda_nome = get_fazenda_nome_filter()
             if fazenda_nome:
                 row = _fetch_one(cur, "SELECT * FROM celulares_turma WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
             else:

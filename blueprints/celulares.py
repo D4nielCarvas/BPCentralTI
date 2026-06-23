@@ -137,10 +137,10 @@ def criar_celular() -> tuple[Response, int] | Response:
 @celulares_bp.route("/celulares/<id_ativo>", methods=["GET"])
 def get_celular(id_ativo: str) -> tuple[Response, int] | Response:
     """Retorna os dados de um celular pelo ID do ativo."""
+    from utils.auth_utils import get_fazenda_nome_filter
+    fazenda_nome = get_fazenda_nome_filter()
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            from auth_utils import get_fazenda_nome_filter
-            fazenda_nome = get_fazenda_nome_filter()
             if fazenda_nome:
                 row = fetch_one(cur, "SELECT * FROM celulares WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
             else:
@@ -233,10 +233,10 @@ def criar_celular_ponto() -> tuple[Response, int] | Response:
 @celulares_bp.route("/celulares_ponto/<id_ativo>", methods=["GET"])
 def get_celular_ponto(id_ativo: str) -> tuple[Response, int] | Response:
     """Retorna dados de um celular de ponto."""
+    from utils.auth_utils import get_fazenda_nome_filter
+    fazenda_nome = get_fazenda_nome_filter()
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            from auth_utils import get_fazenda_nome_filter
-            fazenda_nome = get_fazenda_nome_filter()
             if fazenda_nome:
                 row = fetch_one(cur, "SELECT * FROM celulares_ponto WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
             else:
@@ -325,10 +325,10 @@ def criar_celular_inspecao() -> tuple[Response, int] | Response:
 @celulares_bp.route("/celulares_inspecao/<id_ativo>", methods=["GET"])
 def get_celular_inspecao(id_ativo: str) -> tuple[Response, int] | Response:
     """Retorna dados de um celular de inspeção."""
+    from utils.auth_utils import get_fazenda_nome_filter
+    fazenda_nome = get_fazenda_nome_filter()
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            from auth_utils import get_fazenda_nome_filter
-            fazenda_nome = get_fazenda_nome_filter()
             if fazenda_nome:
                 row = fetch_one(cur, "SELECT * FROM celulares_inspecao WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
             else:
@@ -419,10 +419,10 @@ def criar_celular_turma() -> tuple[Response, int] | Response:
 @celulares_bp.route("/celulares_turma/<id_ativo>", methods=["GET"])
 def get_celular_turma(id_ativo: str) -> tuple[Response, int] | Response:
     """Retorna dados de um celular de turma."""
+    from utils.auth_utils import get_fazenda_nome_filter
+    fazenda_nome = get_fazenda_nome_filter()
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            from auth_utils import get_fazenda_nome_filter
-            fazenda_nome = get_fazenda_nome_filter()
             if fazenda_nome:
                 row = fetch_one(cur, "SELECT * FROM celulares_turma WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
             else:
