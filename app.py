@@ -124,6 +124,18 @@ limiter = Limiter(
 )
 
 # Blueprints existentes
+from flask.json.provider import DefaultJSONProvider
+
+class CustomJSONProvider(DefaultJSONProvider):
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        if isinstance(o, date):
+            return o.isoformat()
+        return super().default(o)
+
+app.json = CustomJSONProvider(app)
+
 from blueprints.celulares import celulares_bp
 
 from blueprints.api_ativos import bp as api_ativos_bp
