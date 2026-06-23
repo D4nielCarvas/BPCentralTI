@@ -1031,7 +1031,7 @@
       if (d.manutencoes_abertas > 0) { b.style.display = ''; b.textContent = d.manutencoes_abertas; } else b.style.display = 'none';
       if (d.pedidos_abertos > 0) { bp.style.display = ''; bp.textContent = d.pedidos_abertos; } else bp.style.display = 'none';
       document.getElementById('dash-activity').innerHTML = d.atividade_recente.length
-        ? d.atividade_recente.map(a => `<div class="activity-item"><div class="activity-dot"></div><div class="activity-text"><strong>${a.id_ativo || '—'}</strong> · ${a.acao} · ${a.tipo_equipamento || ''}</div><div class="activity-time">${(a.data_hora || '').substring(0, 16).replace('T', ' ')}</div></div>`).join('')
+        ? d.atividade_recente.map(a => `<div class="activity-item"><div class="activity-dot"></div><div class="activity-text"><strong>${a.id_ativo || '—'}</strong> · ${a.acao} · ${a.tipo_equipamento || ''}</div><div class="activity-time">${formatarDataHora(a.data_hora)}</div></div>`).join('')
         : '<div class="empty"><div class="empty-icon">📋</div><p>Sem atividade</p></div>';
       const mn = await api('/api/manutencoes?status=Aberta');
       document.getElementById('dash-manut').innerHTML = mn.length
@@ -1088,6 +1088,24 @@
         }
       } catch (_) { }
       return s;
+    }
+
+    // Formata data+hora com fuso correto (America/Sao_Paulo = UTC-3)
+    // Usa Intl.DateTimeFormat para garantir exibição em BRT independente do fuso do servidor
+    const _fmtBRT = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    });
+    function formatarDataHora(isoStr) {
+      if (!isoStr) return '—';
+      try {
+        const dt = new Date(isoStr);
+        if (isNaN(dt.getTime())) return String(isoStr).substring(0, 19).replace('T', ' ');
+        return _fmtBRT.format(dt).replace(',', '');
+      } catch (_) {
+        return String(isoStr).substring(0, 19).replace('T', ' ');
+      }
     }
 
     // ─── LOADERS ─────────────────────────────────────────────────────────────────
@@ -1371,7 +1389,7 @@
     <td><span class="badge ${r.acao.includes('Cadastro') ? 'badge-entrada' : r.acao.includes('Edição') ? 'badge-manut' : 'badge-inativo'}">${r.acao}</span></td>
     <td>${r.campo_alterado || '—'}</td>
     <td style="font-size:11px"><span style="color:var(--text3)">${r.valor_anterior || ''}</span> <span style="color:var(--accent)">${r.valor_anterior && r.valor_novo ? '→' : ''}</span> <span>${r.valor_novo || ''}</span></td>
-    <td style="font-size:11.5px;color:var(--text2)">${(r.data_hora || '').replace('T', ' ').substring(0, 19)}</td>
+    <td style="font-size:11.5px;color:var(--text2)">${formatarDataHora(r.data_hora)}</td>
     <td>${r.usuario || 'Sistema'}</td>
   </tr>`).join('');
     }
@@ -2079,7 +2097,7 @@
       <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-weight:700">${r.tipo === 'entrada' ? '+' : '−'}${r.quantidade}</td>
       <td style="padding:8px">${r.responsavel || '—'}</td>
       <td style="padding:8px">${r.motivo || '—'}</td>
-      <td style="padding:8px;font-size:11px;color:var(--text3)">${(r.data_hora || '').substring(0, 16).replace('T', ' ')}</td>
+      <td style="padding:8px;font-size:11px;color:var(--text3)">${formatarDataHora(r.data_hora)}</td>
     </tr>`).join('')}</tbody></table>`
         : '<div class="empty"><div class="empty-icon">📋</div><p>Sem movimentações</p></div>';
       openModal(`📋 Histórico — ${item}`, html, {}, false);
