@@ -67,6 +67,11 @@ def criar_transferencia() -> Response:
         return jsonify({"ok": False, "msg": "data_devolucao é obrigatório para 'Usuario para Estoque'"}), 400
     if tipo_transf == "Usuario para Usuario" and not d.get("responsavel_destino"):
         return jsonify({"ok": False, "msg": "responsavel_destino é obrigatório para transferência entre usuários"}), 400
+    if tipo_transf == "Usuario para Turma":
+        if not d.get("turma_destino"):
+            return jsonify({"ok": False, "msg": "A turma destino é obrigatória para este tipo de transferência"}), 400
+        # Mapeia a turma para o responsável destino para fins de log na tabela transferencias
+        d["responsavel_destino"] = d.get("turma_destino")
 
     hoje = date.today().isoformat()
 
@@ -119,6 +124,31 @@ def criar_transferencia() -> Response:
                         ativo["responsavel"], id_ativo,
                     ),
                 )
+            elif tipo_transf == "Usuario para Turma":
+                if tabela in ("celulares_turma", "celulares_ponto"):
+                    cur.execute(
+                        f"""UPDATE {tabela} SET
+                            num_turma=%s, responsavel=%s, fazenda=%s, setor=%s,
+                            data_entrega=%s, usuario_anterior=%s,
+                            updated_at=NOW() WHERE id_ativo=%s""",
+                        (
+                            d.get("turma_destino"), d.get("turma_destino"), d.get("fazenda_destino"),
+                            d.get("setor_destino"), hoje,
+                            ativo["responsavel"], id_ativo,
+                        ),
+                    )
+                else:
+                    cur.execute(
+                        f"""UPDATE {tabela} SET
+                            responsavel=%s, fazenda=%s, setor=%s,
+                            data_entrega=%s, usuario_anterior=%s,
+                            updated_at=NOW() WHERE id_ativo=%s""",
+                        (
+                            d.get("turma_destino"), d.get("fazenda_destino"),
+                            d.get("setor_destino"), hoje,
+                            ativo["responsavel"], id_ativo,
+                        ),
+                    )
             else:
                 cur.execute(
                     f"""UPDATE {tabela} SET

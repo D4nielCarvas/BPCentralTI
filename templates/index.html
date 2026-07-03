@@ -1903,7 +1903,7 @@
 
     function openTransferenciaModal(d) {
       const tipos = ['Celular', 'Celular Ponto', 'Celular Inspeção', 'Computador', 'Impressora', 'Estabilizador', 'Starlink'];
-      const tiposTransf = ['Estoque para Fazenda', 'Fazenda para Estoque', 'Usuario para Usuario', 'Usuario para Estoque', 'Usuario para Fazenda', 'Fazenda para Usuario'];
+      const tiposTransf = ['Estoque para Fazenda', 'Fazenda para Estoque', 'Usuario para Usuario', 'Usuario para Estoque', 'Usuario para Fazenda', 'Fazenda para Usuario', 'Usuario para Turma'];
       const html = `<form id="modal-form"><div class="form-grid">
     ${fld('ID Ativo *', `<input name="id_ativo" required placeholder="CEL-001">`)}
     ${fld('Tipo Equipamento *', st('tipo_equipamento', {}, tipos))}
@@ -1922,6 +1922,9 @@
     <div id="trnsf-destino-usuario" class="form-group cond-field" style="display:none">
       ${fld('Responsável Destino *', `<input name="responsavel_destino" placeholder="Nome do destinatário">`)}
     </div>
+    <div id="trnsf-destino-turma" class="form-group cond-field" style="display:none">
+      ${fld('Turma Destino *', `<input name="turma_destino" placeholder="Nome ou Número da Turma (Ex: Turma 10)">`)}
+    </div>
     <div id="trnsf-destino-fazenda" class="form-group cond-field" style="display:none">
       ${fazendaFld({}, 'fazenda_destino', 'Fazenda Destino')}
     </div>
@@ -1937,7 +1940,7 @@
     }
 
     function onTipoTransfChange(tipo) {
-      const allIds = ['trnsf-origem-usuario', 'trnsf-origem-fazenda', 'trnsf-destino-usuario', 'trnsf-destino-fazenda', 'trnsf-setor-destino'];
+      const allIds = ['trnsf-origem-usuario', 'trnsf-origem-fazenda', 'trnsf-destino-usuario', 'trnsf-destino-turma', 'trnsf-destino-fazenda', 'trnsf-setor-destino'];
 
       // Esconde tudo e desabilita os campos para evitar validação de campos invisíveis
       allIds.forEach(id => {
@@ -1976,6 +1979,9 @@
         show('trnsf-destino-usuario');
         show('trnsf-destino-fazenda');
         show('trnsf-setor-destino');
+      } else if (tipo === 'Usuario para Turma') {
+        show('trnsf-origem-usuario');
+        show('trnsf-destino-turma');
       }
     }
 
