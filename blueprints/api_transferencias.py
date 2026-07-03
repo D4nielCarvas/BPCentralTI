@@ -4,7 +4,7 @@ from utils.auth_utils import login_required, admin_required
 from utils.db_layer import acquire_conn, fetch_all, fetch_one
 from utils.api_utils import log_historico
 from utils.id_generator import (
-    proximo_sequencial, gerar_id_ativo, 
+    proximo_sequencial, gerar_id_ativo, sugerir_id_turma,
     SIGLAS_TIPO, SIGLAS_LOCAL, SIGLAS_SETOR
 )
 from app import app  # para app.logger.warning (após refatorar o log, idealmente usar current_app)
@@ -138,17 +138,47 @@ def criar_transferencia() -> Response:
                         ),
                     )
                 else:
+                    ativo_full = fetch_one(cur, f"SELECT * FROM {tabela} WHERE id_ativo=%s", (id_ativo,))
+                    novo_id = sugerir_id_turma(cur)
+                    
                     cur.execute(
-                        f"""UPDATE {tabela} SET
-                            responsavel=%s, fazenda=%s, setor=%s,
-                            data_entrega=%s, usuario_anterior=%s,
-                            updated_at=NOW() WHERE id_ativo=%s""",
+                        """INSERT INTO celulares_turma
+                           (id_ativo,num_turma,responsavel,fazenda,setor,modelo,tipo,status,
+                            uso_celular,carregador,termo_assinado,data_entrega,data_devolucao,
+                            gmail_clockin,senha,usuario_anterior,imei_1,imei_2,num_serie,
+                            armazenamento,observacoes)
+                           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                         (
-                            d.get("turma_destino"), d.get("fazenda_destino"),
-                            d.get("setor_destino"), hoje,
-                            ativo["responsavel"], id_ativo,
+                            novo_id, d.get("turma_destino"), d.get("turma_destino"), 
+                            d.get("fazenda_destino") or ativo_full.get("fazenda"),
+                            d.get("setor_destino") or ativo_full.get("setor"), 
+                            ativo_full.get("modelo"), ativo_full.get("tipo"),
+                            ativo_full.get("status"), ativo_full.get("uso_celular"), 
+                            ativo_full.get("carregador"), ativo_full.get("termo_assinado"), 
+                            hoje, ativo_full.get("data_devolucao"),
+                            ativo_full.get("gmail"), ativo_full.get("senha"), 
+                            ativo["responsavel"], ativo_full.get("imei_1"), 
+                            ativo_full.get("imei_2"), ativo_full.get("num_serie"),
+                            ativo_full.get("armazenamento"), f"Migrado do ID {id_ativo}"
+                        )
+                    )
+                    cur.execute(f"DELETE FROM {tabela} WHERE id_ativo=%s", (id_ativo,))
+                    
+                    cur.execute(
+                        "UPDATE transferencias SET observacoes = CASE "
+                        "WHEN observacoes IS NULL OR observacoes = '' THEN %s "
+                        "ELSE observacoes || ' | ' || %s END "
+                        "WHERE id_ativo=%s AND id=(SELECT MAX(id) FROM transferencias WHERE id_ativo=%s)",
+                        (
+                            f"ID anterior: {id_ativo}", f"ID anterior: {id_ativo}",
+                            id_ativo, id_ativo,
                         ),
                     )
+                    cur.execute("UPDATE historico SET id_ativo=%s WHERE id_ativo=%s", (novo_id, id_ativo))
+                    cur.execute("UPDATE transferencias SET id_ativo=%s, tipo_equipamento='Celular Turma' WHERE id_ativo=%s", (novo_id, id_ativo))
+                    
+                    id_ativo = novo_id
+                    tipo_eq = "Celular Turma"
             else:
                 cur.execute(
                     f"""UPDATE {tabela} SET
