@@ -6,7 +6,8 @@ import psycopg2
 from utils.db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetch_one as _fetch_one, row_to_dict
 from utils.auth_utils import login_required, admin_required, get_fazenda_nome_filter
 from utils.crypto_utils import encrypt_field, decrypt_field
-from utils.api_utils import _list_table, log_historico
+from utils.api_utils import _list_table, log_historico, validate_file_mime
+from werkzeug.utils import secure_filename
 
 bp = Blueprint('api_ativos', __name__, url_prefix='')
 
@@ -457,6 +458,8 @@ def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
     Returns:
         JSON com resultado da operação.
     """
+    tipo_key = tipo.replace(" ", "_")
+    
     if "file" not in request.files:
         return jsonify({"ok": False, "msg": "Nenhum arquivo enviado"}), 400
 
@@ -464,7 +467,7 @@ def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
     if not file.filename or not validate_file_mime(file, {"application/pdf"}):
         return jsonify({"ok": False, "msg": "Tipo de arquivo não permitido. Envie apenas PDF."}), 400
 
-    safe_name = f"{tipo}_{secure_filename(id_ativo)}.pdf"
+    safe_name = f"{tipo_key}_{secure_filename(id_ativo)}.pdf"
     
     file.seek(0)
     file_bytes = file.read()
@@ -486,7 +489,7 @@ def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
         "computador": "computadores",
         "starlink": "starlink",
     }
-    tabela = tabela_map.get(tipo)
+    tabela = tabela_map.get(tipo_key)
 
     if tabela:
         with get_db() as conn:
@@ -495,7 +498,9 @@ def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
                     f"UPDATE {tabela} SET termo_pdf=%s WHERE id_ativo=%s",
                     (safe_name, id_ativo),
                 )
-                log_historico(cur, id_ativo, tipo, "PDF Termo Anexado")
+                log_historico(cur, id_ativo, tipo_key, "PDF Termo Anexado")
+    else:
+        return jsonify({"ok": False, "msg": f"Tipo de ativo desconhecido: {tipo}"}), 400
  
     return jsonify({"ok": True, "msg": "PDF anexado!", "filename": safe_name})
 
