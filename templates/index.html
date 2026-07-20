@@ -144,6 +144,7 @@
           <div class="table-header">
             <h3>📱 Celulares</h3>
             <div class="filter-row">
+              <input type="text" id="search-celulares" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('celulares')">
               <button class="filter-btn active" onclick="filterTable('celulares','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('celulares','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('celulares','Manutenção',this)">Manutenção</button>
@@ -178,6 +179,7 @@
           <div class="table-header">
             <h3>🕐 Celulares Ponto / Turma</h3>
             <div class="filter-row">
+              <input type="text" id="search-celulares_ponto" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('celulares_ponto')">
               <button class="filter-btn active" onclick="filterTable('celulares_ponto','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('celulares_ponto','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('celulares_ponto','Manutenção',this)">Manutenção</button>
@@ -211,6 +213,7 @@
           <div class="table-header">
             <h3>🎓 Celulares Turma</h3>
             <div class="filter-row">
+              <input type="text" id="search-celulares_turma" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('celulares_turma')">
               <button class="filter-btn active" onclick="filterTable('celulares_turma','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('celulares_turma','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('celulares_turma','Manutenção',this)">Manutenção</button>
@@ -244,6 +247,7 @@
           <div class="table-header">
             <h3>🔍 Celulares Inspeção</h3>
             <div class="filter-row">
+              <input type="text" id="search-celulares_inspecao" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('celulares_inspecao')">
               <button class="filter-btn active" onclick="filterTable('celulares_inspecao','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('celulares_inspecao','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('celulares_inspecao','Inativo',this)">Inativos</button>
@@ -278,6 +282,7 @@
           <div class="table-header">
             <h3>💻 Notebooks / Computadores</h3>
             <div class="filter-row">
+              <input type="text" id="search-computadores" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('computadores')">
               <button class="filter-btn active" onclick="filterTable('computadores','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('computadores','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('computadores','Manutenção',this)">Manutenção</button>
@@ -317,6 +322,7 @@
           <div class="table-header">
             <h3>🖨️ Impressoras</h3>
             <div class="filter-row">
+              <input type="text" id="search-impressoras" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('impressoras')">
               <button class="filter-btn active" onclick="filterTable('impressoras','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('impressoras','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('impressoras','Manutenção',this)">Manutenção</button>
@@ -349,6 +355,7 @@
           <div class="table-header">
             <h3>🔌 Estabilizadores / Nobreakes</h3>
             <div class="filter-row">
+              <input type="text" id="search-estabilizadores" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('estabilizadores')">
               <button class="filter-btn active" onclick="filterTable('estabilizadores','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('estabilizadores','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('estabilizadores','Inativo',this)">Inativos</button>
@@ -381,6 +388,7 @@
           <div class="table-header">
             <h3>🛰️ Antenas Starlink</h3>
             <div class="filter-row">
+              <input type="text" id="search-starlink" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('starlink')">
               <button class="filter-btn active" onclick="filterTable('starlink','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('starlink','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('starlink','Inativo',this)">Inativos</button>
@@ -1109,9 +1117,16 @@
     }
 
     // ─── LOADERS ─────────────────────────────────────────────────────────────────
+    let localSearchTimeout;
+    function handleLocalSearch(page) {
+      clearTimeout(localSearchTimeout);
+      localSearchTimeout = setTimeout(() => { loadPage(page); }, 400);
+    }
+
     async function loadCelulares() {
       showTableSkeleton('tb-celulares', 9);
-      const q = globalSearchFilter || '';
+      const localQ = document.getElementById('search-celulares')?.value.trim() || '';
+      const q = globalSearchFilter || localQ;
       const _res_tb_celulares = await api(`/api/celulares?status=${filterState.celulares || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_celulares) ? _res_tb_celulares : (_res_tb_celulares.data || []);
       const tb = document.getElementById('tb-celulares');
@@ -1131,7 +1146,8 @@
 
     async function loadCelularesPonto() {
       showTableSkeleton('tb-celulares_ponto', 9);
-      const q = globalSearchFilter || '';
+      const localQ = document.getElementById('search-celulares_ponto')?.value.trim() || '';
+      const q = globalSearchFilter || localQ;
       const _res_tb_celulares_ponto = await api(`/api/celulares_ponto?status=${filterState.celulares_ponto || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_celulares_ponto) ? _res_tb_celulares_ponto : (_res_tb_celulares_ponto.data || []);
       const tb = document.getElementById('tb-celulares_ponto');
@@ -1151,7 +1167,8 @@
 
     async function loadCelularesInspecao() {
       showTableSkeleton('tb-celulares_inspecao', 10);
-      const q = globalSearchFilter || '';
+      const localQ = document.getElementById('search-celulares_inspecao')?.value.trim() || '';
+      const q = globalSearchFilter || localQ;
       const _res_tb_celulares_inspecao = await api(`/api/celulares_inspecao?status=${filterState.celulares_inspecao || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_celulares_inspecao) ? _res_tb_celulares_inspecao : (_res_tb_celulares_inspecao.data || []);
       const tb = document.getElementById('tb-celulares_inspecao');
@@ -1174,7 +1191,8 @@
 
     async function loadComputadores() {
       showTableSkeleton('tb-computadores', 11);
-      const q = globalSearchFilter || '';
+      const localQ = document.getElementById('search-computadores')?.value.trim() || '';
+      const q = globalSearchFilter || localQ;
       const _res_tb_computadores = await api(`/api/computadores?status=${filterState.computadores || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_computadores) ? _res_tb_computadores : (_res_tb_computadores.data || []);
       const tb = document.getElementById('tb-computadores');
@@ -1201,7 +1219,8 @@
 
     async function loadImpressoras() {
       showTableSkeleton('tb-impressoras', 8);
-      const q = globalSearchFilter || '';
+      const localQ = document.getElementById('search-impressoras')?.value.trim() || '';
+      const q = globalSearchFilter || localQ;
       const _res_tb_impressoras = await api(`/api/impressoras?status=${filterState.impressoras || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_impressoras) ? _res_tb_impressoras : (_res_tb_impressoras.data || []);
       const tb = document.getElementById('tb-impressoras');
@@ -1219,7 +1238,8 @@
 
     async function loadEstabilizadores() {
       showTableSkeleton('tb-estabilizadores', 8);
-      const q = globalSearchFilter || '';
+      const localQ = document.getElementById('search-estabilizadores')?.value.trim() || '';
+      const q = globalSearchFilter || localQ;
       const _res_tb_estabilizadores = await api(`/api/estabilizadores?status=${filterState.estabilizadores || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_estabilizadores) ? _res_tb_estabilizadores : (_res_tb_estabilizadores.data || []);
       const tb = document.getElementById('tb-estabilizadores');
@@ -1236,7 +1256,8 @@
 
     async function loadStarlink() {
       showTableSkeleton('tb-starlink', 12);
-      const q = globalSearchFilter || '';
+      const localQ = document.getElementById('search-starlink')?.value.trim() || '';
+      const q = globalSearchFilter || localQ;
       const _res_tb_starlink = await api(`/api/starlink?status=${filterState.starlink || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_starlink) ? _res_tb_starlink : (_res_tb_starlink.data || []);
       const tb = document.getElementById('tb-starlink');
@@ -1397,7 +1418,8 @@
     // Item 4 — Celulares Turma (ID no formato CL-TRM-NN)
     async function loadCelularesTurma() {
       showTableSkeleton('tb-celulares_turma', 9);
-      const q = globalSearchFilter || '';
+      const localQ = document.getElementById('search-celulares_turma')?.value.trim() || '';
+      const q = globalSearchFilter || localQ;
       const rows = await api(`/api/celulares_turma?status=${filterState.celulares_turma || ''}&q=${encodeURIComponent(q)}`);
       const tb = document.getElementById('tb-celulares_turma');
       if (!rows || !rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular de turma cadastrado', '🎓'); return; }
