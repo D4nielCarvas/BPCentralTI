@@ -40,13 +40,17 @@ try {
     $bios   = Get-CimInstance Win32_BIOS
     $cpu    = Get-CimInstance Win32_Processor
     $os     = Get-CimInstance Win32_OperatingSystem
-    $discos = Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3'
+    $mem = Get-CimInstance Win32_PhysicalMemory
+    $ramTotal = 0
+    foreach ($m in $mem) { $ramTotal += $m.Capacity }
+    $ramGB = [math]::Round($ramTotal / 1GB, 0)
+    $ramStr = "$ramGB" + "GB"
 
-    $ramGB  = [math]::Round($cs.TotalPhysicalMemory / 1GB, 1)
-    $ramStr = (Limpar "$ramGB") + "GB"
-
-    $diskGB = 0
-    foreach ($d in $discos) { $diskGB += [math]::Round($d.Size / 1GB, 0) }
+    $drives = Get-CimInstance Win32_DiskDrive
+    $diskTotal = 0
+    foreach ($drive in $drives) { $diskTotal += $drive.Size }
+    # Usa divisao decimal (1000^3) para espelhar a capacidade comercial real (ex: 256GB, 512GB)
+    $diskGB = [math]::Round($diskTotal / 1000000000, 0)
     $diskStr = "$diskGB" + "GB"
 
     $adapters = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object {
