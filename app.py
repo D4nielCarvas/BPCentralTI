@@ -142,6 +142,7 @@ from blueprints.api_ativos import bp as api_ativos_bp
 from blueprints.api_estoque import bp as api_estoque_bp
 from blueprints.api_pedidos import bp as api_pedidos_bp
 from blueprints.api_manutencoes import bp as api_manutencoes_bp
+from blueprints.api_chips import api_chips_bp
 
 app.register_blueprint(celulares_bp)
 
@@ -149,6 +150,7 @@ app.register_blueprint(api_ativos_bp)
 app.register_blueprint(api_estoque_bp)
 app.register_blueprint(api_pedidos_bp)
 app.register_blueprint(api_manutencoes_bp)
+app.register_blueprint(api_chips_bp)
 
 
 # Blueprints do sistema multi-tenant (Tarefas 8-10)
