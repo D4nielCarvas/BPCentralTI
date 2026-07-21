@@ -88,6 +88,8 @@ SIGLAS_SETOR: dict[str, str] = {
     "LDR": "Líderes",
     "TI":  "TI",
     "BLC": "Balança",
+    "COA": "COA",
+    "RH":  "RH",
 }
 
 # Mapeamento tipo → tabela do banco (para proximo_sequencial)
