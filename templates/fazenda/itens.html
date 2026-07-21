@@ -149,6 +149,11 @@
     <div class="table-header">
       <h3>{{ tipo_icones.get(tipo, '📋') }} {{ tipo }}</h3>
       <span style="font-size:12px; color:var(--text3)">{{ itens | length }} registro(s)</span>
+      
+      <div style="margin-left: 10px;">
+        <button class="btn btn-ghost btn-sm" style="color:#10b981; border-color:rgba(16,185,129,.2);" onclick="exportarExcelDaTabela('tbl-{{ tid }}', 'Equipamentos_{{ tipo }}')">⬇ Excel</button>
+      </div>
+
       <div class="tab-search-wrap" style="margin-left:auto">
         <span class="tab-search-icon">🔍</span>
         <input

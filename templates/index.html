@@ -2590,6 +2590,103 @@
     loadDashboard();
     initDesktopNotifications();
   </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  th { cursor: pointer; user-select: none; transition: background 0.2s; }
+  th:hover { background: rgba(255,255,255,0.05); }
+</style>
+<script>
+// Ordenação de tabelas genérica
+document.addEventListener('click', function(e) {
+  if (e.target.tagName === 'TH') {
+    const th = e.target;
+    const table = th.closest('table');
+    if (!table) return;
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    
+    const thText = th.innerText.trim().toLowerCase();
+    if (thText === 'ações' || thText === 'termo') return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const index = Array.from(th.parentNode.children).indexOf(th);
+    
+    const asc = th.dataset.sort !== 'asc';
+    th.dataset.sort = asc ? 'asc' : 'desc';
+    
+    Array.from(th.parentNode.children).forEach(sibling => {
+      if (sibling !== th) sibling.dataset.sort = '';
+      sibling.innerHTML = sibling.innerHTML.replace(/ ▲| ▼/g, '');
+    });
+    
+    th.innerHTML = th.innerHTML.replace(/ ▲| ▼/g, '') + (asc ? ' ▲' : ' ▼');
+    
+    rows.sort((a, b) => {
+      const cellA = a.children[index]?.innerText.trim() || '';
+      const cellB = b.children[index]?.innerText.trim() || '';
+      const numA = parseFloat(cellA.replace(',', '.'));
+      const numB = parseFloat(cellB.replace(',', '.'));
+      if (!isNaN(numA) && !isNaN(numB) && cellA.match(/^[0-9.,]+$/) && cellB.match(/^[0-9.,]+$/)) {
+         return asc ? numA - numB : numB - numA;
+      }
+      return asc ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+    });
+    
+    tbody.innerHTML = '';
+    rows.forEach(r => tbody.appendChild(r));
+  }
+});
+
+// Exportação Excel da tabela HTML (filtrada e sem coluna Ações)
+function exportarExcelDaTabela(tableId, fileName) {
+    let table = document.getElementById(tableId);
+    if (!table) return;
+    if (table.tagName.toLowerCase() === 'tbody') {
+        table = table.closest('table');
+    }
+    const clone = table.cloneNode(true);
+    const ths = clone.querySelectorAll('th');
+    let actionColIdx = -1;
+    ths.forEach((th, idx) => {
+        const text = th.innerText.trim().toLowerCase();
+        if (text === 'ações' || text === 'termo') {
+            actionColIdx = idx;
+            th.remove();
+        }
+    });
+    if (actionColIdx > -1) {
+        const rows = clone.querySelectorAll('tbody tr');
+        rows.forEach(tr => {
+            if (tr.children[actionColIdx]) {
+                tr.children[actionColIdx].remove();
+            }
+        });
+    }
+    const ws = XLSX.utils.table_to_sheet(clone);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Dados");
+    XLSX.writeFile(wb, `${fileName}.xlsx`);
+}
+
+// Injetar botões de Excel dinamicamente ao lado dos botões de CSV
+document.querySelectorAll('button[onclick^="exportar("]').forEach(btn => {
+  const funcCall = btn.getAttribute('onclick');
+  const match = funcCall.match(/exportar\(['"]([^'"]+)['"]\)/);
+  if (match) {
+    const tabela = match[1];
+    const excelBtn = document.createElement('button');
+    excelBtn.className = "btn btn-ghost btn-sm";
+    excelBtn.style.color = "#10b981";
+    excelBtn.style.borderColor = "rgba(16,185,129,.2)";
+    excelBtn.style.marginLeft = "4px";
+    excelBtn.innerHTML = "⬇ Excel";
+    excelBtn.onclick = function() {
+      exportarExcelDaTabela('tb-' + tabela, tabela);
+    };
+    btn.parentNode.insertBefore(excelBtn, btn.nextSibling);
+  }
+});
+</script>
 </body>
 
 </html>
