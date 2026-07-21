@@ -287,6 +287,8 @@ TIPO-LOCAL-SETOR-ID
 | Apoio | `APO` | Agricola | `AGR` |
 | Sestr | `STR` | Líderes | `LDR` |
 | COA |  `COA` | CD | `CDP` |
+| Inspeção | `INP` | TI | `TI` |
+| Balança | `BLC` | | |
 
 ### Exemplos Práticos de Aplicação
 1. Notebook da Fazenda Tangará do setor de Fito, equipamento número 01: `NT-TNG-FT-01`
