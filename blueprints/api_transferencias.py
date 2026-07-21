@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, Response
+from flask import Blueprint, jsonify, request, Response, session, current_app
 from datetime import date
 from utils.auth_utils import login_required, admin_required
 from utils.db_layer import acquire_conn, fetch_all, fetch_one
@@ -7,25 +7,13 @@ from utils.id_generator import (
     proximo_sequencial, gerar_id_ativo, sugerir_id_turma,
     SIGLAS_TIPO, SIGLAS_LOCAL, SIGLAS_SETOR
 )
-from app import app  # para app.logger.warning (após refatorar o log, idealmente usar current_app)
-from flask import current_app
+# Sprint 4.1 — fonte única de verdade para mapeamentos de tipo
+from utils.equipment_types import TABELA_POR_TIPO as _TABELA_POR_TIPO
 
 FAZENDA_PARA_SIGLA: dict[str, str] = {v: k for k, v in SIGLAS_LOCAL.items()}
 SETOR_PARA_SIGLA: dict[str, str]   = {v: k for k, v in SIGLAS_SETOR.items()}
 
 api_transferencias_bp = Blueprint('api_transferencias', __name__)
-
-# Mapeamento tipo_equipamento → nome da tabela
-_TABELA_POR_TIPO: dict[str, str] = {
-    "Celular":          "celulares",
-    "Celular Ponto":    "celulares_ponto",
-    "Celular Inspeção": "celulares_inspecao",
-    "Celular Turma":    "celulares_turma",
-    "Computador":       "computadores",
-    "Impressora":       "impressoras",
-    "Estabilizador":    "estabilizadores",
-    "Starlink":         "starlink",
-}
 
 # Mapeamento tipo_equipamento → sigla para id_generator
 _SIGLA_TIPO_MAP: dict[str, str] = {
@@ -89,20 +77,30 @@ def criar_transferencia() -> Response:
                     "msg": f"Ativo com status '{ativo['status']}' não pode ser transferido",
                 }), 409
 
+            # Sprint 1.1 — registrado_por sempre vem da sessão, nunca do body da request
+            _registrado_por = (
+                session.get("usuario")
+                or session.get("email")
+                or "Sistema"
+            )
+
+            # Sprint 1.3 — RETURNING id captura o PK para ancorar UPDATEs posteriores
             cur.execute(
                 """INSERT INTO transferencias
                    (id_ativo,tipo_equipamento,responsavel_origem,fazenda_origem,setor_origem,
                     responsavel_destino,fazenda_destino,setor_destino,tipo_transferencia,
                     motivo,data_transferencia,registrado_por,observacoes,termo_pdf)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                   RETURNING id""",
                 (
                     id_ativo, tipo_eq,
                     d.get("responsavel_origem"), d.get("fazenda_origem"), d.get("setor_origem"),
                     d.get("responsavel_destino"), d.get("fazenda_destino"), d.get("setor_destino"),
                     tipo_transf, d.get("motivo"), data_transf,
-                    d.get("registrado_por"), d.get("observacoes"), d.get("termo_pdf"),
+                    _registrado_por, d.get("observacoes"), d.get("termo_pdf"),
                 ),
             )
+            transf_id: int = cur.fetchone()["id"]
 
             if tipo_transf == "Usuario para Estoque":
                 cur.execute(
@@ -162,16 +160,30 @@ def criar_transferencia() -> Response:
                             ativo_full.get("armazenamento"), f"Migrado do ID {id_ativo}"
                         )
                     )
+                    # Sprint 1.2 — snapshot em ativos_arquivados antes de apagar o original
+                    import json as _json
+                    cur.execute(
+                        """INSERT INTO ativos_arquivados
+                           (id_ativo_origem, tabela_origem, motivo, migrado_para, snapshot, arquivado_por)
+                           VALUES (%s, %s, %s, %s, %s, %s)""",
+                        (
+                            id_ativo, tabela, "Migração de Tipo",
+                            novo_id,
+                            _json.dumps(dict(ativo_full), default=str),
+                            session.get("usuario") or session.get("email"),
+                        ),
+                    )
                     cur.execute(f"DELETE FROM {tabela} WHERE id_ativo=%s", (id_ativo,))
-                    
+
+                    # Sprint 1.3 — ancorar UPDATE no PK transf_id (nunca muda)
                     cur.execute(
                         "UPDATE transferencias SET observacoes = CASE "
                         "WHEN observacoes IS NULL OR observacoes = '' THEN %s "
                         "ELSE observacoes || ' | ' || %s END "
-                        "WHERE id_ativo=%s AND id=(SELECT MAX(id) FROM transferencias WHERE id_ativo=%s)",
+                        "WHERE id = %s",
                         (
                             f"ID anterior: {id_ativo}", f"ID anterior: {id_ativo}",
-                            id_ativo, id_ativo,
+                            transf_id,
                         ),
                     )
                     cur.execute("UPDATE historico SET id_ativo=%s WHERE id_ativo=%s", (novo_id, id_ativo))
@@ -216,14 +228,15 @@ def criar_transferencia() -> Response:
                     try:
                         seq = proximo_sequencial(cur, tipo_sigla, local_sigla, setor_sigla)
                         novo_id = gerar_id_ativo(tipo_sigla, local_sigla, setor_sigla, seq)
+                        # Sprint 1.3 — ancorar UPDATE no PK transf_id
                         cur.execute(
                             "UPDATE transferencias SET observacoes = CASE "
                             "WHEN observacoes IS NULL OR observacoes = '' THEN %s "
                             "ELSE observacoes || ' | ' || %s END "
-                            "WHERE id_ativo=%s AND id=(SELECT MAX(id) FROM transferencias WHERE id_ativo=%s)",
+                            "WHERE id = %s",
                             (
                                 f"ID anterior: {id_ativo}", f"ID anterior: {id_ativo}",
-                                id_ativo, id_ativo,
+                                transf_id,
                             ),
                         )
                         cur.execute(
@@ -247,19 +260,30 @@ def criar_transferencia() -> Response:
                             "aviso": f"Aviso: Não foi possível gerar novo ID automaticamente. Erro: {e}"
                         })
 
-    return jsonify({"ok": True, "msg": "Transferência registrada com sucesso!"})
+    # Sprint 4.4 — retorna id_ativo final (pode ter sido renomeado durante a transferência)
+    return jsonify({"ok": True, "msg": "Transferência registrada com sucesso!", "id_ativo": id_ativo})
 
 @api_transferencias_bp.route("/api/transferencias", methods=["GET"])
 @login_required
 def listar_transferencias() -> Response:
-    """Lista transferências com filtros opcionais."""
+    """Lista transferências com filtros opcionais e paginação.
+
+    Query params:
+        id_ativo, tipo_equipamento, data_inicio, data_fim (filtros)
+        page (int, default=1), per_page (int, default=50, max=200)
+    """
     id_ativo = request.args.get("id_ativo", "")
-    tipo_eq = request.args.get("tipo_equipamento", "")
+    tipo_eq  = request.args.get("tipo_equipamento", "")
     data_ini = request.args.get("data_inicio", "")
     data_fim = request.args.get("data_fim", "")
 
-    query = "SELECT * FROM transferencias WHERE 1=1"
-    params = []
+    # Sprint 2.1 — paginação para evitar varredura completa da tabela
+    page     = max(1, int(request.args.get("page", 1)))
+    per_page = min(200, max(1, int(request.args.get("per_page", 50))))
+    offset   = (page - 1) * per_page
+
+    query  = "SELECT * FROM transferencias WHERE 1=1"
+    params: list = []
 
     if id_ativo:
         query += " AND id_ativo=%s"
@@ -274,13 +298,14 @@ def listar_transferencias() -> Response:
         query += " AND data_transferencia <= %s"
         params.append(data_fim)
 
-    query += " ORDER BY id DESC"
+    query += " ORDER BY id DESC LIMIT %s OFFSET %s"
+    params.extend([per_page, offset])
 
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             rows = fetch_all(cur, query, tuple(params))
 
-    return jsonify(rows)
+    return jsonify({"items": rows, "page": page, "per_page": per_page})
 
 @api_transferencias_bp.route("/api/transferencias/<id_ativo>/historico")
 @login_required
@@ -315,16 +340,30 @@ def historico_transferencias(id_ativo: str) -> Response:
 @api_transferencias_bp.route("/api/transferencias/estoque")
 @login_required
 def ativos_em_estoque() -> Response:
-    """Lista todos os ativos com status 'Estoque' em todas as tabelas de equipamentos."""
-    resultado = []
+    """Lista todos os ativos com status 'Estoque' em uma única query UNION ALL.
+
+    Sprint 2.2 — substitui loop de N queries por 1 UNION ALL,
+    reduzindo de 8 round-trips para 1 e eliminando risco de DoS por query explosion.
+    """
+    _UNION_ESTOQUE_SQL = """
+        SELECT id_ativo, modelo, fazenda, setor, updated_at, 'Celular'          AS tipo_equipamento FROM celulares          WHERE status='Estoque'
+        UNION ALL
+        SELECT id_ativo, modelo, fazenda, NULL,   updated_at, 'Celular Ponto'   AS tipo_equipamento FROM celulares_ponto     WHERE status='Estoque'
+        UNION ALL
+        SELECT id_ativo, modelo, fazenda, setor, updated_at, 'Celular Inspecão' AS tipo_equipamento FROM celulares_inspecao  WHERE status='Estoque'
+        UNION ALL
+        SELECT id_ativo, modelo, fazenda, setor, updated_at, 'Celular Turma'   AS tipo_equipamento FROM celulares_turma     WHERE status='Estoque'
+        UNION ALL
+        SELECT id_ativo, modelo, fazenda, setor, updated_at, 'Computador'      AS tipo_equipamento FROM computadores        WHERE status='Estoque'
+        UNION ALL
+        SELECT id_ativo, modelo, fazenda, setor, updated_at, 'Impressora'      AS tipo_equipamento FROM impressoras         WHERE status='Estoque'
+        UNION ALL
+        SELECT id_ativo, modelo, fazenda, setor, updated_at, 'Estabilizador'   AS tipo_equipamento FROM estabilizadores     WHERE status='Estoque'
+        UNION ALL
+        SELECT id_ativo, modelo, fazenda, setor, updated_at, 'Starlink'        AS tipo_equipamento FROM starlink            WHERE status='Estoque'
+        ORDER BY updated_at DESC
+    """
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            for tipo_nome, nome_tabela in _TABELA_POR_TIPO.items():
-                rows = fetch_all(
-                    cur,
-                    f"SELECT id_ativo, modelo, fazenda, setor, updated_at "
-                    f"FROM {nome_tabela} WHERE status='Estoque' ORDER BY updated_at DESC",
-                )
-                for r in rows:
-                    resultado.append({**r, "tipo_equipamento": tipo_nome})
+            resultado = fetch_all(cur, _UNION_ESTOQUE_SQL)
     return jsonify(resultado)

@@ -32,6 +32,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+# Sprint 4.1 — importa da fonte única de verdade de tipos de equipamento
+from utils.equipment_types import TABELA_POR_SIGLA as _TABELA_POR_SIGLA
+from utils.equipment_types import SETOR_TABELA_OVERRIDE as _SETOR_TABELA_OVERRIDE
+
 if TYPE_CHECKING:
     import psycopg2.extensions
 
@@ -92,18 +96,7 @@ SIGLAS_SETOR: dict[str, str] = {
     "RH":  "RH",
 }
 
-# Mapeamento tipo → tabela do banco (para proximo_sequencial)
-_TABELA_POR_TIPO: dict[str, str] = {
-    "DK":  "computadores",
-    "NT":  "computadores",
-    "CL":  "celulares",
-    "CLI": "celulares_inspecao",
-    "IMP": "impressoras",
-    "TB":  "celulares",
-    "EST": "estabilizadores",
-    "STL": "starlink",
-    "BLC": "balancas",
-}
+# (removido na Sprint 4.1 — ver utils/equipment_types.py)
 
 # Prefixo exclusivo para Celulares Turma (formato CL-TRM-NN)
 _TURMA_PREFIX = "CL-TRM-"
@@ -161,32 +154,27 @@ def proximo_sequencial(
     setor: str,
 ) -> int:
     """
-    Consulta o banco e retorna o próximo número sequencial disponível.
+    Retorna o próximo número sequencial de forma **atômica**.
 
-    Busca todos os IDs com o prefixo TIPO-LOCAL-SETOR- na tabela correspondente
-    e retorna max_encontrado + 1. IDs liberados por transferência podem ser
-    reutilizados se o max cair (comportamento natural do max+1).
+    Usa INSERT ... ON CONFLICT ... DO UPDATE na tabela `id_sequenciais`
+    (migration 020), garantindo que dois workers concorrentes nunca
+    recebam o mesmo número — eliminando a race condition do SELECT+max+1 anterior.
+
+    Sprint 3.2 — substitui SELECT LIKE + max+1 (race condition)
+                   por operação atômica no banco.
     """
-    tabela = _TABELA_POR_TIPO.get(tipo, "computadores")
-    if tipo == "CL" and setor in ("PTO",):
-        tabela = "celulares_ponto"
-
-    prefixo = f"{tipo}-{localidade}-{setor}-"
-
+    prefixo = f"{tipo}-{localidade}-{setor}"
     cur.execute(
-        f"SELECT id_ativo FROM {tabela} WHERE id_ativo LIKE %s",
-        (f"{prefixo}%",),
+        """
+        INSERT INTO id_sequenciais (prefixo, proximo)
+        VALUES (%s, 2)
+        ON CONFLICT (prefixo) DO UPDATE
+            SET proximo = id_sequenciais.proximo + 1
+        RETURNING proximo - 1 AS sequencial
+        """,
+        (prefixo,),
     )
-    rows = cur.fetchall()
-
-    maior = 0
-    for row in rows:
-        id_val: str = row["id_ativo"] if isinstance(row, dict) else row[0]
-        sufixo = id_val[len(prefixo):]
-        if sufixo.isdigit():
-            maior = max(maior, int(sufixo))
-
-    return maior + 1
+    return cur.fetchone()["sequencial"]
 
 
 def sugerir_id(
@@ -227,24 +215,21 @@ def gerar_id_turma(sequencial: int) -> str:
 
 def proximo_sequencial_turma(cur: "psycopg2.extensions.cursor") -> int:
     """
-    Consulta a tabela celulares_turma e retorna o próximo sequencial disponível.
+    Retorna o próximo sequencial disponível para Celular Turma (CL-TRM-NN),
+    de forma atômica via tabela id_sequenciais.
 
-    Busca todos os IDs com prefixo 'CL-TRM-' e retorna max_encontrado + 1.
+    Sprint 3.2 — mesma lógica atômica de proximo_sequencial.
     """
     cur.execute(
-        "SELECT id_ativo FROM celulares_turma WHERE id_ativo LIKE %s",
-        (f"{_TURMA_PREFIX}%",),
+        """
+        INSERT INTO id_sequenciais (prefixo, proximo)
+        VALUES ('CL-TRM', 2)
+        ON CONFLICT (prefixo) DO UPDATE
+            SET proximo = id_sequenciais.proximo + 1
+        RETURNING proximo - 1 AS sequencial
+        """,
     )
-    rows = cur.fetchall()
-
-    maior = 0
-    for row in rows:
-        id_val: str = row["id_ativo"] if isinstance(row, dict) else row[0]
-        sufixo = id_val[len(_TURMA_PREFIX):]
-        if sufixo.isdigit():
-            maior = max(maior, int(sufixo))
-
-    return maior + 1
+    return cur.fetchone()["sequencial"]
 
 
 def sugerir_id_turma(cur: "psycopg2.extensions.cursor") -> str:
