@@ -45,6 +45,45 @@ def _mask_telefones(rows: list[dict]) -> list[dict]:
                 r["numero"] = "***"
     return rows
 
+def _atribuir_linha(cur, id_ativo: str, numero: str | None, responsavel: str | None, data_entrega: Any = None) -> None:
+    """Garante que a linha atual no histórico corresponda ao responsavel e numero informados."""
+    if not numero or not responsavel:
+        return
+        
+    numero = str(numero).strip()
+    responsavel = str(responsavel).strip()
+    if not numero or not responsavel:
+        return
+        
+    # 1. Garante que Funcionario existe
+    cur.execute("INSERT INTO funcionarios (nome) VALUES (%s) ON CONFLICT (nome) DO NOTHING RETURNING id", (responsavel,))
+    f_id_row = fetch_one(cur, "SELECT id FROM funcionarios WHERE nome = %s", (responsavel,))
+    if not f_id_row:
+        return
+    f_id = f_id_row["id"]
+    
+    # 2. Garante que Linha existe
+    cur.execute("INSERT INTO linhas_celular (numero) VALUES (%s) ON CONFLICT (numero) DO NOTHING RETURNING id", (numero,))
+    l_id_row = fetch_one(cur, "SELECT id FROM linhas_celular WHERE numero = %s", (numero,))
+    if not l_id_row:
+        return
+    l_id = l_id_row["id"]
+        
+    # 3. Verifica qual é a atribuição ativa para este id_ativo
+    atual = fetch_one(cur, "SELECT id, linha_id, funcionario_id FROM atribuicoes_linha WHERE id_ativo = %s AND data_devolucao IS NULL", (id_ativo,))
+    
+    if atual:
+        if str(atual["linha_id"]) == str(l_id) and str(atual["funcionario_id"]) == str(f_id):
+            return # Nada mudou, já está atribuído corretamente
+        # Mudou! Então encerra a atribuição atual
+        cur.execute("UPDATE atribuicoes_linha SET data_devolucao = NOW() WHERE id = %s", (atual["id"],))
+        
+    # 4. Cria a nova atribuição
+    cur.execute(
+        "INSERT INTO atribuicoes_linha (linha_id, funcionario_id, id_ativo, data_inicio) VALUES (%s, %s, %s, COALESCE(%s, NOW()))",
+        (l_id, f_id, id_ativo, data_entrega)
+    )
+
 
 def _list_paginado(tabela: str, colunas_busca: list[str]) -> Response:
     """
@@ -65,7 +104,16 @@ def _list_paginado(tabela: str, colunas_busca: list[str]) -> Response:
     per_page = min(500, max(1, int(request.args.get("per_page", 100))))
     offset = (page - 1) * per_page
 
-    query = f"SELECT * FROM {tabela} WHERE 1=1"
+    if tabela == "celulares":
+        query = f"""
+            SELECT t.*, l.numero as numero_atual
+            FROM {tabela} t
+            LEFT JOIN atribuicoes_linha a ON t.id_ativo = a.id_ativo AND a.data_devolucao IS NULL
+            LEFT JOIN linhas_celular l ON a.linha_id = l.id
+            WHERE 1=1
+        """
+    else:
+        query = f"SELECT * FROM {tabela} WHERE 1=1"
     params: list[Any] = []
 
     if filtro:
@@ -82,6 +130,12 @@ def _list_paginado(tabela: str, colunas_busca: list[str]) -> Response:
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             rows = fetch_all(cur, query, tuple(params))
+
+    if tabela == "celulares":
+        for r in rows:
+            if r.get("numero_atual"):
+                r["numero"] = r["numero_atual"]
+            r.pop("numero_atual", None)
 
     return jsonify(_mask_telefones(rows))
 
@@ -127,6 +181,7 @@ def criar_celular() -> tuple[Response, int] | Response:
                         d.get("imei_2"), d.get("num_serie"), d.get("armazenamento"), d.get("cargo"),
                     ),
                 )
+                _atribuir_linha(cur, d["id_ativo"], d.get("numero"), d.get("responsavel"), d.get("data_entrega"))
                 _log(cur, d["id_ativo"], "Celular", "Cadastro")
             except psycopg2.IntegrityError:
                 return jsonify({"ok": False, "msg": "ID de ativo já existe!"}), 400
@@ -142,11 +197,17 @@ def get_celular(id_ativo: str) -> tuple[Response, int] | Response:
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             if fazenda_nome:
-                row = fetch_one(cur, "SELECT * FROM celulares WHERE id_ativo=%s AND fazenda=%s", (id_ativo, fazenda_nome))
+                row = fetch_one(cur, "SELECT t.*, l.numero as numero_atual FROM celulares t LEFT JOIN atribuicoes_linha a ON t.id_ativo = a.id_ativo AND a.data_devolucao IS NULL LEFT JOIN linhas_celular l ON a.linha_id = l.id WHERE t.id_ativo=%s AND t.fazenda=%s", (id_ativo, fazenda_nome))
             else:
-                row = fetch_one(cur, "SELECT * FROM celulares WHERE id_ativo=%s", (id_ativo,))
+                row = fetch_one(cur, "SELECT t.*, l.numero as numero_atual FROM celulares t LEFT JOIN atribuicoes_linha a ON t.id_ativo = a.id_ativo AND a.data_devolucao IS NULL LEFT JOIN linhas_celular l ON a.linha_id = l.id WHERE t.id_ativo=%s", (id_ativo,))
+    
     if row is None:
         return jsonify({"ok": False, "msg": "Celular não encontrado"}), 404
+        
+    if row.get("numero_atual"):
+        row["numero"] = row["numero_atual"]
+    row.pop("numero_atual", None)
+        
     return jsonify(_mask_telefones([row])[0])
 
 
@@ -182,6 +243,7 @@ def atualizar_celular(id_ativo: str) -> tuple[Response, int] | Response:
                     d.get("num_serie"), d.get("armazenamento"), d.get("cargo"), id_ativo,
                 ),
             )
+            _atribuir_linha(cur, id_ativo, d.get("numero"), d.get("responsavel"), d.get("data_entrega"))
             _log(cur, id_ativo, "Celular", "Edição")
     return jsonify({"ok": True, "msg": "Celular atualizado!"})
 
