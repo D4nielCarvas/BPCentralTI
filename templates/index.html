@@ -1485,7 +1485,8 @@
 
     async function loadTransferencias() {
       showTableSkeleton('tb-transferencias', 8);
-      const rows = await api('/api/transferencias');
+      const res = await api('/api/transferencias');
+      const rows = Array.isArray(res) ? res : (res.items || res.data || []);
       const tb = document.getElementById('tb-transferencias');
       if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhuma transferência registrada', '🔄'); return; }
       tb.innerHTML = rows.map(r => `<tr>

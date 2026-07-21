@@ -305,7 +305,7 @@ def listar_transferencias() -> Response:
         with conn.cursor() as cur:
             rows = fetch_all(cur, query, tuple(params))
 
-    return jsonify({"items": rows, "page": page, "per_page": per_page})
+    return jsonify(rows)
 
 @api_transferencias_bp.route("/api/transferencias/<id_ativo>/historico")
 @login_required
