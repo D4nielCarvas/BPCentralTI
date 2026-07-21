@@ -132,4 +132,83 @@
   {% endif %}
 </div>
 
+{# ── Chamados Fechados / Resolvidos #}
+<div class="table-card" style="margin-top:24px">
+  <div class="table-header" style="flex-wrap:wrap;gap:10px;">
+    <h3>📁 Chamados Fechados / Resolvidos</h3>
+    {% if mostrar_fechados %}
+      <span style="font-size:12px;color:var(--text3)">{{ chamados_fechados | length }} registro(s)</span>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+        <div style="position:relative;">
+          <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:11px;pointer-events:none">🔍</span>
+          <input type="text" id="search-fechados" placeholder="Buscar chamado fechado…"
+            oninput="filtrarFechados(this.value)"
+            style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 10px 6px 28px;font-size:12px;font-family:inherit;outline:none;width:220px;">
+        </div>
+        <a href="{{ url_for('admin_chamados.dashboard_chamados', localidade=filtro_local, prioridade=filtro_prioridade) }}"
+           class="btn btn-ghost btn-sm" style="white-space:nowrap">🙈 Ocultar fechados</a>
+      </div>
+    {% else %}
+      <div style="margin-left:auto;">
+        <a href="{{ url_for('admin_chamados.dashboard_chamados', fechados=1, localidade=filtro_local, prioridade=filtro_prioridade) }}"
+           class="btn btn-ghost btn-sm" style="white-space:nowrap">👁 Ver chamados fechados</a>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if mostrar_fechados %}
+    {% if chamados_fechados %}
+    <div style="overflow-x:auto">
+    <table id="tbl-fechados">
+      <thead>
+        <tr>
+          <th>#</th><th>Prioridade</th><th>Título</th><th>Localidade</th>
+          <th>Solicitante</th><th>Técnico</th><th>Status</th><th>Fechado em</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in chamados_fechados %}
+        {% set s = c.status | lower | replace(' ','_') %}
+        <tr>
+          <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">#{{ c.id }}</td>
+          <td>{{ prioridade_badge(c.prioridade) }}</td>
+          <td style="font-weight:500;color:var(--text);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.titulo }}</td>
+          <td style="font-size:12px;color:var(--text2)">{{ c.localidade_nome }}</td>
+          <td style="font-size:12px;color:var(--text2)">{{ c.criado_por_nome }}</td>
+          <td style="font-size:12px;color:var(--text3)">{{ c.tecnico_nome or '—' }}</td>
+          <td><span class="badge badge-{{ s }}">{{ c.status | replace('_',' ') | title }}</span></td>
+          <td style="font-size:11px;color:var(--text3)">
+            {{ c.atualizado_em.strftime('%d/%m/%y %H:%M') if c.atualizado_em is not string
+               else c.atualizado_em[:16] | replace('T',' ') }}
+          </td>
+          <td>
+            <a href="{{ url_for('admin_chamados.detalhe_chamado_admin', chamado_id=c.id) }}"
+               class="btn btn-ghost btn-xs">Abrir →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <script>
+      function filtrarFechados(q) {
+        q = q.toLowerCase().trim();
+        document.querySelectorAll('#tbl-fechados tbody tr').forEach(function(row) {
+          row.style.display = (!q || row.textContent.toLowerCase().includes(q)) ? '' : 'none';
+        });
+      }
+    </script>
+    {% else %}
+    <div style="padding:40px;text-align:center;color:var(--text3)">
+      <div style="font-size:28px;margin-bottom:8px">🗂️</div>
+      <div style="font-size:13px">Nenhum chamado fechado encontrado com os filtros atuais.</div>
+    </div>
+    {% endif %}
+  {% else %}
+  <div style="padding:28px;text-align:center;color:var(--text3);font-size:13px">
+    Clique em <strong style="color:var(--text2)">👁 Ver chamados fechados</strong> para carregar o histórico.
+  </div>
+  {% endif %}
+</div>
+
 {% endblock %}

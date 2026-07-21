@@ -91,9 +91,10 @@ def dashboard_chamados():
 
     Filtros opcionais: localidade, prioridade, etiqueta.
     """
-    usuario_id      = get_usuario_id()
-    filtro_local    = request.args.get("localidade", "").strip()
+    usuario_id        = get_usuario_id()
+    filtro_local      = request.args.get("localidade", "").strip()
     filtro_prioridade = request.args.get("prioridade", "").strip()
+    mostrar_fechados  = request.args.get("fechados", "") == "1"
 
     def build_filter(base_query: str, params: list) -> str:
         q = base_query
@@ -125,10 +126,22 @@ def dashboard_chamados():
 
             localidades = fetch_all(cur, "SELECT id, nome FROM localidades ORDER BY nome ASC")
 
+            # Chamados fechados / resolvidos (carregados apenas quando solicitado)
+            chamados_fechados = []
+            if mostrar_fechados:
+                params_fech: list[Any] = []
+                q_fech = build_filter(
+                    _QUERY_CHAMADOS + " WHERE c.status IN ('resolvido','fechado')",
+                    params_fech,
+                ) + " ORDER BY c.atualizado_em DESC LIMIT 200"
+                chamados_fechados = fetch_all(cur, q_fech, tuple(params_fech))
+
     return render_template(
         "admin/chamados_dashboard.html",
         fila_abertos=fila_abertos,
         meus_chamados=meus_chamados,
+        chamados_fechados=chamados_fechados,
+        mostrar_fechados=mostrar_fechados,
         localidades=localidades,
         prioridades=_PRIORIDADES,
         filtro_local=filtro_local,
