@@ -120,7 +120,16 @@ def _list_paginado(tabela: str, colunas_busca: list[str]) -> Response:
         query += " AND status=%s"
         params.append(filtro)
     if busca:
-        cond = " OR ".join([f"{c} ILIKE %s" for c in colunas_busca])
+        if tabela == "celulares":
+            conds = []
+            for c in colunas_busca:
+                if c == "numero_atual":
+                    conds.append("l.numero::text ILIKE %s")
+                else:
+                    conds.append(f"t.{c}::text ILIKE %s")
+            cond = " OR ".join(conds)
+        else:
+            cond = " OR ".join([f"{c}::text ILIKE %s" for c in colunas_busca])
         query += f" AND ({cond})"
         params += [f"%{busca}%"] * len(colunas_busca)
 
@@ -147,7 +156,14 @@ def _list_paginado(tabela: str, colunas_busca: list[str]) -> Response:
 @celulares_bp.route("/celulares", methods=["GET"])
 def listar_celulares() -> Response:
     """Lista celulares com suporte a filtro de status, busca e paginação."""
-    return _list_paginado("celulares", ["id_ativo", "responsavel", "modelo", "numero"])
+    return _list_paginado(
+        "celulares",
+        [
+            "id_ativo", "fazenda", "setor", "responsavel", "cargo", "tipo",
+            "modelo", "numero", "numero_atual", "num_serie", "imei_1", "imei_2",
+            "gmail", "usuario_anterior"
+        ],
+    )
 
 
 @celulares_bp.route("/celulares", methods=["POST"])
@@ -257,7 +273,10 @@ def listar_celulares_ponto() -> Response:
     """Lista celulares de ponto com filtros e paginação."""
     return _list_paginado(
         "celulares_ponto",
-        ["id_ativo", "responsavel", "modelo", "num_turma", "funcao"],
+        [
+            "id_ativo", "fazenda", "funcao", "responsavel", "num_turma", "modelo",
+            "gmail_clockin", "num_serie", "imei_1", "usuario_anterior"
+        ],
     )
 
 
@@ -346,7 +365,10 @@ def listar_celulares_inspecao() -> Response:
     """Lista celulares de inspeção com filtros e paginação."""
     return _list_paginado(
         "celulares_inspecao",
-        ["id_ativo", "responsavel", "modelo", "usuario_mip", "id_sistema"],
+        [
+            "id_ativo", "id_sistema", "fazenda", "setor", "responsavel", "cargo",
+            "modelo", "usuario_mip", "gmail", "num_serie", "imei_1", "usuario_anterior"
+        ],
     )
 
 
@@ -441,7 +463,10 @@ def listar_celulares_turma() -> Response:
     """Lista celulares de turma com filtros e paginação."""
     return _list_paginado(
         "celulares_turma",
-        ["id_ativo", "responsavel", "modelo", "num_turma", "fazenda", "num_serie"],
+        [
+            "id_ativo", "num_turma", "responsavel", "fazenda", "setor", "modelo",
+            "num_serie", "imei_1", "gmail_clockin", "usuario_anterior"
+        ],
     )
 
 

@@ -19,20 +19,20 @@ def busca_global() -> Response:
     resultados = []
     
     tabelas_busca = [
-        ("Celular",          "celulares",          ["id_ativo", "responsavel", "modelo", "fazenda", "numero", "setor", "cargo", "num_serie", "imei_1"]),
-        ("Celular Ponto",    "celulares_ponto",    ["id_ativo", "responsavel", "modelo", "fazenda", "num_turma", "funcao", "num_serie"]),
-        ("Celular Inspeção", "celulares_inspecao", ["id_ativo", "responsavel", "modelo", "fazenda", "id_sistema", "num_serie"]),
-        ("Celular Turma",    "celulares_turma",    ["id_ativo", "responsavel", "modelo", "fazenda", "num_turma", "num_serie", "imei_1"]),
-        ("Computador",       "computadores",       ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "numero_serie", "setor", "cargo"]),
-        ("Impressora",       "impressoras",        ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "ip_rede", "setor", "numero_serie"]),
+        ("Celular",          "celulares",          ["id_ativo", "responsavel", "modelo", "fazenda", "numero", "setor", "cargo", "num_serie", "imei_1", "gmail"]),
+        ("Celular Ponto",    "celulares_ponto",    ["id_ativo", "responsavel", "modelo", "fazenda", "num_turma", "funcao", "num_serie", "gmail_clockin"]),
+        ("Celular Inspeção", "celulares_inspecao", ["id_ativo", "responsavel", "modelo", "fazenda", "id_sistema", "num_serie", "usuario_mip", "cargo", "setor"]),
+        ("Celular Turma",    "celulares_turma",    ["id_ativo", "responsavel", "modelo", "fazenda", "num_turma", "num_serie", "imei_1", "setor"]),
+        ("Computador",       "computadores",       ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "numero_serie", "setor", "cargo", "processador", "memoria_ram", "armazenamento", "sistema_operacional", "usuario_windows"]),
+        ("Impressora",       "impressoras",        ["id_ativo", "responsavel", "modelo", "fazenda", "marca", "ip_rede", "setor", "numero_serie", "patrimonio"]),
         ("Estabilizador",    "estabilizadores",    ["id_ativo", "modelo", "fazenda", "setor", "num_serie", "uso"]),
-        ("Starlink",         "starlink",           ["id_ativo", "responsavel", "modelo", "fazenda", "setor", "num_serie", "ip_rede"]),
+        ("Starlink",         "starlink",           ["id_ativo", "responsavel", "modelo", "fazenda", "setor", "num_serie", "ip_rede", "mac_address"]),
     ]
 
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             for tipo_nome, tabela, colunas in tabelas_busca:
-                condicoes = " OR ".join([f"{col} ILIKE %s" for col in colunas])
+                condicoes = " OR ".join([f"{col}::text ILIKE %s" for col in colunas])
                 sel_responsavel = "responsavel" if "responsavel" in colunas else "fazenda as responsavel"
                 query = f"SELECT id_ativo, status, modelo, {sel_responsavel} FROM {tabela} WHERE {condicoes} ORDER BY id_ativo LIMIT 10"
                 params = [f"%{q}%"] * len(colunas)

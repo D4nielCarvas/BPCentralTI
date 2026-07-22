@@ -40,7 +40,7 @@ def _list_table(tabela: str, colunas_busca: list[str]) -> Response:
         query += " AND status=%s"
         params.append(filtro)
     if busca:
-        cond = " OR ".join([f"{c} ILIKE %s" for c in colunas_busca])
+        cond = " OR ".join([f"{c}::text ILIKE %s" for c in colunas_busca])
         query += f" AND ({cond})"
         params += [f"%{busca}%"] * len(colunas_busca)
 

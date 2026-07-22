@@ -18,7 +18,15 @@ bp = Blueprint('api_ativos', __name__, url_prefix='')
 @login_required  # P7: exige autenticação para listar
 def listar_computadores() -> Response:
     """Lista computadores/notebooks com filtros."""
-    return _list_table("computadores", ["id_ativo", "responsavel", "modelo", "marca"])
+    return _list_table(
+        "computadores",
+        [
+            "id_ativo", "fazenda", "setor", "responsavel", "cargo", "marca",
+            "modelo", "processador", "memoria_ram", "armazenamento",
+            "sistema_operacional", "numero_serie", "patrimonio", "usuario_windows",
+            "usuario_anterior"
+        ],
+    )
 
 
 @bp.route("/api/computadores", methods=["POST"])
@@ -103,7 +111,13 @@ def atualizar_computador(id_ativo: str) -> Response:
 @login_required  # P7: exige autenticação para listar
 def listar_impressoras() -> Response:
     """Lista impressoras com filtros."""
-    return _list_table("impressoras", ["id_ativo", "responsavel", "modelo", "marca"])
+    return _list_table(
+        "impressoras",
+        [
+            "id_ativo", "fazenda", "setor", "responsavel", "marca", "modelo",
+            "numero_serie", "ip_rede", "hostname", "patrimonio", "observacoes"
+        ],
+    )
 
 
 @bp.route("/api/impressoras", methods=["POST"])
@@ -181,7 +195,10 @@ def atualizar_impressora(id_ativo: str) -> Response:
 @login_required  # P7: exige autenticação para listar
 def listar_estabilizadores() -> Response:
     """Lista estabilizadores/nobreakes com filtros."""
-    return _list_table("estabilizadores", ["id_ativo", "fazenda", "modelo", "setor"])
+    return _list_table(
+        "estabilizadores",
+        ["id_ativo", "fazenda", "setor", "modelo", "uso", "num_serie"]
+    )
 
 
 @bp.route("/api/estabilizadores", methods=["POST"])
@@ -248,7 +265,13 @@ def atualizar_estabilizador(id_ativo: str) -> Response:
 @login_required  # P7: exige autenticação para listar
 def listar_starlink() -> Response:
     """Lista antenas Starlink com filtros."""
-    return _list_table("starlink", ["id_ativo", "fazenda", "responsavel", "num_serie"])
+    return _list_table(
+        "starlink",
+        [
+            "id_ativo", "fazenda", "setor", "responsavel", "modelo",
+            "num_serie", "mac_address", "ip_rede", "plano", "observacoes"
+        ]
+    )
 
 
 @bp.route("/api/starlink", methods=["POST"])
@@ -333,7 +356,10 @@ def listar_celulares_turma() -> Response:
     """Lista celulares de turma com filtros de status e busca textual."""
     return _list_table(
         "celulares_turma",
-        ["id_ativo", "responsavel", "modelo", "num_turma", "fazenda", "num_serie"],
+        [
+            "id_ativo", "num_turma", "responsavel", "fazenda", "setor", "modelo",
+            "num_serie", "imei_1", "gmail_clockin", "usuario_anterior"
+        ],
     )
 
 
