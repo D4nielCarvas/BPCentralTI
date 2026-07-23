@@ -77,10 +77,9 @@ def log_historico(
     )
 
 
-import magic
-
 def validate_file_mime(file, allowed_mimes: set) -> bool:
     """Detecta o MIME real baseado na assinatura binária do arquivo."""
+    import magic  # lazy import — evita falha em ambientes sem libmagic (ex: testes)
     header = file.read(2048)
     file.seek(0)
     mime = magic.from_buffer(header, mime=True)
