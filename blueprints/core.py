@@ -6,13 +6,6 @@ core_bp = Blueprint('core', __name__)
 
 @core_bp.route("/")
 def index():
-    """
-    Rota raiz — redireciona com base no estado de autenticação e role.
-
-    - Não autenticado → /login
-    - Admin ou Viewer com permissões avançadas → renderiza o painel principal (index.html)
-    - Viewer restrito → /fazenda/itens (portal de fazenda)
-    """
     if "usuario_id" not in session:
         return redirect(url_for("auth.login"))
         

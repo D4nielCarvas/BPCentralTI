@@ -65,11 +65,7 @@
   <div id="main">
     <div id="topbar">
       <h2 id="page-title">Dashboard</h2>
-      <div class="search-wrap">
-        <span class="s-icon">🔍</span>
-        <input type="text" id="global-search" placeholder="Buscar ativo..." autocomplete="off">
-        <div id="search-results"></div>
-      </div>
+      
       <div style="flex:1"></div>
       <button class="btn btn-primary" id="btn-new" style="display:none" onclick="openNew()">+ Novo</button>
 
@@ -144,7 +140,10 @@
           <div class="table-header">
             <h3>📱 Celulares</h3>
             <div class="filter-row">
-              <input type="text" id="search-celulares" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('celulares')">
+              <div class="search-wrap" style="width: 200px; margin-left: 0;">
+                <span class="s-icon">🔍</span>
+                <input type="text" id="search-celulares" placeholder="Buscar..." oninput="handleLocalSearch('celulares')" autocomplete="off">
+              </div>
               <button class="filter-btn active" onclick="filterTable('celulares','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('celulares','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('celulares','Manutenção',this)">Manutenção</button>
@@ -179,7 +178,10 @@
           <div class="table-header">
             <h3>🕐 Celulares Ponto / Turma</h3>
             <div class="filter-row">
-              <input type="text" id="search-celulares_ponto" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('celulares_ponto')">
+              <div class="search-wrap" style="width: 200px; margin-left: 0;">
+                <span class="s-icon">🔍</span>
+                <input type="text" id="search-celulares_ponto" placeholder="Buscar..." oninput="handleLocalSearch('celulares_ponto')" autocomplete="off">
+              </div>
               <button class="filter-btn active" onclick="filterTable('celulares_ponto','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('celulares_ponto','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('celulares_ponto','Manutenção',this)">Manutenção</button>
@@ -213,7 +215,10 @@
           <div class="table-header">
             <h3>🎓 Celulares Turma</h3>
             <div class="filter-row">
-              <input type="text" id="search-celulares_turma" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('celulares_turma')">
+              <div class="search-wrap" style="width: 200px; margin-left: 0;">
+                <span class="s-icon">🔍</span>
+                <input type="text" id="search-celulares_turma" placeholder="Buscar..." oninput="handleLocalSearch('celulares_turma')" autocomplete="off">
+              </div>
               <button class="filter-btn active" onclick="filterTable('celulares_turma','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('celulares_turma','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('celulares_turma','Manutenção',this)">Manutenção</button>
@@ -247,7 +252,10 @@
           <div class="table-header">
             <h3>🔍 Celulares Inspeção</h3>
             <div class="filter-row">
-              <input type="text" id="search-celulares_inspecao" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('celulares_inspecao')">
+              <div class="search-wrap" style="width: 200px; margin-left: 0;">
+                <span class="s-icon">🔍</span>
+                <input type="text" id="search-celulares_inspecao" placeholder="Buscar..." oninput="handleLocalSearch('celulares_inspecao')" autocomplete="off">
+              </div>
               <button class="filter-btn active" onclick="filterTable('celulares_inspecao','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('celulares_inspecao','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('celulares_inspecao','Inativo',this)">Inativos</button>
@@ -282,7 +290,10 @@
           <div class="table-header">
             <h3>📶 Gestão de Chips</h3>
             <div class="filter-row">
-              <input type="text" id="search-chips" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('chips')">
+              <div class="search-wrap" style="width: 200px; margin-left: 0;">
+                <span class="s-icon">🔍</span>
+                <input type="text" id="search-chips" placeholder="Buscar..." oninput="handleLocalSearch('chips')" autocomplete="off">
+              </div>
               <button class="filter-btn active" onclick="filterTable('chips','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('chips','Disponível',this)">Disponíveis</button>
               <button class="filter-btn" onclick="filterTable('chips','Em Uso',this)">Em Uso</button>
@@ -313,7 +324,10 @@
           <div class="table-header">
             <h3>💻 Notebooks / Computadores</h3>
             <div class="filter-row">
-              <input type="text" id="search-computadores" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('computadores')">
+              <div class="search-wrap" style="width: 200px; margin-left: 0;">
+                <span class="s-icon">🔍</span>
+                <input type="text" id="search-computadores" placeholder="Buscar..." oninput="handleLocalSearch('computadores')" autocomplete="off">
+              </div>
               <button class="filter-btn active" onclick="filterTable('computadores','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('computadores','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('computadores','Manutenção',this)">Manutenção</button>
@@ -353,7 +367,10 @@
           <div class="table-header">
             <h3>🖨️ Impressoras</h3>
             <div class="filter-row">
-              <input type="text" id="search-impressoras" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('impressoras')">
+              <div class="search-wrap" style="width: 200px; margin-left: 0;">
+                <span class="s-icon">🔍</span>
+                <input type="text" id="search-impressoras" placeholder="Buscar..." oninput="handleLocalSearch('impressoras')" autocomplete="off">
+              </div>
               <button class="filter-btn active" onclick="filterTable('impressoras','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('impressoras','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('impressoras','Manutenção',this)">Manutenção</button>
@@ -386,7 +403,10 @@
           <div class="table-header">
             <h3>🔌 Estabilizadores / Nobreakes</h3>
             <div class="filter-row">
-              <input type="text" id="search-estabilizadores" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('estabilizadores')">
+              <div class="search-wrap" style="width: 200px; margin-left: 0;">
+                <span class="s-icon">🔍</span>
+                <input type="text" id="search-estabilizadores" placeholder="Buscar..." oninput="handleLocalSearch('estabilizadores')" autocomplete="off">
+              </div>
               <button class="filter-btn active" onclick="filterTable('estabilizadores','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('estabilizadores','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('estabilizadores','Inativo',this)">Inativos</button>
@@ -419,7 +439,10 @@
           <div class="table-header">
             <h3>🛰️ Antenas Starlink</h3>
             <div class="filter-row">
-              <input type="text" id="search-starlink" class="form-control" placeholder="Buscar..." style="max-width:150px;font-size:12px;padding:4px 8px;border-radius:4px;" oninput="handleLocalSearch('starlink')">
+              <div class="search-wrap" style="width: 200px; margin-left: 0;">
+                <span class="s-icon">🔍</span>
+                <input type="text" id="search-starlink" placeholder="Buscar..." oninput="handleLocalSearch('starlink')" autocomplete="off">
+              </div>
               <button class="filter-btn active" onclick="filterTable('starlink','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('starlink','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('starlink','Inativo',this)">Inativos</button>
@@ -2279,47 +2302,11 @@
     function newManutFromAtivo(id, tipo, modelo) { showPage('manutencoes'); openManutModal(null, { id_ativo: id, tipo_equipamento: tipo, modelo }); }
     function newDescarteFromAtivo(id, tipo, modelo) { showPage('descartes'); openDescarteModal(null, { id_ativo: id, tipo_equipamento: tipo, modelo }); }
 
-    // ─── BUSCA GLOBAL ─────────────────────────────────────────────────────────────
-    let searchTimeout;
-    const searchInput = document.getElementById('global-search');
-    const searchResults = document.getElementById('search-results');
-
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchTimeout);
-      const q = searchInput.value.trim();
-      if (!q) {
-        searchResults.style.display = 'none';
-        globalSearchFilter = '';
-        return;
-      }
-      searchResults.innerHTML = '<div style="padding:15px; color:var(--text3); font-size:12px">🔍 Buscando...</div>';
-      searchResults.style.display = 'block';
-      searchTimeout = setTimeout(async () => {
-        const results = await api(`/api/busca?q=${encodeURIComponent(q)}`);
-        if (results.ok === false) { toast(results.msg || "Erro na busca", "error"); searchResults.style.display = 'none'; return; }
-        if (!Array.isArray(results) || results.length === 0) {
-          searchResults.innerHTML = '<div style="padding:15px; color:var(--text3); font-size:12px; text-align:center">Nenhum resultado encontrado</div>';
-          return;
-        }
-        searchResults.innerHTML = results.map(r => `
-      <div class="sr-item" data-tipo="${r.tipo}" data-id="${r.id_ativo}" onclick="goToAtivo(this.dataset.tipo,this.dataset.id)">
-        <span class="badge badge-analise" style="font-size:10px">${r.tipo}</span>
-        <div style="flex:1">
-          <div style="color:var(--text);font-weight:600;font-size:12px">${r.id_ativo}</div>
-          <div style="color:var(--text3);font-size:11px">${r.responsavel || '—'} · ${r.modelo || '—'}</div>
-        </div>
-        ${statusBadge(r.status)}
-      </div>`).join('');
-      }, 300);
-    });
-
-    document.addEventListener('click', e => {
-      if (!e.target.closest('.search-wrap')) searchResults.style.display = 'none';
-    });
+    
 
     function goToAtivo(tipo, idAtivo) {
-      searchResults.style.display = 'none';
-      searchInput.value = idAtivo;
+      // searchResults.style.display = 'none';
+      // searchInput.value = idAtivo;
       globalSearchFilter = idAtivo;
       const map = {
         'Celular': 'celulares', 'Celular Ponto': 'celulares_ponto', 'Celular Turma': 'celulares_turma',
@@ -2333,7 +2320,7 @@
 
     document.querySelectorAll('.nav-item').forEach(item => {
       item.addEventListener('click', () => {
-        if (globalSearchFilter !== '') { globalSearchFilter = ''; searchInput.value = ''; }
+        if (globalSearchFilter !== '') { globalSearchFilter = ''; // searchInput.value = ''; }
       });
     });
 
