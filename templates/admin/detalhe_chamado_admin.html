@@ -401,7 +401,7 @@
 
   async function pollMensagens() {
     try {
-      const res = await fetch(`/chamados/${CHAMADO_ID}/poll`);
+      const res = await fetch(`/fazenda/chamados/${CHAMADO_ID}/poll`);
       if (!res.ok) return;
       const msgs = await res.json();
       if (!Array.isArray(msgs) || msgs.length === 0) return;

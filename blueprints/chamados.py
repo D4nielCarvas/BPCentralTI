@@ -406,7 +406,7 @@ def movimentacao_equipamento(chamado_id: int):
     return redirect(url_for("chamados.detalhe_chamado", chamado_id=chamado_id))
 
 
-@chamados_bp.route("/chamados/<int:chamado_id>/poll")
+@chamados_bp.route("/<int:chamado_id>/poll")
 # limiter.limit("60/minute")  # P12: rate limiting
 def poll_chamado(chamado_id: int):
     """Retorna as mensagens do chamado como JSON para o cliente fazer polling."""
