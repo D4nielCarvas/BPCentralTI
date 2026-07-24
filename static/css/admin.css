@@ -400,3 +400,111 @@ tbody tr:hover td { background: rgba(255,255,255,.02); color: var(--text) }
   vertical-align: middle; margin-right: 4px
 }
 @keyframes spin { to { transform: rotate(360deg) } }
+
+/* ── Mobile Responsiveness ───────────────────────────── */
+@media (max-width: 860px) {
+  body {
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  #sidebar {
+    width: 100%;
+    min-height: auto;
+    max-height: 250px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 999;
+  }
+  .sidebar-logo {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo h1 {
+    font-size: 16px;
+  }
+  .sidebar-logo p {
+    display: none;
+  }
+  .logo-icon {
+    margin-bottom: 0;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+  nav {
+    display: flex;
+    overflow-x: auto;
+    padding: 0 10px;
+    width: 100%;
+    gap: 10px;
+  }
+  .nav-label {
+    display: none;
+  }
+  .nav-item {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 12px;
+    font-size: 11px;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .nav-item.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--accent);
+  }
+  .nav-item .icon {
+    font-size: 16px;
+  }
+  .sidebar-footer {
+    display: none;
+  }
+  #main {
+    overflow-y: visible;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table {
+    width: 100%;
+    min-width: 700px;
+  }
+  #topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 10px;
+    gap: 10px;
+  }
+  .search-wrap {
+    width: 100%;
+    order: 3;
+    margin-top: 5px;
+  }
+  #page-title {
+    order: 1;
+    font-size: 18px;
+  }
+  .notif-bell, #btn-new {
+    order: 2;
+  }
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .stat-mini-card {
+    min-width: calc(50% - 8px);
+  }
+}

@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nova Senha — BP Central TI</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖥️</text></svg>">
+  <link rel="icon" href="{{ url_for('static', filename='icon.svg') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
   <style>
     .strength-bar{height:4px;border-radius:2px;background:var(--border);margin-top:6px;overflow:hidden}
@@ -114,6 +115,11 @@
     btn.disabled = true;
     btn.innerHTML = '⏳ Salvando…';
   });
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/sw.js');
+  }
 </script>
 </body>
 </html>
