@@ -2320,7 +2320,10 @@
 
     document.querySelectorAll('.nav-item').forEach(item => {
       item.addEventListener('click', () => {
-        if (globalSearchFilter !== '') { globalSearchFilter = ''; // searchInput.value = ''; }
+        if (globalSearchFilter !== '') { 
+            globalSearchFilter = ''; 
+            // searchInput.value = ''; 
+        }
       });
     });
 
