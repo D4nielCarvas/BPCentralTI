@@ -13,10 +13,11 @@
 
 <!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
 <div id="sidebar">
-  <div class="sidebar-logo">
+  <div class="sidebar-logo" style="position: relative;">
     <div class="logo-icon">🖥️</div>
     <h1>BP Central TI</h1>
     <p>v3.0 · Portal Fazenda</p>
+    <a href="{{ url_for('auth.logout') }}" style="position: absolute; top: 20px; right: 20px; color:var(--red); text-decoration:none; font-size:12px; font-weight:bold;">⏻ Sair</a>
   </div>
 
   {% if session.usuario_nome %}
@@ -97,9 +98,7 @@
     {% endif %}
   </nav>
 
-  <div class="sidebar-footer">
-    <a href="{{ url_for('auth.logout') }}">⏻ Sair</a>
-  </div>
+
 </div>
 
 <!-- ── Main Content ───────────────────────────────────────────────────────── -->
