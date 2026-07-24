@@ -17,8 +17,9 @@ from werkzeug.utils import secure_filename
 
 from flask import (
     Blueprint, abort, flash, redirect,
-    render_template, request, session, url_for,
+    render_template, request, session, url_for, jsonify
 )
+from datetime import datetime, timedelta
 
 from utils.auth_utils import get_localidade_filter, get_usuario_id, viewer_required
 from utils.db_layer import acquire_conn, fetch_all, fetch_one
