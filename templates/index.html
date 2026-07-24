@@ -42,8 +42,6 @@
           id="badge-man" style="display:none">0</span></div>
       <div class="nav-item" data-page="descartes"><span class="icon">🗑️</span> Descartes</div>
       <div class="nav-item" data-page="transferencias"><span class="icon">🔄</span> Transferências</div>
-      <div class="nav-item" data-page="pedidos"><span class="icon">📋</span> Pedidos <span class="nav-badge"
-          id="badge-ped" style="display:none">0</span></div>
       <div class="nav-item" data-page="historico"><span class="icon">📜</span> Histórico</div>
 
       {% if session.role == 'admin' %}
@@ -617,46 +615,6 @@
         </div>
       </div>
 
-      <!-- PEDIDOS -->
-      <div class="page" id="page-pedidos">
-        <div class="table-card">
-          <div class="table-header">
-            <h3>📋 Pedidos de TI</h3>
-            <div class="filter-row">
-              <button class="filter-btn active" onclick="filterPedidos('',this)">Todos</button>
-              <button class="filter-btn" onclick="filterPedidos('Aberto',this)">Abertos</button>
-              <button class="filter-btn" onclick="filterPedidos('Pendente de Envio',this)">Pendentes</button>
-              <button class="filter-btn" onclick="filterPedidos('Enviado',this)">Enviados</button>
-              <button class="filter-btn" onclick="filterPedidos('Finalizado',this)">Finalizados</button>
-              <button class="filter-btn" onclick="filterPedidos('Rejeitado',this)">Rejeitados</button>
-            </div>
-            <input type="text" id="pedidos-search" placeholder="🔍 Nº Requisição..."
-              oninput="filterState.pedidos_q=this.value;loadPedidos()"
-              style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:5px 10px;font-size:12px;width:185px;outline:none;font-family:inherit">
-            <button class="btn btn-ghost btn-sm" onclick="exportar('pedidos')">⬇ CSV</button>
-          </div>
-          <div style="overflow-x:auto">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Fazenda Sol.</th>
-                  <th>Item</th>
-                  <th>Qtd</th>
-                  <th>Nº Requisição</th>
-                  <th>Motivo</th>
-                  <th>Forma Envio</th>
-                  <th>Data</th>
-                  <th>Status</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody id="tb-pedidos"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
       <!-- HISTORICO -->
       <div class="page" id="page-historico">
         <div class="table-card">
@@ -807,7 +765,7 @@
         impressoras: 'Impressoras', estabilizadores: 'Estabilizadores / Nobreakes',
         starlink: 'Antenas Starlink', estoque: 'Estoque Geral', estoque_equipamentos: 'Estoque Equipamentos',
         toners: 'Controle de Toner', manutencoes: 'Manutenções', descartes: 'Descartes',
-        transferencias: 'Transferências', pedidos: 'Pedidos de TI', historico: 'Histórico de Transações',
+        transferencias: 'Transferências', historico: 'Histórico de Transações',
         tutoriais: 'Tutoriais e Manuais'
       };
       document.getElementById('page-title').textContent = titles[page] || page;
@@ -823,7 +781,7 @@
         celulares_inspecao: '+ Cel. Inspeção', chips: '+ Chip',
         computadores: '+ Computador', impressoras: '+ Impressora', estabilizadores: '+ Estabilizador',
         starlink: '+ Starlink', estoque: '+ Item', toners: '+ Toner', manutencoes: '+ Manutenção',
-        transferencias: '+ Transferência', pedidos: '+ Pedido', tutoriais: '+ Tutorial'
+        transferencias: '+ Transferência', tutoriais: '+ Tutorial'
       };
       btn.textContent = lbls[page] || '+ Novo';
       loadPage(page);
@@ -837,7 +795,7 @@
         impressoras: loadImpressoras, estabilizadores: loadEstabilizadores,
         starlink: loadStarlink, estoque: loadEstoque, estoque_equipamentos: loadEstoqueEquipamentos,
         toners: loadToners, manutencoes: loadManutencoes, descartes: loadDescartes,
-        transferencias: loadTransferencias, pedidos: loadPedidos, historico: loadHistorico,
+        transferencias: loadTransferencias, historico: loadHistorico,
         tutoriais: loadTutoriais
       };
       loaders[page]?.();
@@ -853,11 +811,7 @@
       document.querySelectorAll('#page-manutencoes .filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active'); loadManutencoes();
     }
-    function filterPedidos(status, btn) {
-      filterState.pedidos = status;
-      document.querySelectorAll('#page-pedidos .filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active'); loadPedidos();
-    }
+
 
     // ─── API ─────────────────────────────────────────────────────────────────────
     async function api(path, method = 'GET', body = null) {
@@ -1063,13 +1017,10 @@
     <div class="stat-card green"><div class="stat-label">💻 Notebooks/PCs</div><div class="stat-val">${eq.computadores.total}</div><div class="stat-sub">${eq.computadores.ativos} ativos</div></div>
     <div class="stat-card yellow"><div class="stat-label">🖨️ Impressoras</div><div class="stat-val">${eq.impressoras.total}</div><div class="stat-sub">${eq.impressoras.ativos} ativas</div></div>
     <div class="stat-card orange"><div class="stat-label">🔧 Manutenções</div><div class="stat-val">${d.manutencoes_abertas}</div><div class="stat-sub">em aberto</div></div>
-    <div class="stat-card ${d.pedidos_abertos > 0 ? 'orange' : 'green'}"><div class="stat-label">📋 Pedidos</div><div class="stat-val">${d.pedidos_abertos || 0}</div><div class="stat-sub">em aberto</div></div>
     <div class="stat-card ${d.toner_alerta > 0 ? 'red' : 'green'}"><div class="stat-label">🖨️ Toners</div><div class="stat-val">${d.toner_alerta}</div><div class="stat-sub">${d.toner_alerta > 0 ? '⚠️ Estoque baixo' : 'Estoque OK'}</div></div>
     <div class="stat-card blue"><div class="stat-label">📦 Itens Estoque</div><div class="stat-val">${d.estoque_itens}</div><div class="stat-sub">itens cadastrados</div></div>`;
       const b = document.getElementById('badge-man');
-      const bp = document.getElementById('badge-ped');
       if (d.manutencoes_abertas > 0) { b.style.display = ''; b.textContent = d.manutencoes_abertas; } else b.style.display = 'none';
-      if (d.pedidos_abertos > 0) { bp.style.display = ''; bp.textContent = d.pedidos_abertos; } else bp.style.display = 'none';
       document.getElementById('dash-activity').innerHTML = d.atividade_recente.length
         ? d.atividade_recente.map(a => `<div class="activity-item"><div class="activity-dot"></div><div class="activity-text"><strong>${a.id_ativo || '—'}</strong> · ${a.acao} · ${a.tipo_equipamento || ''}</div><div class="activity-time">${formatarDataHora(a.data_hora)}</div></div>`).join('')
         : '<div class="empty"><div class="empty-icon">📋</div><p>Sem atividade</p></div>';
@@ -1498,24 +1449,6 @@
     <td>${r.registrado_por || '—'}</td></tr>`).join('');
     }
 
-    async function loadPedidos() {
-      showTableSkeleton('tb-pedidos', 10);
-      const q = filterState.pedidos_q || '';
-      const _res_tb_pedidos = await api(`/api/pedidos?status=${filterState.pedidos || ''}&q=${encodeURIComponent(q)}`);
-      const rows = Array.isArray(_res_tb_pedidos) ? _res_tb_pedidos : (_res_tb_pedidos.data || []);
-      const tb = document.getElementById('tb-pedidos');
-      if (!rows.length) { tb.innerHTML = emptyRow(10, 'Nenhum pedido registrado', '📋'); return; }
-      tb.innerHTML = rows.map(r => `<tr>
-    <td class="td-id">#${r.id}</td>
-    <td class="td-bold">${r.fazenda_solicitante || '—'}</td>
-    <td>${r.item || '—'}</td>
-    <td style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700">${r.quantidade || 1}</td>
-    <td>${r.num_requisicao || '—'}</td>
-    <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.motivo || ''}">${r.motivo || '—'}</td>
-    <td>${r.forma_envio || '—'}</td><td>${formatarData(r.data_pedido)}</td>
-    <td>${statusBadge(r.status)}</td>
-    <td><button class="btn btn-ghost btn-xs" onclick="editPedido(${r.id})">✏️</button></td></tr>`).join('');
-    }
 
     async function loadHistorico() {
       showTableSkeleton('tb-historico', 8);
@@ -1594,19 +1527,6 @@
         } else if (type === 'toner') {
           if (mode === 'new') res = await api('/api/toners', 'POST', data);
           else res = await api(`/api/toners/${id}`, 'PUT', data);
-        } else if (type === 'pedido') {
-          if (mode === 'new') {
-            res = await api('/api/pedidos', 'POST', data);
-            // Item 9: se forma_envio=CD e há arquivo, faz upload da nota
-            if (res && res.ok && res.id) {
-              const fileInput = document.getElementById('ped-nota-file');
-              if (fileInput && fileInput.files && fileInput.files[0]) {
-                const fmData = new FormData();
-                fmData.append('file', fileInput.files[0]);
-                await fetch(`/api/pedidos/${res.id}/upload-nota`, { method: 'POST', body: fmData });
-              }
-            }
-          } else res = await api(`/api/pedidos/${id}`, 'PUT', data);
         } else if (type === 'chip') {
           if (mode === 'create') res = await api('/api/chips', 'POST', data);
           else res = await api(`/api/chips/${id}`, 'PUT', data);
@@ -1631,7 +1551,7 @@
         estabilizadores: () => openEstabilizadorModal(null), starlink: () => openStarlinkModal(null),
         estoque: () => openEstoqueModal(null), toners: () => openTonerModal(null),
         manutencoes: () => openManutModal(null), descartes: () => openDescarteModal(null),
-        transferencias: () => openTransferenciaModal(null), pedidos: () => openPedidoModal(null),
+        transferencias: () => openTransferenciaModal(null),
         tutoriais: () => newTutorial()
       };
       map[page]?.();
@@ -1651,7 +1571,6 @@
     async function editManut(id) { openManutModal(await api(`/api/manutencoes/${id}`)); }
     async function editEstoque(id) { openEstoqueModal(await api(`/api/estoque/${id}`)); }
     async function editToner(id) { openTonerModal(await api(`/api/toners/${id}`)); }
-    async function editPedido(id) { openPedidoModal(await api(`/api/pedidos/${id}`)); }
 
     // ─── FORM HELPERS ────────────────────────────────────────────────────────────
     const st = (f, d, opts, onchange = '') => {
@@ -2129,54 +2048,7 @@
       }
     }
 
-    async function openPedidoModal(d) {
-      const estoque = await api('/api/estoque');
-      const optsEstoque = `<option value="">Nenhum / Não aplicável</option>
-    ${estoque.map(e => `<option value="${e.id}" data-item="${e.item}" ${d?.estoque_id === e.id ? 'selected' : ''}>#${e.id} — ${e.item} (Estoque: ${e.quantidade})</option>`).join('')}`;
 
-      const formaEnvioAtual = d?.forma_envio || '';
-      const html = `<form id="modal-form"><div class="form-grid" style="grid-template-columns: 1fr">
-    ${d ? fld('ID', '<input name="_id" value="' + d.id + '" readonly style="display:none">') : ''}
-    ${fazendaFld(d, 'fazenda_solicitante', 'Fazenda Solicitante *')}
-    ${fld('Vincular a Estoque', `<select name="estoque_id" onchange="const opt=this.options[this.selectedIndex]; if(opt.value){document.getElementById('ped-item').value=opt.dataset.item;}">${optsEstoque}</select>`)}
-    ${fld('Item *', `<input id="ped-item" name="item" value="${d?.item || ''}" required placeholder="Nome do item de TI">`)}
-    ${fld('Quantidade *', `<input type="number" name="quantidade" value="${d?.quantidade || 1}" min="1" required>`)}
-    ${fld('Nº Requisição', `<input name="num_requisicao" value="${d?.num_requisicao || ''}" placeholder="REQ-001">`)}
-    ${fld('Status', st('status', d, ['Aberto', 'Pendente de Envio', 'Enviado', 'Finalizado', 'Rejeitado']))}
-    ${fld('Forma de Envio', `<select name="forma_envio" onchange="onFormaEnvioChange(this.value)" id="ped-forma-envio">
-      <option value="">Selecione...</option>
-      <option value="CD" ${formaEnvioAtual === 'CD' ? 'selected' : ''}>CD (Nota Fiscal obrigatória)</option>
-      <option value="Apoio" ${formaEnvioAtual === 'Apoio' ? 'selected' : ''}>Apoio (Responsável obrigatório)</option>
-      <option value="Pessoalmente" ${formaEnvioAtual === 'Pessoalmente' ? 'selected' : ''}>Pessoalmente</option>
-    </select>`)}
-    <!-- Item 9: Campo condicional - nota fiscal (visível somente para CD) -->
-    <div id="div-nota-fiscal" class="form-group" style="display:${formaEnvioAtual === 'CD' ? '' : 'none'}">
-      <label>📄 Nota Fiscal (PDF/JPG)</label>
-      <input type="file" id="ped-nota-file" accept=".pdf,.jpg,.jpeg,.png">
-      ${d?.nota_fiscal_pdf ? `<small style="color:var(--text3)">Arquivo atual: ${d.nota_fiscal_pdf}</small>` : ''}
-    </div>
-    <!-- Item 9: Campo condicional - responsável envio (visível somente para Apoio) -->
-    <div id="div-resp-envio" style="display:${formaEnvioAtual === 'Apoio' ? '' : 'none'}">
-      ${fld('Responsável pelo Envio *', `<input name="responsavel_envio" value="${d?.responsavel_envio || ''}" placeholder="Nome do responsável">`)}
-    </div>
-    ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel || ''}">`)}
-    ${fld('Data do Pedido', `<input type="date" name="data_pedido" value="${d?.data_pedido || new Date().toISOString().split('T')[0]}">`)}
-    <div class="form-group full">${fld('Motivo / Justificativa', `<textarea name="motivo">${d?.motivo || ''}</textarea>`)}</div>
-    <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${d?.observacoes || ''}</textarea>`)}</div>
-  </div></form>`;
-      openModal(d ? `Editar Pedido #${d.id}` : 'Novo Pedido de TI', html, { type: 'pedido', mode: d ? 'edit' : 'new', id: d?.id });
-    }
-
-    // Item 9: Toggle de campos condicionais por forma de envio
-    function onFormaEnvioChange(val) {
-      const divNota = document.getElementById('div-nota-fiscal');
-      const divResp = document.getElementById('div-resp-envio');
-      if (divNota) divNota.style.display = val === 'CD' ? '' : 'none';
-      if (divResp) divResp.style.display = val === 'Apoio' ? '' : 'none';
-      // Habilita/desabilita campo de responsável envio para validação HTML5
-      const respInp = divResp ? divResp.querySelector('[name="responsavel_envio"]') : null;
-      if (respInp) respInp.required = val === 'Apoio';
-    }
 
     // Item 1: Autopreenchimento de campos da Manutenção ao digitar ID do ativo
     async function autoFillAtivoManut(idAtivo) {
