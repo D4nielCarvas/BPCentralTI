@@ -211,6 +211,7 @@ PERMISSOES_SISTEMA = {
         ("ver_termos",            "Visualizar termos assinados"),
         ("anexar_termos",         "Anexar / assinar termos"),
         ("excluir_termos",        "Excluir termos"),
+        ("gerar_termos",          "Gerar Termos em PDF"),
     ],
     "Chamados de TI": [
         ("abrir_chamados",        "Abrir chamados"),

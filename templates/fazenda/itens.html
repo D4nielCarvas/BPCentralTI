@@ -114,7 +114,7 @@
   {% endfor %}
 </div>
 
-{% set can_gerar_termo = (session.get('is_admin_master') or session.get('role') == 'admin' or 'administrativo fazendas' in (session.get('perfil_acesso') or '').lower()) %}
+{% set can_gerar_termo = has_permission('gerar_termos') %}
 
 
 {# ── Tab Bar ──────────────────────────────────────────────── #}
