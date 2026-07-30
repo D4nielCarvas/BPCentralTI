@@ -1,3 +1,4 @@
+import os
 from fpdf import FPDF
 from datetime import datetime
 import io
@@ -9,20 +10,25 @@ class TermoResponsabilidadePDF(FPDF):
         
         # Larguras das colunas
         col1_w = 40
-        col2_w = 100
-        col3_w = 25
-        col4_w = 25
+        col2_w = 120
+        col3_w = 30
         
         x_start = self.get_x()
         y_start = self.get_y()
         
         # Desenhar bordas da tabela
         # Linha superior
-        self.line(x_start, y_start, x_start + col1_w + col2_w + col3_w + col4_w, y_start)
+        self.line(x_start, y_start, x_start + col1_w + col2_w + col3_w, y_start)
         
         # Coluna 1 (Logo + Codigo)
         self.set_xy(x_start, y_start)
-        self.cell(col1_w, 20, 'LOGO BP', border='LTR', align='C')
+        logo_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'logo.png')
+        if os.path.exists(logo_path):
+            self.image(logo_path, x=x_start + 10, y=y_start + 2, w=20)
+            self.cell(col1_w, 20, '', border='LTR', align='C')
+        else:
+            self.cell(col1_w, 20, 'LOGO BP', border='LTR', align='C')
+            
         self.set_xy(x_start, y_start + 20)
         self.set_font('helvetica', 'B', 8)
         self.cell(col1_w, 5, 'Código', border='LR', align='C')
@@ -51,18 +57,6 @@ class TermoResponsabilidadePDF(FPDF):
         self.set_xy(x_start + col1_w + col2_w, y_start + 22)
         self.set_font('helvetica', '', 8)
         self.cell(col3_w, 8, '1.00', border='LBR', align='C')
-        
-        # Coluna 4 (Classificação e Aprovado por)
-        self.set_xy(x_start + col1_w + col2_w + col3_w, y_start)
-        self.set_font('helvetica', 'B', 8)
-        self.cell(col4_w, 7, 'Classificação', border='LTR', align='C')
-        self.set_xy(x_start + col1_w + col2_w + col3_w, y_start + 7)
-        self.set_font('helvetica', '', 8)
-        self.cell(col4_w, 8, 'Turma Colheita', border='LBR', align='C')
-        
-        self.set_xy(x_start + col1_w + col2_w + col3_w, y_start + 15)
-        self.set_font('helvetica', 'B', 8)
-        self.cell(col4_w, 15, 'Aprovado por:', border=1, align='C')
         
         self.set_text_color(0, 0, 0) # reset to black
         self.ln(20)
