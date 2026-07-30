@@ -404,6 +404,18 @@
   const FAZENDAS = ['Central','São Manoel','Tangará','São Pedro','São Judas','São Francisco',
     'Santana','Santa Eliza','Santa Lucia','Santa Lucia 2','Caroline','São João',
     'Santa Luzia','Santa Adelina','CD'];
+  const SETORES_OPTS = [
+    {v: 'Fito', l: 'Fito (FT)'}, {v: 'Almoxarifado Peças', l: 'Almoxarifado Peças (ALP)'},
+    {v: 'Almoxarifado Insumos', l: 'Almoxarifado Insumos (ALI)'}, {v: 'Coordenador', l: 'Coordenador (COO)'},
+    {v: 'Administrativo', l: 'Administrativo (ADM)'}, {v: 'Apoio', l: 'Apoio (APO)'},
+    {v: 'Colheita', l: 'Colheita (COL)'}, {v: 'Ponto', l: 'Ponto (PTO)'},
+    {v: 'Turma', l: 'Turma (TRM)'}, {v: 'Abastecimento', l: 'Abastecimento (ABS)'},
+    {v: 'Irrigação', l: 'Irrigação (IRR)'}, {v: 'Sestr', l: 'Sestr (STR)'},
+    {v: 'Agrícola', l: 'Agrícola (AGR)'}, {v: 'CD', l: 'CD (CDP)'},
+    {v: 'Inspeção', l: 'Inspeção (INP)'}, {v: 'Líderes', l: 'Líderes (LDR)'},
+    {v: 'TI', l: 'TI (TI)'}, {v: 'Balança', l: 'Balança (BLC)'},
+    {v: 'COA', l: 'COA (COA)'}, {v: 'RH', l: 'RH (RH)'}
+  ];
 
   function _buildForm(tipoApi, d) {
     // Campos comuns a todos os tipos
@@ -411,7 +423,7 @@
       ${fld('ID Ativo', inp('id_ativo', d.id_ativo, '', 'text', true))}
       ${fld('Status', sel('status', d.status, STATUS_OPTS))}
       ${fld('Fazenda', sel('fazenda', d.fazenda, FAZENDAS))}
-      ${fld('Setor', inp('setor', d.setor))}
+      ${fld('Setor', sel('setor', d.setor, SETORES_OPTS))}
       ${fld('Responsável', inp('responsavel', d.responsavel))}
       ${fld('Modelo', inp('modelo', d.modelo))}
     `;
