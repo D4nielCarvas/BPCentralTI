@@ -71,7 +71,7 @@ class TermoResponsabilidadePDF(FPDF):
         self.ln(2)
         
         # Texto do footer
-        self.cell(0, 10, 'RODRIGO BRANCO PERES - Termo de Ciência e Responsabilidade', 0, 0, 'C')
+        self.cell(0, 10, 'Branco Peres Agronegocios - Termo de Ciência e Responsabilidade', 0, 0, 'C')
         
         # Numero da pagina
         self.set_x(-20)
