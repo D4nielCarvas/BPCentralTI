@@ -24,5 +24,8 @@ Flask-Limiter>=3.5.0
 # pyinstaller==6.11.1
 gunicorn==21.2.0
 
-# ── Validação de Arquivos (Uploads) ───────────────────────────────────────────
+# 🔹 Validação de Arquivos (Uploads) 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
 python-magic>=0.4.27
+
+# 🔹 Geração de PDF 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
+fpdf2==2.8.1

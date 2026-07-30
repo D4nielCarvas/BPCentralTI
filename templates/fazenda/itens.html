@@ -114,6 +114,9 @@
   {% endfor %}
 </div>
 
+{% set can_gerar_termo = (session.get('is_admin_master') or session.get('role') == 'admin' or 'administrativo fazendas' in (session.get('perfil_acesso') or '').lower()) %}
+
+
 {# ── Tab Bar ──────────────────────────────────────────────── #}
 <div class="tabs-wrap" id="tabs-bar">
   {% for tipo in tipos_habilitados %}
@@ -154,6 +157,12 @@
         <button class="btn btn-ghost btn-sm" style="color:#10b981; border-color:rgba(16,185,129,.2);" onclick="exportarExcelDaTabela('tbl-{{ tid }}', 'Equipamentos_{{ tipo }}')">⬇ Excel</button>
       </div>
 
+      {% if can_gerar_termo %}
+      <div style="margin-left: 10px;">
+        <button id="btn-termo-{{ tid }}" class="btn btn-primary btn-sm" style="display:none;" onclick="gerarTermoPDF('{{ tid }}')">📄 Gerar Termo PDF (<span id="count-termo-{{ tid }}">0</span>)</button>
+      </div>
+      {% endif %}
+
       <div class="tab-search-wrap" style="margin-left:auto">
         <span class="tab-search-icon">🔍</span>
         <input
@@ -170,6 +179,9 @@
     <table id="tbl-{{ tid }}">
       <thead>
         <tr>
+          {% if can_gerar_termo %}
+            <th style="width:30px;"><input type="checkbox" onclick="toggleAll(this, 'tbl-{{ tid }}', '{{ tid }}')"></th>
+          {% endif %}
           <th>ID Ativo</th>
           <th>Modelo</th>
           {% if tipo != 'Estabilizador' %}<th>Responsável</th>{% endif %}
@@ -197,6 +209,9 @@
       <tbody>
         {% for item in itens %}
         <tr>
+          {% if can_gerar_termo %}
+          <td><input type="checkbox" class="chk-termo" value="{{ item.id_ativo }}" onchange="updateTermoBtn('{{ tid }}')"></td>
+          {% endif %}
           <td class="td-id">{{ item.id_ativo }}</td>
           <td style="color:var(--text)">{{ item.modelo or '—' }}</td>
 
@@ -494,6 +509,73 @@
   document.getElementById('edit-modal-overlay').addEventListener('click', function(e) {
     if (e.target === this) closeEditModal();
   });
+
+  /* ── Gerar Termo PDF ──────────────────────────────────────── */
+  function toggleAll(source, tblId, tid) {
+    const checkboxes = document.querySelectorAll(`#${tblId} tbody tr:not([style*="display: none"]) .chk-termo`);
+    checkboxes.forEach(chk => chk.checked = source.checked);
+    updateTermoBtn(tid);
+  }
+
+  function updateTermoBtn(tid) {
+    const checkboxes = document.querySelectorAll(`#tbl-${tid} tbody .chk-termo:checked`);
+    const btn = document.getElementById(`btn-termo-${tid}`);
+    const countSpan = document.getElementById(`count-termo-${tid}`);
+    if (btn && countSpan) {
+      if (checkboxes.length > 0) {
+        countSpan.textContent = checkboxes.length;
+        btn.style.display = 'inline-flex';
+      } else {
+        btn.style.display = 'none';
+      }
+    }
+  }
+
+  async function gerarTermoPDF(tid) {
+    const checkboxes = document.querySelectorAll(`#tbl-${tid} tbody .chk-termo:checked`);
+    if (checkboxes.length === 0) return;
+    
+    const ids = Array.from(checkboxes).map(c => c.value);
+    const btn = document.getElementById(`btn-termo-${tid}`);
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Gerando...';
+    btn.disabled = true;
+    
+    try {
+      const response = await fetch('/api/gerar_termo_responsabilidade', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ids: ids })
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'Termo_Responsabilidade.pdf';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        // Desmarcar tudo após sucesso
+        const allCheckboxes = document.querySelectorAll(`#tbl-${tid} .chk-termo, #tbl-${tid} thead input[type="checkbox"]`);
+        allCheckboxes.forEach(chk => chk.checked = false);
+        updateTermoBtn(tid);
+      } else {
+        const data = await response.json();
+        alert('❌ Erro: ' + (data.msg || 'Falha ao gerar termo'));
+      }
+    } catch (err) {
+      alert('❌ Erro na requisição: ' + err.message);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
 </script>
 
 {% endif %}

@@ -1,14 +1,14 @@
 <# :
 @echo off
 setlocal
-chcp 65001 > nul 2>&1
+%SystemRoot%\System32\chcp.com 65001 > nul 2>&1
 echo.
 echo  ============================================================
 echo   COLETA AUTOMATICA DE BP Central TI
 echo  ============================================================
 echo.
 echo  Coletando dados do sistema...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression $([System.IO.File]::ReadAllText('%~f0'))"
+%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression $([System.IO.File]::ReadAllText('%~f0'))"
 if errorlevel 1 (
     echo.
     echo  [ERRO] Ocorreu um problema na execucao.

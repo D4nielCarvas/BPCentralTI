@@ -7,6 +7,9 @@ from utils.db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetc
 from utils.auth_utils import login_required, admin_required, get_fazenda_nome_filter
 from utils.crypto_utils import encrypt_field, decrypt_field
 from utils.api_utils import _list_table, log_historico, validate_file_mime
+from utils.pdf_utils import gerar_termo_equipamentos_pdf
+from flask import send_file
+import io
 from werkzeug.utils import secure_filename
 
 bp = Blueprint('api_ativos', __name__, url_prefix='')
@@ -529,4 +532,65 @@ def upload_termo(tipo: str, id_ativo: str) -> tuple[Response, int] | Response:
         return jsonify({"ok": False, "msg": f"Tipo de ativo desconhecido: {tipo}"}), 400
  
     return jsonify({"ok": True, "msg": "PDF anexado!", "filename": safe_name})
+
+
+@bp.route("/api/gerar_termo_responsabilidade", methods=["POST"])
+@login_required
+def gerar_termo_responsabilidade():
+    """
+    Gera o termo de responsabilidade em PDF para os equipamentos selecionados.
+    Restrito a ADM e Administrativo Fazendas.
+    """
+    from flask import session
+    perfil = session.get("perfil_acesso", "").lower()
+    role = session.get("role", "")
+    
+    is_admin = session.get("is_admin_master") or role == "admin"
+    is_adm_fazendas = "administrativo fazendas" in perfil
+    
+    if not (is_admin or is_adm_fazendas):
+        return jsonify({"ok": False, "msg": "Sem permissão para gerar termos."}), 403
+        
+    data = request.json
+    if not data or not data.get("ids"):
+        return jsonify({"ok": False, "msg": "Nenhum equipamento selecionado."}), 400
+        
+    ids = data["ids"]
+    equipamentos_dados = []
+    
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            for id_ativo in ids:
+                encontrado = False
+                for tabela, tipo_nome in [
+                    ("celulares", "Celular"),
+                    ("celulares_ponto", "Celular Ponto"),
+                    ("celulares_inspecao", "Celular Inspeção"),
+                    ("celulares_turma", "Celular Turma"),
+                    ("computadores", "Computador"),
+                    ("impressoras", "Impressora"),
+                    ("estabilizadores", "Estabilizador"),
+                    ("starlink", "Starlink")
+                ]:
+                    row = _fetch_one(cur, f"SELECT * FROM {tabela} WHERE id_ativo=%s", (id_ativo,))
+                    if row:
+                        row["tipo_equipamento"] = tipo_nome
+                        equipamentos_dados.append(row)
+                        encontrado = True
+                        break
+                if not encontrado:
+                    # Pode logar ou ignorar o não encontrado
+                    pass
+
+    if not equipamentos_dados:
+        return jsonify({"ok": False, "msg": "Nenhum dos equipamentos foi encontrado."}), 404
+        
+    pdf_bytes = gerar_termo_equipamentos_pdf(equipamentos_dados)
+    
+    return send_file(
+        io.BytesIO(pdf_bytes),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="Termo_Responsabilidade.pdf"
+    )
 
