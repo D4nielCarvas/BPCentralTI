@@ -1,0 +1,13 @@
+﻿[hardware]
+tipo=Notebook
+marca=SAMSUNG ELECTRONICS CO., LTD.
+modelo=340XAA/350XAA/550XAA
+num_serie=08R39QAK800167
+processador=Intel(R) Core(TM) i3-7020U CPU @ 2.30GHz
+memoria_ram=4GB
+armazenamento=240GB
+sistema_operacional=Microsoft Windows 10 Home Single Language
+versao_so=10.0.19045 Build 19045
+ip_rede=192.168.0.163
+mac_address=98:83:89:C5:DA:8F
+usuario=Coord - S. Francisco

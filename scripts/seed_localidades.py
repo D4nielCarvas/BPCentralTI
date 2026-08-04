@@ -50,6 +50,7 @@ LOCALIDADES: list[dict] = [
     {"nome": "Sao Joao",      "sigla": "SJO", "tipo": "fazenda"},
     {"nome": "Santa Luzia",   "sigla": "SLZ", "tipo": "fazenda"},
     {"nome": "Santa Adelina", "sigla": "SAD", "tipo": "fazenda"},
+    {"nome": "Santa Francisca","sigla": "SFC", "tipo": "fazenda"},
     {"nome": "CD",            "sigla": "CD",  "tipo": "cd"},
     {"nome": "Central",       "sigla": "CEN", "tipo": "central"},
 ]

@@ -70,6 +70,7 @@ SIGLAS_LOCAL: dict[str, str] = {
     "SJO": "São João",
     "SLZ": "Santa Luzia",
     "SAD": "Santa Adelina",
+    "SFC": "Santa Francisca",
 }
 
 # C. Setores

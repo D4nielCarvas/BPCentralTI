@@ -274,7 +274,7 @@ TIPO-LOCAL-SETOR-ID
 | São Judas | `SJU` | São João | `SJO` |
 | São Francisco | `SFR` | Santa Luzia | `SLZ` |
 | Santana | `STN` | Santa Adelina | `SAD` |
-| CD | `CD` | | |
+| Santa Francisca | `SFC` | CD | `CD` |
 
 #### C. Setores
 | Setor | Sigla | Setor | Sigla |
