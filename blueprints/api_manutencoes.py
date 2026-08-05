@@ -46,6 +46,28 @@ def listar_manutencoes() -> Response:
 def criar_manutencao() -> Response:
     """Registra uma nova ocorrência de manutenção."""
     d = request.json
+    
+    localidade_id = None
+    tabela_equipamento = {
+        "Celular": "celulares",
+        "Celular Ponto": "celulares_ponto",
+        "Celular Inspeção": "celulares_inspecao",
+        "Celular Turma": "celulares_turma",
+        "Computador": "computadores",
+        "Impressora": "impressoras",
+        "Estabilizador": "estabilizadores",
+        "Starlink": "starlink"
+    }.get(d.get("tipo_equipamento"))
+
+    if tabela_equipamento and d.get("id_ativo"):
+        try:
+            with get_db() as conn:
+                with conn.cursor() as cur:
+                    row = _fetch_one(cur, f"SELECT localidade_id FROM {tabela_equipamento} WHERE id_ativo=%s", (d["id_ativo"],))
+                    if row:
+                        localidade_id = row.get("localidade_id")
+        except Exception:
+            pass
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -54,8 +76,8 @@ def criar_manutencao() -> Response:
                     pessoa_recebimento,problema_relatado,data_manutencao,os_manutencao,
                     orcamento,status,data_envio,forma_envio,data_retorno,
                     solucao_aplicada,tecnico,observacoes,
-                    tipo_manutencao,pecas_utilizadas,subtipo)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    tipo_manutencao,pecas_utilizadas,subtipo,localidade_id)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (
                     d["id_ativo"], d["tipo_equipamento"], d.get("modelo"), d.get("local_atual"),
                     d.get("data_recebimento"), d.get("pessoa_recebimento"), d.get("problema_relatado"),
@@ -63,7 +85,7 @@ def criar_manutencao() -> Response:
                     d.get("status", "Aberta"), d.get("data_envio"), d.get("forma_envio"),
                     d.get("data_retorno"), d.get("solucao_aplicada"), d.get("tecnico"),
                     d.get("observacoes"), d.get("tipo_manutencao"),
-                    d.get("pecas_utilizadas"), d.get("subtipo"),
+                    d.get("pecas_utilizadas"), d.get("subtipo"), localidade_id,
                 ),
             )
             log_historico(cur, d["id_ativo"], d["tipo_equipamento"], "Manutenção Aberta")
