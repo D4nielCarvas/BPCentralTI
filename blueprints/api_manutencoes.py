@@ -44,7 +44,7 @@ def listar_manutencoes() -> Response:
 @bp.route("/api/manutencoes", methods=["POST"])
 @admin_required
 def criar_manutencao() -> Response:
-    """Registra uma nova ocorrência de manutenção."""
+    """Registra uma nova ocorrência de manutenção e vincula peças."""
     d = request.json
     
     localidade_id = None
@@ -68,6 +68,11 @@ def criar_manutencao() -> Response:
                         localidade_id = row.get("localidade_id")
         except Exception:
             pass
+            
+    tipo_manut = d.get("tipo_manutencao")
+    orcamento = d.get("orcamento") if tipo_manut != "Manutenção Local" else None
+    os_manutencao = d.get("os_manutencao") # if local, we generate later
+    
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -76,29 +81,68 @@ def criar_manutencao() -> Response:
                     pessoa_recebimento,problema_relatado,data_manutencao,os_manutencao,
                     orcamento,status,data_envio,forma_envio,data_retorno,
                     solucao_aplicada,tecnico,observacoes,
-                    tipo_manutencao,pecas_utilizadas,subtipo,localidade_id)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    tipo_manutencao,pecas_utilizadas,subtipo,localidade_id,chamado_id)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
                 (
                     d["id_ativo"], d["tipo_equipamento"], d.get("modelo"), d.get("local_atual"),
                     d.get("data_recebimento"), d.get("pessoa_recebimento"), d.get("problema_relatado"),
-                    d.get("data_manutencao"), d.get("os_manutencao"), d.get("orcamento"),
+                    d.get("data_manutencao"), os_manutencao, orcamento,
                     d.get("status", "Aberta"), d.get("data_envio"), d.get("forma_envio"),
                     d.get("data_retorno"), d.get("solucao_aplicada"), d.get("tecnico"),
-                    d.get("observacoes"), d.get("tipo_manutencao"),
-                    d.get("pecas_utilizadas"), d.get("subtipo"), localidade_id,
+                    d.get("observacoes"), tipo_manut,
+                    d.get("pecas_utilizadas"), d.get("subtipo"), localidade_id, d.get("chamado_id")
                 ),
             )
-            log_historico(cur, d["id_ativo"], d["tipo_equipamento"], "Manutenção Aberta")
-    return jsonify({"ok": True, "msg": "Manutenção registrada!"})
+            novo_id = cur.fetchone()["id"]
+            
+            if tipo_manut == "Manutenção Local":
+                ano = date.today().year
+                os_manutencao = f"OS-LOC-{ano}-{novo_id:04d}"
+                cur.execute("UPDATE manutencoes SET os_manutencao=%s WHERE id=%s", (os_manutencao, novo_id))
+
+            # Processar peças do estoque
+            pecas = d.get("pecas_json", [])
+            for p in pecas:
+                qtd = int(p.get("quantidade", 1))
+                if qtd <= 0: continue
+                
+                estoque_id = p.get("estoque_id")
+                nome_peca = p.get("nome_peca")
+                
+                if estoque_id:
+                    # Debitar do estoque
+                    cur.execute("SELECT quantidade FROM estoque WHERE id=%s FOR UPDATE", (estoque_id,))
+                    item_estoque = _fetch_one(cur, "SELECT quantidade FROM estoque WHERE id=%s", (estoque_id,))
+                    if item_estoque:
+                        nova_qtd = item_estoque["quantidade"] - qtd
+                        if nova_qtd < 0:
+                            raise Exception(f"Estoque insuficiente para o item ID {estoque_id}")
+                        cur.execute("UPDATE estoque SET quantidade=%s, updated_at=NOW() WHERE id=%s", (nova_qtd, estoque_id))
+                        cur.execute(
+                            "INSERT INTO estoque_movimentacoes (estoque_id,tipo,quantidade,motivo,responsavel) VALUES (%s,'saida',%s,%s,%s)",
+                            (estoque_id, qtd, f"Uso na Manutenção #{novo_id}", "Sistema")
+                        )
+                
+                cur.execute(
+                    "INSERT INTO manutencoes_pecas (manutencao_id, estoque_id, nome_peca, quantidade) VALUES (%s, %s, %s, %s)",
+                    (novo_id, estoque_id, nome_peca, qtd)
+                )
+
+            log_historico(cur, d["id_ativo"], d["tipo_equipamento"], f"Manutenção Aberta (OS: {os_manutencao or 'S/N'})")
+            
+    return jsonify({"ok": True, "msg": "Manutenção registrada!", "id": novo_id})
 
 
 @bp.route("/api/manutencoes/<int:mid>", methods=["GET"])
 @admin_required
 def get_manutencao(mid: int) -> Response:
-    """Retorna dados de uma manutenção pelo ID."""
+    """Retorna dados de uma manutenção pelo ID, incluindo peças."""
     with get_db() as conn:
         with conn.cursor() as cur:
             row = _fetch_one(cur, "SELECT * FROM manutencoes WHERE id=%s", (mid,))
+            if row:
+                pecas = _fetch_all(cur, "SELECT mp.*, e.item as estoque_nome FROM manutencoes_pecas mp LEFT JOIN estoque e ON e.id = mp.estoque_id WHERE mp.manutencao_id=%s", (mid,))
+                row["pecas_json"] = pecas
     return jsonify(row)
 
 
@@ -107,8 +151,21 @@ def get_manutencao(mid: int) -> Response:
 def atualizar_manutencao(mid: int) -> Response:
     """Atualiza dados de uma manutenção existente."""
     d = request.json
+    tipo_manut = d.get("tipo_manutencao")
+    orcamento = d.get("orcamento") if tipo_manut != "Manutenção Local" else None
+    
     with get_db() as conn:
         with conn.cursor() as cur:
+            # Mantemos o OS gerado caso seja local, senão usamos o que veio do form
+            row = _fetch_one(cur, "SELECT os_manutencao FROM manutencoes WHERE id=%s", (mid,))
+            os_manutencao = d.get("os_manutencao")
+            if tipo_manut == "Manutenção Local":
+                if row and row.get("os_manutencao") and row.get("os_manutencao").startswith("OS-LOC-"):
+                    os_manutencao = row.get("os_manutencao")
+                else:
+                    ano = date.today().year
+                    os_manutencao = f"OS-LOC-{ano}-{mid:04d}"
+
             cur.execute(
                 """UPDATE manutencoes SET
                    local_atual=%s,data_recebimento=%s,pessoa_recebimento=%s,
@@ -119,13 +176,54 @@ def atualizar_manutencao(mid: int) -> Response:
                    WHERE id=%s""",
                 (
                     d.get("local_atual"), d.get("data_recebimento"), d.get("pessoa_recebimento"),
-                    d.get("problema_relatado"), d.get("data_manutencao"), d.get("os_manutencao"),
-                    d.get("orcamento"), d.get("status"), d.get("data_envio"), d.get("forma_envio"),
+                    d.get("problema_relatado"), d.get("data_manutencao"), os_manutencao, orcamento,
+                    d.get("status"), d.get("data_envio"), d.get("forma_envio"),
                     d.get("data_retorno"), d.get("solucao_aplicada"), d.get("tecnico"),
-                    d.get("observacoes"), d.get("tipo_manutencao"),
+                    d.get("observacoes"), tipo_manut,
                     d.get("pecas_utilizadas"), d.get("subtipo"), mid,
                 ),
             )
+            
+            if "pecas_json" in d:
+                # 1. Devolver peças antigas ao estoque
+                pecas_antigas = _fetch_all(cur, "SELECT * FROM manutencoes_pecas WHERE manutencao_id=%s", (mid,))
+                for pa in pecas_antigas:
+                    if pa["estoque_id"]:
+                        cur.execute("SELECT quantidade FROM estoque WHERE id=%s FOR UPDATE", (pa["estoque_id"],))
+                        cur.execute("UPDATE estoque SET quantidade=quantidade + %s WHERE id=%s", (pa["quantidade"], pa["estoque_id"]))
+                        cur.execute(
+                            "INSERT INTO estoque_movimentacoes (estoque_id,tipo,quantidade,motivo,responsavel) VALUES (%s,'entrada',%s,%s,%s)",
+                            (pa["estoque_id"], pa["quantidade"], f"Restituição da Manutenção #{mid} (edição)", "Sistema")
+                        )
+                
+                # 2. Deletar vínculos
+                cur.execute("DELETE FROM manutencoes_pecas WHERE manutencao_id=%s", (mid,))
+                
+                # 3. Debitar novas peças
+                for p in d["pecas_json"]:
+                    qtd = int(p.get("quantidade", 1))
+                    if qtd <= 0: continue
+                    estoque_id = p.get("estoque_id")
+                    nome_peca = p.get("nome_peca")
+                    
+                    if estoque_id:
+                        cur.execute("SELECT quantidade FROM estoque WHERE id=%s FOR UPDATE", (estoque_id,))
+                        item_estoque = _fetch_one(cur, "SELECT quantidade FROM estoque WHERE id=%s", (estoque_id,))
+                        if item_estoque:
+                            nova_qtd = item_estoque["quantidade"] - qtd
+                            if nova_qtd < 0:
+                                raise Exception(f"Estoque insuficiente para o item ID {estoque_id}")
+                            cur.execute("UPDATE estoque SET quantidade=%s, updated_at=NOW() WHERE id=%s", (nova_qtd, estoque_id))
+                            cur.execute(
+                                "INSERT INTO estoque_movimentacoes (estoque_id,tipo,quantidade,motivo,responsavel) VALUES (%s,'saida',%s,%s,%s)",
+                                (estoque_id, qtd, f"Uso na Manutenção #{mid} (edição)", "Sistema")
+                            )
+                    
+                    cur.execute(
+                        "INSERT INTO manutencoes_pecas (manutencao_id, estoque_id, nome_peca, quantidade) VALUES (%s, %s, %s, %s)",
+                        (mid, estoque_id, nome_peca, qtd)
+                    )
+
     return jsonify({"ok": True, "msg": "Manutenção atualizada!"})
 
 

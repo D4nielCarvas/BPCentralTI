@@ -1541,6 +1541,22 @@
       form.querySelectorAll('[name]').forEach(el => {
         data[el.name] = el.value === "" ? null : el.value;
       });
+      
+      if (type === 'manutencao') {
+          const pecas = [];
+          document.querySelectorAll('.peca-item-row').forEach(row => {
+              const estoque_id = row.querySelector('.peca-estoque-id').value;
+              const nome_peca = row.querySelector('.peca-nome-externo').value;
+              const quantidade = row.querySelector('.peca-qtd').value;
+              pecas.push({
+                  estoque_id: estoque_id ? parseInt(estoque_id) : null,
+                  nome_peca: nome_peca,
+                  quantidade: parseInt(quantidade)
+              });
+          });
+          data.pecas_json = pecas;
+      }
+      
       let res;
       try {
         if (type === 'manutencao') res = mode === 'new' ? await api('/api/manutencoes', 'POST', data) : await api(`/api/manutencoes/${id}`, 'PUT', data);
@@ -1911,61 +1927,137 @@
       openModal(d ? `Editar Estoque de Toner — ${d.modelo_toner}` : 'Cadastrar Toner/Cilindro', html, { type: 'toner', mode: d ? 'edit' : 'new', id: d?.id });
     }
 
-    function openManutModal(d, prefill = {}) {
+    async function openManutModal(d, prefill = {}) {
       const v = f => d?.[f] || prefill[f] || '';
       const tipos = ['Celular', 'Celular Ponto', 'Celular Turma', 'Celular Inspeção', 'Computador', 'Impressora', 'Estabilizador', 'Starlink'];
+      const formasEnvio = ['Apoio', 'CD', 'Motorista'];
       const tipoManut = v('tipo_manutencao') || '';
+      
+      let estoqueOpts = '<option value="">-- Externa (Não no estoque) --</option>';
+      try {
+        const est = await api('/api/estoque');
+        if (est && Array.isArray(est)) {
+            estoqueOpts += est.map(e => `<option value="${e.id}">${e.item} (Estoque: ${e.quantidade})</option>`).join('');
+        }
+      } catch(e) {}
+      window._estoqueOpts = estoqueOpts;
+      window._pecasManut = d?.pecas_json || [];
+
       const html = `<form id="modal-form">
     <div class="form-section"><h4>📋 Ativo</h4><div class="form-grid">
-      ${fld('ID Ativo *', `<input name="id_ativo" value="${v('id_ativo')}" required placeholder="CL-CEN-ADM-01"
-        onblur="autoFillAtivoManut(this.value)">`)}
+      ${fld('ID Ativo *', `<input name="id_ativo" value="${v('id_ativo')}" required placeholder="CL-CEN-ADM-01" onblur="autoFillAtivoManut(this.value)">`)}
       ${fld('Tipo *', `<select name="tipo_equipamento" required>${tipos.map(t => `<option value="${t}" ${v('tipo_equipamento') === t ? 'selected' : ''}>${t}</option>`).join('')}</select>`)}
       ${fld('Modelo', `<input name="modelo" value="${v('modelo')}">`)}
       ${fld('Local Atual', `<input name="local_atual" value="${v('local_atual')}" placeholder="Almoxarifado TI">`)}
     </div></div>
-    <div class="form-section"><h4>🔧 Tipo de Manutenção</h4><div class="form-grid">
+    
+    <div class="form-section"><h4>🔧 Detalhes da Manutenção</h4><div class="form-grid">
       <div class="form-group full">${fld('Tipo de Manutenção *', `<select name="tipo_manutencao" onchange="onTipoManutChange(this.value)" required>
         <option value="">Selecione...</option>
         <option value="Manutenção de 3°" ${tipoManut === 'Manutenção de 3°' ? 'selected' : ''}>Manutenção de 3° (Terceiros)</option>
         <option value="Manutenção Local" ${tipoManut === 'Manutenção Local' ? 'selected' : ''}>Manutenção Local</option>
         <option value="Garantia" ${tipoManut === 'Garantia' ? 'selected' : ''}>Garantia</option>
       </select>`)}</div>
-      <div id="cond-pecas" class="form-group full cond-field" style="${tipoManut === 'Manutenção Local' ? '' : 'display:none'}">
-        ${fld('Peças Utilizadas', `<textarea name="pecas_utilizadas" placeholder="Liste as peças utilizadas">${v('pecas_utilizadas')}</textarea>`)}
-      </div>
-      <div id="cond-subtipo" class="cond-field" style="${tipoManut === 'Manutenção Local' ? '' : 'display:none'}">
-        ${fld('Subtipo', `<select name="subtipo"><option value="">Selecione...</option>
-          <option value="Preventiva" ${v('subtipo') === 'Preventiva' ? 'selected' : ''}>Preventiva</option>
-          <option value="Corretiva" ${v('subtipo') === 'Corretiva' ? 'selected' : ''}>Corretiva</option>
-        </select>`)}
-      </div>
-    </div></div>
-    <div class="form-section"><h4>🔧 Detalhes</h4><div class="form-grid">
+      
       ${fld('Data Recebimento', `<input type="date" name="data_recebimento" value="${v('data_recebimento')}">`)}
       ${fld('Pessoa Recebimento', `<input name="pessoa_recebimento" value="${v('pessoa_recebimento')}">`)}
       <div class="form-group full">${fld('Problema Relatado', `<textarea name="problema_relatado">${v('problema_relatado')}</textarea>`)}</div>
+      
       ${fld('Data Manutenção', `<input type="date" name="data_manutencao" value="${v('data_manutencao')}">`)}
-      ${fld('OS Manutenção', `<input name="os_manutencao" value="${v('os_manutencao')}" placeholder="OS-2025-001">`)}
-      ${fld('Orçamento (R$)', `<input type="number" step="0.01" name="orcamento" value="${v('orcamento')}">`)}
+      
+      <div id="cond-os" class="form-group" style="${tipoManut === 'Manutenção Local' ? 'display:none' : ''}">
+          ${fld('OS Manutenção', `<input name="os_manutencao" value="${v('os_manutencao')}" placeholder="OS-2025-001">`)}
+      </div>
+      <div id="cond-os-local" class="form-group" style="${tipoManut === 'Manutenção Local' ? '' : 'display:none'}">
+          ${fld('OS Manutenção', `<input type="text" disabled value="${v('os_manutencao') || 'Gerado Automaticamente'}">`)}
+      </div>
+      
+      <div id="cond-orcamento" class="form-group" style="${tipoManut === 'Manutenção Local' ? 'display:none' : ''}">
+          ${fld('Orçamento (R$)', `<input type="number" step="0.01" name="orcamento" value="${v('orcamento')}">`)}
+      </div>
+      
       ${fld('Técnico', `<input name="tecnico" value="${v('tecnico')}">`)}
       ${fld('Status', `<select name="status">${['Aberta', 'Em Análise', 'Aguardando Peça', 'Em Reparo', 'Concluída', 'Cancelada'].map(s => `<option value="${s}" ${v('status') === s ? 'selected' : ''}>${s}</option>`).join('')}</select>`)}
+      
       ${fld('Data Envio', `<input type="date" name="data_envio" value="${v('data_envio')}">`)}
-      ${fld('Forma Envio', `<input name="forma_envio" value="${v('forma_envio')}" placeholder="Motoboy, Correios...">`)}
-      ${fld('Data Retorno', `<input type="date" name="data_retorno" value="${v('data_retorno')}">`)}
+      ${fld('Forma Envio', `<select name="forma_envio"><option value="">Selecione...</option>${formasEnvio.map(f => `<option value="${f}" ${v('forma_envio') === f ? 'selected' : ''}>${f}</option>`).join('')}</select>`)}
+      
       <div class="form-group full">${fld('Solução Aplicada', `<textarea name="solucao_aplicada">${v('solucao_aplicada')}</textarea>`)}</div>
       <div class="form-group full">${fld('Observações', `<textarea name="observacoes">${v('observacoes')}</textarea>`)}</div>
-    </div></div></form>`;
+    </div></div>
+    
+    <div id="cond-pecas" class="form-section cond-field" style="${tipoManut === 'Manutenção Local' ? '' : 'display:none'}">
+        <h4>📦 Peças Utilizadas (Estoque)</h4>
+        <div class="form-grid">
+            <div id="cond-subtipo" class="form-group full">
+                ${fld('Subtipo', `<select name="subtipo"><option value="">Selecione...</option>
+                  <option value="Preventiva" ${v('subtipo') === 'Preventiva' ? 'selected' : ''}>Preventiva</option>
+                  <option value="Corretiva" ${v('subtipo') === 'Corretiva' ? 'selected' : ''}>Corretiva</option>
+                </select>`)}
+            </div>
+            <div class="form-group full">
+                <table class="table" style="margin-bottom: 10px;">
+                    <thead><tr><th>Peça do Estoque / Externa</th><th width="80">Qtd</th><th width="40"></th></tr></thead>
+                    <tbody id="lista-pecas-body"></tbody>
+                </table>
+                <button type="button" class="btn btn-secondary" onclick="addPecaRow()" style="width: 100%; margin-bottom: 10px;">+ Adicionar Peça</button>
+            </div>
+            <div class="form-group full">
+                ${fld('Outras Peças / Obs. Adicional', `<textarea name="pecas_utilizadas" placeholder="Anotações adicionais">${v('pecas_utilizadas')}</textarea>`)}
+            </div>
+        </div>
+    </div>
+    
+    </form>`;
       openModal(d ? `Editar Manutenção #${d.id}` : 'Nova Manutenção', html, { type: 'manutencao', mode: d ? 'edit' : 'new', id: d?.id });
+      
+      if (window._pecasManut && window._pecasManut.length > 0) {
+          window._pecasManut.forEach(p => addPecaRow(p));
+      }
     }
+    
+    function addPecaRow(peca = {}) {
+        const tbody = document.getElementById('lista-pecas-body');
+        if (!tbody) return;
+        const tr = document.createElement('tr');
+        tr.className = 'peca-item-row';
+        
+        let selectHtml = `<select class="peca-estoque-id" style="width:100%; margin-bottom: 5px; background:var(--bg-lighter);" onchange="toggleNomePeca(this)">${window._estoqueOpts}</select>`;
+        if (peca.estoque_id) {
+            selectHtml = selectHtml.replace(`value="${peca.estoque_id}"`, `value="${peca.estoque_id}" selected`);
+        }
+        
+        tr.innerHTML = `
+            <td>
+                ${selectHtml}
+                <input type="text" class="peca-nome-externo" placeholder="Nome da peça (se não no estoque)" value="${peca.nome_peca || ''}" style="${peca.estoque_id ? 'display:none;' : 'width:100%; background:var(--bg-lighter);'}">
+            </td>
+            <td><input type="number" class="peca-qtd" value="${peca.quantidade || 1}" min="1" style="width:100%; background:var(--bg-lighter);"></td>
+            <td style="text-align:center;"><button type="button" class="btn btn-danger" onclick="this.closest('tr').remove()" style="padding: 5px; line-height:1;">X</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+    
+    window.toggleNomePeca = function(selectEl) {
+        const inputEl = selectEl.parentElement.querySelector('.peca-nome-externo');
+        if (selectEl.value) {
+            inputEl.style.display = 'none';
+            inputEl.value = '';
+        } else {
+            inputEl.style.display = '';
+        }
+    };
 
     function onTipoManutChange(val) {
       const showLocal = val === 'Manutenção Local';
       document.getElementById('cond-pecas').style.display = showLocal ? '' : 'none';
-      document.getElementById('cond-subtipo').style.display = showLocal ? '' : 'none';
-      // Limpar campos se não Local
+      
+      document.getElementById('cond-os').style.display = showLocal ? 'none' : '';
+      document.getElementById('cond-os-local').style.display = showLocal ? '' : 'none';
+      document.getElementById('cond-orcamento').style.display = showLocal ? 'none' : '';
+      
       if (!showLocal) {
         const f = document.getElementById('modal-form');
-        if (f.querySelector('[name="pecas_utilizadas"]')) f.querySelector('[name="pecas_utilizadas"]').value = '';
         if (f.querySelector('[name="subtipo"]')) f.querySelector('[name="subtipo"]').value = '';
       }
     }

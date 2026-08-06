@@ -418,6 +418,7 @@ def gerar_manutencao(chamado_id: int):
     Requer: chamado deve ter id_ativo preenchido.
     Insere em 'manutencoes' e registra mensagem automática no chat.
     """
+    from datetime import date
     usuario_id = get_usuario_id()
 
     with acquire_conn() as conn:
@@ -439,40 +440,66 @@ def gerar_manutencao(chamado_id: int):
                 flash("Este chamado não possui equipamento vinculado. Vincule um ID de ativo antes de gerar manutenção.", "danger")
                 return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
 
-            # Verifica se já existe manutenção gerada para este chamado (evita duplicatas)
+            # Verifica se já existe manutenção gerada para este chamado usando a nova FK
             existe = fetch_one(
                 cur,
-                "SELECT id FROM manutencoes WHERE problema_relatado ILIKE %s",
-                (f"%chamado #{chamado_id}%",),
+                "SELECT id FROM manutencoes WHERE chamado_id = %s",
+                (chamado_id,),
             )
             if existe:
                 flash("Já existe uma manutenção gerada para este chamado.", "warning")
                 return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
 
+            # Descobrir o tipo real do equipamento
+            tipo_equipamento = 'Equipamento'
+            tabelas_busca = [
+                ("celulares", "Celular"),
+                ("celulares_ponto", "Celular Ponto"),
+                ("celulares_inspecao", "Celular Inspeção"),
+                ("celulares_turma", "Celular Turma"),
+                ("computadores", "Computador"),
+                ("impressoras", "Impressora"),
+                ("estabilizadores", "Estabilizador"),
+                ("starlink", "Starlink"),
+            ]
+            for tabela, tipo_nome in tabelas_busca:
+                row_equip = fetch_one(cur, f"SELECT id_ativo FROM {tabela} WHERE id_ativo=%s", (chamado["id_ativo"],))
+                if row_equip:
+                    tipo_equipamento = tipo_nome
+                    break
+
+            hoje = date.today()
             cur.execute(
                 """
                 INSERT INTO manutencoes
                     (id_ativo, tipo_equipamento, problema_relatado, status,
-                     local_atual, localidade_id, created_at, updated_at)
-                VALUES (%s, 'Equipamento', %s, 'Em Análise', %s, %s, now(), now())
+                     local_atual, localidade_id, tipo_manutencao, data_recebimento, chamado_id, created_at, updated_at)
+                VALUES (%s, %s, %s, 'Em Análise', %s, %s, 'Manutenção Local', %s, %s, now(), now())
                 RETURNING id
                 """,
                 (
                     chamado["id_ativo"],
+                    tipo_equipamento,
                     f"[Chamado #{chamado_id}] {chamado['descricao'][:500]}",
                     chamado["localidade_nome"],
                     chamado["localidade_id"],
+                    hoje.isoformat(),
+                    chamado_id
                 ),
             )
             manutencao_id = cur.fetchone()["id"]
+            
+            # Gera o OS porque criamos como Manutenção Local
+            os_manutencao = f"OS-LOC-{hoje.year}-{manutencao_id:04d}"
+            cur.execute("UPDATE manutencoes SET os_manutencao=%s WHERE id=%s", (os_manutencao, manutencao_id))
 
             # Mensagem automática no chat
             cur.execute(
                 "INSERT INTO chamado_mensagens (chamado_id, usuario_id, mensagem, is_sistema) VALUES (%s, %s, %s, TRUE)",
-                (chamado_id, usuario_id, f"Equipamento {chamado['id_ativo']} encaminhado para manutenção (OS #{manutencao_id}) pela TI."),
+                (chamado_id, usuario_id, f"Equipamento {chamado['id_ativo']} encaminhado para manutenção (OS: {os_manutencao}) pela TI."),
             )
 
-    flash(f"Manutenção criada com sucesso (OS #{manutencao_id})!", "success")
+    flash(f"Manutenção criada com sucesso ({os_manutencao})!", "success")
     return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
 
 
