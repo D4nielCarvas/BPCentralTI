@@ -160,13 +160,14 @@ class TransferenciaService:
 
                 # 3g. Gerenciamento automático de Chips (Linhas Celular)
                 from blueprints.celulares import desvincular_linha_para_estoque, repassar_linha_para_novo_responsavel
+                data_transf = payload.get("data_transferencia") or date.today().isoformat()
                 if tipo_eq_final in ("Celular", "Celular Ponto", "Celular Turma", "Celular Inspeção"):
                     if "Estoque" in tipo_transf and tipo_transf.endswith("Estoque"):
                         desvincular_linha_para_estoque(cur, id_ativo_final)
                     elif payload.get("responsavel_destino"):
-                        repassar_linha_para_novo_responsavel(cur, id_ativo_final, payload.get("responsavel_destino"), data_str)
+                        repassar_linha_para_novo_responsavel(cur, id_ativo_final, payload.get("responsavel_destino"), data_transf)
                     elif payload.get("turma_destino"):
-                        repassar_linha_para_novo_responsavel(cur, id_ativo_final, payload.get("turma_destino"), data_str)
+                        repassar_linha_para_novo_responsavel(cur, id_ativo_final, payload.get("turma_destino"), data_transf)
 
         logger.info(
             "Transferência criada: %s [%s] → %s (por: %s)",

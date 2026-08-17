@@ -445,5 +445,56 @@ class TestValidacoesTransferenciaLegado(unittest.TestCase):
         self.assertIn("inválida", msg)
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# TESTES: Gerenciamento de Linhas/Chips (blueprints.celulares)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestGerenciamentoChipsCelular(unittest.TestCase):
+    """Testa funções de ciclo de vida de chips e linhas de celular com cursor mockado."""
+
+    @patch("blueprints.celulares.fetch_one")
+    def test_desvincular_linha_para_estoque(self, mock_fetch_one):
+        from blueprints.celulares import desvincular_linha_para_estoque
+        mock_cur = MagicMock()
+        mock_fetch_one.return_value = {"id": "attr-uuid-1", "linha_id": "chip-uuid-1"}
+
+        desvincular_linha_para_estoque(mock_cur, "CL-CEN-APO-11")
+
+        # Verifica encerramento da atribuição
+        mock_cur.execute.assert_any_call(
+            "UPDATE atribuicoes_linha SET data_devolucao = NOW() WHERE id = %s",
+            ("attr-uuid-1",),
+        )
+        # Verifica liberação do chip para Disponível
+        mock_cur.execute.assert_any_call(
+            "UPDATE linhas_celular SET status = 'Disponível' WHERE id = %s",
+            ("chip-uuid-1",),
+        )
+        # Verifica limpeza do campo numero em celulares
+        mock_cur.execute.assert_any_call(
+            "UPDATE celulares SET numero = NULL WHERE id_ativo = %s",
+            ("CL-CEN-APO-11",),
+        )
+
+    @patch("blueprints.celulares.fetch_one")
+    def test_atribuir_linha_troca_chip_libera_antigo(self, mock_fetch_one):
+        from blueprints.celulares import _atribuir_linha
+        mock_cur = MagicMock()
+        # 1. Busca funcionario -> 2. Busca linha -> 3. Busca atribuição atual
+        mock_fetch_one.side_effect = [
+            {"id": "func-uuid-1"},     # f_id
+            {"id": "chip-novo-uuid"},   # l_id novo
+            {"id": "attr-antiga", "linha_id": "chip-antigo-uuid", "funcionario_id": "func-uuid-1"}, # atribuição atual
+        ]
+
+        _atribuir_linha(mock_cur, "CL-CEN-ADM-01", "(16) 99999-0000", "João Silva")
+
+        # Verifica que a linha antiga foi liberada para Disponível
+        mock_cur.execute.assert_any_call(
+            "UPDATE linhas_celular SET status = 'Disponível' WHERE id = %s",
+            ("chip-antigo-uuid",),
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

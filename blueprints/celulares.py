@@ -48,11 +48,13 @@ def _mask_telefones(rows: list[dict]) -> list[dict]:
 def _atribuir_linha(cur, id_ativo: str, numero: str | None, responsavel: str | None, data_entrega: Any = None) -> None:
     """Garante que a linha atual no histórico corresponda ao responsavel e numero informados."""
     if not numero or not responsavel:
+        desvincular_linha_para_estoque(cur, id_ativo)
         return
         
     numero = str(numero).strip()
     responsavel = str(responsavel).strip()
     if not numero or not responsavel:
+        desvincular_linha_para_estoque(cur, id_ativo)
         return
         
     # 1. Garante que Funcionario existe
@@ -77,15 +79,21 @@ def _atribuir_linha(cur, id_ativo: str, numero: str | None, responsavel: str | N
             return # Nada mudou, já está atribuído corretamente
         # Mudou! Então encerra a atribuição atual
         cur.execute("UPDATE atribuicoes_linha SET data_devolucao = NOW() WHERE id = %s", (atual["id"],))
+        # Se a linha antiga for diferente da nova, libera a linha antiga
+        if str(atual["linha_id"]) != str(l_id):
+            cur.execute("UPDATE linhas_celular SET status = 'Disponível' WHERE id = %s", (atual["linha_id"],))
+            
+    # 4. Encerra qualquer atribuição anterior desta mesma linha em outro aparelho
+    cur.execute("UPDATE atribuicoes_linha SET data_devolucao = NOW() WHERE linha_id = %s AND data_devolucao IS NULL AND id_ativo != %s", (l_id, id_ativo))
         
-    # 4. Cria a nova atribuição
+    # 5. Cria a nova atribuição
     cur.execute(
         "INSERT INTO atribuicoes_linha (linha_id, funcionario_id, id_ativo, data_inicio) VALUES (%s, %s, %s, COALESCE(%s, NOW()))",
         (l_id, f_id, id_ativo, data_entrega)
     )
 
 def desvincular_linha_para_estoque(cur, id_ativo: str) -> None:
-    """Desvincula a linha de um ativo e a coloca como Disponível (usado em devolução/descarte)."""
+    """Desvincula a linha de um ativo e a coloca como Disponível (usado em devolução/descarte/estoque)."""
     # Descobre qual linha está ativa
     atual = fetch_one(cur, "SELECT id, linha_id FROM atribuicoes_linha WHERE id_ativo = %s AND data_devolucao IS NULL", (id_ativo,))
     if atual:
@@ -93,6 +101,8 @@ def desvincular_linha_para_estoque(cur, id_ativo: str) -> None:
         cur.execute("UPDATE atribuicoes_linha SET data_devolucao = NOW() WHERE id = %s", (atual["id"],))
         # Passa chip para Disponível
         cur.execute("UPDATE linhas_celular SET status = 'Disponível' WHERE id = %s", (atual["linha_id"],))
+    # Limpa o campo numero na tabela celulares
+    cur.execute("UPDATE celulares SET numero = NULL WHERE id_ativo = %s", (id_ativo,))
 
 def repassar_linha_para_novo_responsavel(cur, id_ativo: str, novo_responsavel: str, data_entrega: Any = None) -> None:
     """Mantém o chip no aparelho, mas troca o responsável."""

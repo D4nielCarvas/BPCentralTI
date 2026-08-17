@@ -417,6 +417,54 @@
     {v: 'COA', l: 'COA (COA)'}, {v: 'RH', l: 'RH (RH)'}
   ];
 
+  function chipNumeroField(d) {
+    return fld('Número / Linha (Chip)', `
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; gap:6px; align-items:center;">
+          <input type="text" name="numero" id="input-cel-numero" value="${d.numero || ''}" placeholder="(16) 99999-1234" style="flex:1; padding:8px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:inherit; font-size:13px; outline:none;">
+          <button type="button" onclick="limparNumeroChip()" title="Limpar / Sem Chip" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; color:var(--text2); cursor:pointer; font-size:12px;">❌</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:11px; color:var(--text2); white-space:nowrap;">📶 Chip:</span>
+          <select id="select-chips-disp" onchange="onSelectChipDisponivel(this)" style="font-size:11px; padding:5px 8px; flex:1; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text);">
+            <option value="">Carregando chips disponíveis...</option>
+          </select>
+        </div>
+      </div>
+    `);
+  }
+
+  async function loadChipsDisponiveis() {
+    const sel = document.getElementById('select-chips-disp');
+    if (!sel) return;
+    try {
+      const res = await fetch('/api/chips?status=Disponível').then(r => r.json());
+      if (Array.isArray(res)) {
+        if (res.length === 0) {
+          sel.innerHTML = '<option value="">Nenhum chip com status "Disponível"</option>';
+        } else {
+          sel.innerHTML = `<option value="">-- Escolha um chip disponível (${res.length}) --</option>` +
+            res.map(c => `<option value="${c.numero}">${c.numero} (Disponível)</option>`).join('');
+        }
+      }
+    } catch (e) {
+      sel.innerHTML = '<option value="">Erro ao carregar chips</option>';
+    }
+  }
+
+  function onSelectChipDisponivel(sel) {
+    if (!sel || !sel.value) return;
+    const inp = document.getElementById('input-cel-numero');
+    if (inp) inp.value = sel.value;
+  }
+
+  function limparNumeroChip() {
+    const inp = document.getElementById('input-cel-numero');
+    if (inp) inp.value = '';
+    const sel = document.getElementById('select-chips-disp');
+    if (sel) sel.value = '';
+  }
+
   function _buildForm(tipoApi, d) {
     // Campos comuns a todos os tipos
     const common = `
@@ -446,12 +494,12 @@
       return common + `
         ${fld('Função', inp('funcao', d.funcao, 'Operador, Supervisor...'))}
         ${fld('Gmail ClockIn', inp('gmail_clockin', d.gmail_clockin))}
-        ${fld('Número', inp('numero', d.numero, '(16) 99999-1234'))}
+        ${chipNumeroField(d)}
       `;
     }
     if (tipoApi === 'celular') {
       return common + `
-        ${fld('Número', inp('numero', d.numero, '(16) 99999-1234'))}
+        ${chipNumeroField(d)}
         ${fld('Gmail', inp('gmail', d.gmail))}
         ${fld('Cargo', inp('cargo', d.cargo))}
       `;
@@ -480,6 +528,9 @@
       document.getElementById('edit-modal-body').innerHTML = _buildForm(tipoApi, data);
       const ov = document.getElementById('edit-modal-overlay');
       ov.style.display = 'flex';
+      if (tipoApi === 'celular' || tipoApi === 'celular_ponto') {
+        loadChipsDisponiveis();
+      }
     } catch(e) {
       alert('❌ Erro ao carregar dados: ' + e.message);
     }

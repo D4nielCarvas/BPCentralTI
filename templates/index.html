@@ -1660,6 +1660,23 @@
       );
     }
 
+    function chipNumeroField(d) {
+      return fld('Número / Linha (Chip)', `
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex; gap:6px; align-items:center;">
+            <input name="numero" id="input-cel-numero" value="${d?.numero || ''}" list="chips-disponiveis" placeholder="(16) 99999-1234" oninput="formatPhone(this)" style="flex:1;">
+            <button type="button" class="btn btn-ghost btn-xs" onclick="limparNumeroChip()" title="Limpar / Sem Chip" style="padding:6px 8px; font-size:12px;">❌ Limpar</button>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:11px; color:var(--text2); white-space:nowrap;">📶 Selecionar Chip:</span>
+            <select id="select-chips-disp" onchange="onSelectChipDisponivel(this)" style="font-size:11px; padding:5px 8px; flex:1; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text);">
+              <option value="">Carregando chips disponíveis...</option>
+            </select>
+          </div>
+        </div>
+      `);
+    }
+
     function commonCelFields(d) {
       return `
     ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo || ''}" ${d ? 'readonly' : 'required'} placeholder="CL-XXX-XXX-01">`)}
@@ -1668,7 +1685,7 @@
     ${setorSelect(d)}
     ${fld('Tipo', `<input name="tipo" value="${d?.tipo || ''}" placeholder="Smartphone, Tablet..." oninput="triggerIdSuggestion()">`)}
     ${fld('Modelo', `<input name="modelo" value="${d?.modelo || ''}" placeholder="Samsung Galaxy A54">`)}
-    ${fld('Número', `<input name="numero" value="${d?.numero || ''}" list="chips-disponiveis" placeholder="(16) 99999-1234" oninput="formatPhone(this)">`)}
+    ${chipNumeroField(d)}
     ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel || ''}">`)}
     ${fld('Cargo', `<input name="cargo" value="${d?.cargo || ''}" placeholder="Ex: Analista, Gerente">`)}
     ${fld('IMEI 1', `<input name="imei_1" value="${d?.imei_1 || ''}" placeholder="000000000000000">`)}
@@ -1683,23 +1700,49 @@
     ${fld('Usuário Anterior', `<input name="usuario_anterior" value="${d?.usuario_anterior || ''}">`)}`;
     }
 
-    async function loadChipsDisponiveis() {
+    async function loadChipsDisponiveis(currentNum = '') {
       let dl = document.getElementById('chips-disponiveis');
       if (!dl) {
         dl = document.createElement('datalist');
         dl.id = 'chips-disponiveis';
         document.body.appendChild(dl);
       }
+      const sel = document.getElementById('select-chips-disp');
       try {
         const res = await api('/api/chips?status=Disponível');
         if (Array.isArray(res)) {
-            dl.innerHTML = res.map(c => `<option value="${c.numero}">`).join('');
+          dl.innerHTML = res.map(c => `<option value="${c.numero}">`).join('');
+          if (sel) {
+            if (res.length === 0) {
+              sel.innerHTML = '<option value="">Nenhum chip com status "Disponível"</option>';
+            } else {
+              sel.innerHTML = `<option value="">-- Escolha um chip disponível (${res.length}) --</option>` +
+                res.map(c => `<option value="${c.numero}">${c.numero} (Disponível)</option>`).join('');
+            }
+          }
         }
-      } catch (e) {}
+      } catch (e) {
+        if (sel) sel.innerHTML = '<option value="">Erro ao carregar lista de chips</option>';
+      }
+    }
+
+    function onSelectChipDisponivel(sel) {
+      if (!sel || !sel.value) return;
+      const inp = document.getElementById('input-cel-numero');
+      if (inp) {
+        inp.value = sel.value;
+        formatPhone(inp);
+      }
+    }
+
+    function limparNumeroChip() {
+      const inp = document.getElementById('input-cel-numero');
+      if (inp) inp.value = '';
+      const sel = document.getElementById('select-chips-disp');
+      if (sel) sel.value = '';
     }
 
     function openCelularModal(d) {
-      loadChipsDisponiveis();
       const html = `<form id="modal-form">
     <div class="form-section"><h4>📋 Celular</h4><div class="form-grid">
       ${commonCelFields(d)}
@@ -1707,10 +1750,10 @@
       ${pwdField('senha', d, 'Senha Gmail', 'cel-senha')}
     </div></div></form>`;
       openModal(d ? `Editar Celular — ${d.id_ativo}` : 'Cadastrar Celular', html, { type: 'celulares', mode: d ? 'edit' : 'new', id: d?.id_ativo });
+      loadChipsDisponiveis(d?.numero);
     }
 
     function openCelularPontoModal(d) {
-      loadChipsDisponiveis();
       const html = `<form id="modal-form">
     <div class="form-section"><h4>🕐 Celular Ponto / Turma</h4><div class="form-grid">
       ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo || ''}" ${d ? 'readonly' : 'required'} placeholder="CL-XXX-PTO-01">`)}
@@ -1729,13 +1772,14 @@
       ${fld('Armazenamento', `<input name="armazenamento" value="${d?.armazenamento || ''}" placeholder="64GB">`)}
       ${fld('Carregador', st('carregador', d, ['Sim', 'Não']))}
       ${fld('Uso Celular', `<input name="uso_celular" value="${d?.uso_celular || ''}">`)}
-      ${fld('Número', `<input name="numero" value="${d?.numero || ''}" list="chips-disponiveis" oninput="formatPhone(this)" placeholder="(16) 99999-1234">`)}
+      ${chipNumeroField(d)}
       ${fld('Termo Assinado', st('termo_assinado', d, ['Sim', 'Não']))}
       ${fld('Data Entrega', `<input type="date" name="data_entrega" value="${d?.data_entrega || ''}">`)}
       ${fld('Data Devolução', `<input type="date" name="data_devolucao" value="${d?.data_devolucao || ''}">`)}
       ${fld('Usuário Anterior', `<input name="usuario_anterior" value="${d?.usuario_anterior || ''}">`)}
     </div></div></form>`;
       openModal(d ? `Editar Cel. Ponto — ${d.id_ativo}` : 'Cadastrar Celular Ponto', html, { type: 'celulares_ponto', mode: d ? 'edit' : 'new', id: d?.id_ativo });
+      loadChipsDisponiveis(d?.numero);
     }
 
     function openCelularInspecaoModal(d) {
