@@ -107,6 +107,8 @@ with app.app_context():
     init_pool(minconn=2, maxconn=10)
 
 import atexit
+import logging
+import logging.handlers
 atexit.register(close_pool)
 
 # ── Rate limiting (P12) ───────────────────────────────────────────────────────
@@ -348,18 +350,42 @@ def allowed_file(filename: str) -> bool:
 # FRONTEND
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# [FIX-8] RotatingFileHandler: limita crash.log a 5MB com 3 backups — evita crescimento ilimitado.
+_crash_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "inventario_crash.log")
+_crash_handler = logging.handlers.RotatingFileHandler(
+    _crash_file,
+    maxBytes=5 * 1024 * 1024,  # 5 MB
+    backupCount=3,
+    encoding="utf-8",
+)
+_crash_handler.setFormatter(logging.Formatter("%(message)s"))
+_crash_logger = logging.getLogger("inventario.crash")
+_crash_logger.setLevel(logging.ERROR)
+_crash_logger.addHandler(_crash_handler)
+_crash_logger.propagate = False
+
+
 @app.errorhandler(Exception)
 def handle_exception(e):
-    # Log safely to the current application directory
-    crash_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "inventario_crash.log")
+    from werkzeug.exceptions import HTTPException
+
+    # [FIX-2] HTTPExceptions (404, 405, etc.) são respostas HTTP normais —
+    # não devem ser logadas como crashes nem capturadas aqui.
+    # Antes: o crash.log acumulava >1800 linhas de erros 404 do /favicon.ico.
+    if isinstance(e, HTTPException):
+        return e
+
+    # Apenas erros reais (5xx) são registrados no crash log
     try:
-        with open(crash_file, "a", encoding="utf-8") as f:
-            f.write(f"\n--- {datetime.now().isoformat()} ---\n")
-            f.write(traceback.format_exc())
-            f.write(f"\nURL: {request.url}\n")
+        _crash_logger.error(
+            "\n--- %s ---\n%s\nURL: %s",
+            datetime.now().isoformat(),
+            traceback.format_exc(),
+            request.url,
+        )
     except Exception as log_err:
         print(f"Failed to write crash log: {log_err}")
-    
+
     # P2 CORRIGIDO: Retorna traceback apenas se FLASK_ENV=development ou debug=True
     is_dev = app.debug or os.environ.get("FLASK_ENV") == "development"
     if is_dev:

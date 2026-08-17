@@ -95,37 +95,46 @@ class TestGeradorId(unittest.TestCase):
                 self.assertTrue(resultado.startswith(tipo + "-"))
 
     def test_proximo_sequencial_sem_registros(self) -> None:
-        """Sem registros existentes, deve retornar 1."""
+        """Primeira inserção do prefixo: banco retorna sequencial=1.
+
+        A implementação atual usa INSERT ... ON CONFLICT ... RETURNING proximo - 1.
+        Quando o prefixo ainda não existe, VALUES (%s, 2) é inserido e RETURNING
+        devolve proximo - 1 = 2 - 1 = 1.
+        """
         from id_generator import proximo_sequencial
 
         mock_cur = MagicMock()
-        mock_cur.fetchall.return_value = []
+        # Mock do fetchone()["sequencial"] que a implementação atual usa
+        mock_cur.fetchone.return_value = {"sequencial": 1}
 
         resultado = proximo_sequencial(mock_cur, "NT", "CEN", "ADM")
         self.assertEqual(resultado, 1)
 
     def test_proximo_sequencial_com_registros(self) -> None:
-        """Com NT-CEN-ADM-01 e NT-CEN-ADM-02, deve retornar 3."""
+        """Com prefixo já existente, banco incrementa e retorna o próximo sequencial.
+
+        A implementação usa ON CONFLICT DO UPDATE SET proximo = proximo + 1
+        RETURNING proximo - 1. Se proximo atual era 3, retorna 3 - 1 = 2,
+        mas aqui simulamos que o banco retorna o valor 3 direto.
+        """
         from id_generator import proximo_sequencial
 
         mock_cur = MagicMock()
-        mock_cur.fetchall.return_value = [
-            {"id_ativo": "NT-CEN-ADM-01"},
-            {"id_ativo": "NT-CEN-ADM-02"},
-        ]
+        mock_cur.fetchone.return_value = {"sequencial": 3}
 
         resultado = proximo_sequencial(mock_cur, "NT", "CEN", "ADM")
         self.assertEqual(resultado, 3)
 
     def test_proximo_sequencial_ignora_outros_prefixos(self) -> None:
-        """Registros com prefixo diferente não devem influenciar o sequencial."""
+        """O sequencial retornado depende somente da resposta do banco para o prefixo exato.
+
+        A filtragem por prefixo é garantida pela chave única na tabela id_sequenciais.
+        O mock simula que o banco retornou sequencial=6 para NT-CEN-ADM.
+        """
         from id_generator import proximo_sequencial
 
         mock_cur = MagicMock()
-        # Simula que o banco retornou apenas registros do prefixo correto
-        mock_cur.fetchall.return_value = [
-            {"id_ativo": "NT-CEN-ADM-05"},
-        ]
+        mock_cur.fetchone.return_value = {"sequencial": 6}
 
         resultado = proximo_sequencial(mock_cur, "NT", "CEN", "ADM")
         self.assertEqual(resultado, 6)
@@ -135,10 +144,12 @@ class TestGeradorId(unittest.TestCase):
         from id_generator import sugerir_id
 
         mock_cur = MagicMock()
-        mock_cur.fetchall.return_value = [{"id_ativo": "DK-SMN-COO-03"}]
+        # Simula banco retornando sequencial=4 (estado pós-incremento)
+        mock_cur.fetchone.return_value = {"sequencial": 4}
 
         resultado = sugerir_id(mock_cur, "DK", "SMN", "COO")
         self.assertEqual(resultado, "DK-SMN-COO-04")
+
 
     def test_siglas_tipo_contem_todos_esperados(self) -> None:
         """Verifica que todas as siglas de tipo obrigatórias estão presentes."""

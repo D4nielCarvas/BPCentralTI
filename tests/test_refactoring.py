@@ -132,31 +132,49 @@ class TestDbLayer:
 class TestMovimentarEstoque:
     """Testa a correção da race condition em movimentar_estoque."""
 
-    def test_usa_for_update_na_query(self, client, app):
+    def _set_admin_session(self, client):
+        """Injeta sessão de admin no cliente de teste para passar pelo @admin_required."""
+        with client.session_transaction() as sess:
+            sess["usuario_id"] = 1
+            sess["role"] = "admin"
+            sess["is_admin_master"] = True
+
+    def test_usa_for_update_na_query(self, client):
         """A query SQL deve conter FOR UPDATE."""
-        _, _, mock_conn, mock_cur = app
+        self._set_admin_session(client)
 
-        # Simula item encontrado com quantidade=10
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_conn.__enter__ = lambda s: mock_conn
+        mock_conn.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value.__enter__ = lambda s: mock_cur
+        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
         mock_cur.fetchone.return_value = {"id": 1, "quantidade": 10}
-        mock_cur.execute = MagicMock()
 
-        with patch("app.get_db") as mock_ctx:
-            mock_ctx.return_value.__enter__ = lambda s: mock_conn
-            mock_ctx.return_value.__exit__ = MagicMock(return_value=False)
-
+        with patch("blueprints.api_estoque.get_db") as mock_get_db:
+            mock_get_db.return_value = mock_conn
             response = client.post(
                 "/api/estoque/1/movimentar",
                 json={"tipo": "saida", "quantidade": 3, "motivo": "teste"},
             )
 
-        # Verifica que FOR UPDATE foi usado
+        assert response.status_code == 200
+        # Verifica que FOR UPDATE foi usado em alguma das chamadas a execute()
         calls_sql = [str(c) for c in mock_cur.execute.call_args_list]
         assert any("FOR UPDATE" in sql for sql in calls_sql), (
-            "SELECT deve usar FOR UPDATE para evitar race condition"
+            f"SELECT deve usar FOR UPDATE para evitar race condition. "
+            f"Calls registradas: {calls_sql}"
         )
 
+
     def test_rejeita_tipo_invalido(self, client):
-        """tipo diferente de 'entrada'/'saida' deve retornar 400."""
+        """tipo diferente de 'entrada'/'saida' deve retornar 400.
+
+        [FIX] Injeta sessão de admin — sem isso @admin_required retorna 302.
+        A validação do payload ocorre ANTES da query ao banco, portanto
+        este teste não precisa mockar o pool.
+        """
+        self._set_admin_session(client)
         response = client.post(
             "/api/estoque/1/movimentar",
             json={"tipo": "cancelar", "quantidade": 1},
@@ -166,6 +184,7 @@ class TestMovimentarEstoque:
 
     def test_rejeita_quantidade_zero(self, client):
         """quantidade=0 deve retornar 400."""
+        self._set_admin_session(client)
         response = client.post(
             "/api/estoque/1/movimentar",
             json={"tipo": "saida", "quantidade": 0},
@@ -174,6 +193,7 @@ class TestMovimentarEstoque:
 
     def test_rejeita_quantidade_negativa(self, client):
         """quantidade negativa deve retornar 400."""
+        self._set_admin_session(client)
         response = client.post(
             "/api/estoque/1/movimentar",
             json={"tipo": "saida", "quantidade": -5},
@@ -182,6 +202,7 @@ class TestMovimentarEstoque:
 
     def test_rejeita_quantidade_nao_numerica(self, client):
         """quantidade não numérica deve retornar 400."""
+        self._set_admin_session(client)
         response = client.post(
             "/api/estoque/1/movimentar",
             json={"tipo": "entrada", "quantidade": "abc"},

@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 
 from utils.auth_utils import get_localidade_filter, get_usuario_id, viewer_required
 from utils.db_layer import acquire_conn, fetch_all, fetch_one
+from app import limiter  # [FIX-5] necessário para reativar rate limit no poll
 import psycopg2
 
 chamados_bp = Blueprint("chamados", __name__, url_prefix="/fazenda/chamados")
@@ -408,7 +409,7 @@ def movimentacao_equipamento(chamado_id: int):
 
 
 @chamados_bp.route("/<int:chamado_id>/poll")
-# limiter.limit("60/minute")  # P12: rate limiting
+@limiter.limit("60/minute")  # [FIX-5] rate limit reativado — previne DoS ao banco via polling em loop
 def poll_chamado(chamado_id: int):
     """Retorna as mensagens do chamado como JSON para o cliente fazer polling."""
     if not session.get("usuario_id"):

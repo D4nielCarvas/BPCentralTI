@@ -20,13 +20,14 @@ def criar_descarte() -> Response:
     """Registra o descarte de um ativo e atualiza seu status na tabela de origem."""
     d = request.json
     tabela_map = {
-        "Celular":          "celulares",
-        "Celular Ponto":    "celulares_ponto",
-        "Celular Turma":    "celulares_turma",
-        "Computador":       "computadores",
-        "Impressora":       "impressoras",
-        "Estabilizador":    "estabilizadores",
-        "Starlink":         "starlink",
+        "Celular":           "celulares",
+        "Celular Ponto":     "celulares_ponto",
+        "Celular Turma":     "celulares_turma",
+        "Celular Inspeção":  "celulares_inspecao",  # [FIX-4] estava ausente — status nunca era atualizado para 'Descartado'
+        "Computador":        "computadores",
+        "Impressora":        "impressoras",
+        "Estabilizador":     "estabilizadores",
+        "Starlink":          "starlink",
     }
     with acquire_conn() as conn:
         with conn.cursor() as cur:
