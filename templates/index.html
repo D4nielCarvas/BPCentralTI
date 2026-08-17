@@ -1668,7 +1668,7 @@
     ${setorSelect(d)}
     ${fld('Tipo', `<input name="tipo" value="${d?.tipo || ''}" placeholder="Smartphone, Tablet..." oninput="triggerIdSuggestion()">`)}
     ${fld('Modelo', `<input name="modelo" value="${d?.modelo || ''}" placeholder="Samsung Galaxy A54">`)}
-    ${fld('Número', `<input name="numero" value="${d?.numero || ''}" placeholder="(16) 99999-1234" oninput="formatPhone(this)">`)}
+    ${fld('Número', `<input name="numero" value="${d?.numero || ''}" list="chips-disponiveis" placeholder="(16) 99999-1234" oninput="formatPhone(this)">`)}
     ${fld('Responsável', `<input name="responsavel" value="${d?.responsavel || ''}">`)}
     ${fld('Cargo', `<input name="cargo" value="${d?.cargo || ''}" placeholder="Ex: Analista, Gerente">`)}
     ${fld('IMEI 1', `<input name="imei_1" value="${d?.imei_1 || ''}" placeholder="000000000000000">`)}
@@ -1683,7 +1683,23 @@
     ${fld('Usuário Anterior', `<input name="usuario_anterior" value="${d?.usuario_anterior || ''}">`)}`;
     }
 
+    async function loadChipsDisponiveis() {
+      let dl = document.getElementById('chips-disponiveis');
+      if (!dl) {
+        dl = document.createElement('datalist');
+        dl.id = 'chips-disponiveis';
+        document.body.appendChild(dl);
+      }
+      try {
+        const res = await api('/api/chips?status=Disponível');
+        if (Array.isArray(res)) {
+            dl.innerHTML = res.map(c => `<option value="${c.numero}">`).join('');
+        }
+      } catch (e) {}
+    }
+
     function openCelularModal(d) {
+      loadChipsDisponiveis();
       const html = `<form id="modal-form">
     <div class="form-section"><h4>📋 Celular</h4><div class="form-grid">
       ${commonCelFields(d)}
@@ -1694,6 +1710,7 @@
     }
 
     function openCelularPontoModal(d) {
+      loadChipsDisponiveis();
       const html = `<form id="modal-form">
     <div class="form-section"><h4>🕐 Celular Ponto / Turma</h4><div class="form-grid">
       ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo || ''}" ${d ? 'readonly' : 'required'} placeholder="CL-XXX-PTO-01">`)}
@@ -1712,7 +1729,7 @@
       ${fld('Armazenamento', `<input name="armazenamento" value="${d?.armazenamento || ''}" placeholder="64GB">`)}
       ${fld('Carregador', st('carregador', d, ['Sim', 'Não']))}
       ${fld('Uso Celular', `<input name="uso_celular" value="${d?.uso_celular || ''}">`)}
-      ${fld('Número', `<input name="numero" value="${d?.numero || ''}" oninput="formatPhone(this)" placeholder="(16) 99999-1234">`)}
+      ${fld('Número', `<input name="numero" value="${d?.numero || ''}" list="chips-disponiveis" oninput="formatPhone(this)" placeholder="(16) 99999-1234">`)}
       ${fld('Termo Assinado', st('termo_assinado', d, ['Sim', 'Não']))}
       ${fld('Data Entrega', `<input type="date" name="data_entrega" value="${d?.data_entrega || ''}">`)}
       ${fld('Data Devolução', `<input type="date" name="data_devolucao" value="${d?.data_devolucao || ''}">`)}

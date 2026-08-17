@@ -11,6 +11,7 @@ _STATUS_VALIDOS = {"Disponível", "Em Uso", "Perdido", "Cancelado"}
 def listar_chips() -> Response:
     """Lista todas as linhas (chips) e sua alocação atual."""
     busca = request.args.get("q", "").strip()
+    status = request.args.get("status", "").strip()
 
     query = """
         SELECT
@@ -23,6 +24,10 @@ def listar_chips() -> Response:
         WHERE 1=1
     """
     params: list = []
+
+    if status:
+        query += " AND l.status = %s"
+        params.append(status)
 
     if busca:
         query += " AND (l.numero ILIKE %s OR f.nome ILIKE %s OR a.id_ativo ILIKE %s)"

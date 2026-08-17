@@ -62,8 +62,8 @@ def _atribuir_linha(cur, id_ativo: str, numero: str | None, responsavel: str | N
         return
     f_id = f_id_row["id"]
     
-    # 2. Garante que Linha existe
-    cur.execute("INSERT INTO linhas_celular (numero) VALUES (%s) ON CONFLICT (numero) DO NOTHING RETURNING id", (numero,))
+    # 2. Garante que Linha existe (e marca como Em Uso)
+    cur.execute("INSERT INTO linhas_celular (numero, status) VALUES (%s, 'Em Uso') ON CONFLICT (numero) DO UPDATE SET status = 'Em Uso' RETURNING id", (numero,))
     l_id_row = fetch_one(cur, "SELECT id FROM linhas_celular WHERE numero = %s", (numero,))
     if not l_id_row:
         return
@@ -82,6 +82,45 @@ def _atribuir_linha(cur, id_ativo: str, numero: str | None, responsavel: str | N
     cur.execute(
         "INSERT INTO atribuicoes_linha (linha_id, funcionario_id, id_ativo, data_inicio) VALUES (%s, %s, %s, COALESCE(%s, NOW()))",
         (l_id, f_id, id_ativo, data_entrega)
+    )
+
+def desvincular_linha_para_estoque(cur, id_ativo: str) -> None:
+    """Desvincula a linha de um ativo e a coloca como Disponível (usado em devolução/descarte)."""
+    # Descobre qual linha está ativa
+    atual = fetch_one(cur, "SELECT id, linha_id FROM atribuicoes_linha WHERE id_ativo = %s AND data_devolucao IS NULL", (id_ativo,))
+    if atual:
+        # Encerra atribuição
+        cur.execute("UPDATE atribuicoes_linha SET data_devolucao = NOW() WHERE id = %s", (atual["id"],))
+        # Passa chip para Disponível
+        cur.execute("UPDATE linhas_celular SET status = 'Disponível' WHERE id = %s", (atual["linha_id"],))
+
+def repassar_linha_para_novo_responsavel(cur, id_ativo: str, novo_responsavel: str, data_entrega: Any = None) -> None:
+    """Mantém o chip no aparelho, mas troca o responsável."""
+    if not novo_responsavel or not novo_responsavel.strip():
+        return
+        
+    atual = fetch_one(cur, "SELECT id, linha_id, funcionario_id FROM atribuicoes_linha WHERE id_ativo = %s AND data_devolucao IS NULL", (id_ativo,))
+    if not atual:
+        return # Aparelho não tem linha ativa, não faz nada
+        
+    novo_resp_limpo = novo_responsavel.strip()
+    # Garante novo funcionario
+    cur.execute("INSERT INTO funcionarios (nome) VALUES (%s) ON CONFLICT (nome) DO NOTHING RETURNING id", (novo_resp_limpo,))
+    f_id_row = fetch_one(cur, "SELECT id FROM funcionarios WHERE nome = %s", (novo_resp_limpo,))
+    if not f_id_row:
+        return
+    f_id = f_id_row["id"]
+    
+    if str(atual["funcionario_id"]) == str(f_id):
+        return # Já está com essa pessoa
+        
+    # Encerra atual
+    cur.execute("UPDATE atribuicoes_linha SET data_devolucao = NOW() WHERE id = %s", (atual["id"],))
+    
+    # Inicia a nova, mantendo a mesma linha_id
+    cur.execute(
+        "INSERT INTO atribuicoes_linha (linha_id, funcionario_id, id_ativo, data_inicio) VALUES (%s, %s, %s, COALESCE(%s, NOW()))",
+        (atual["linha_id"], f_id, id_ativo, data_entrega)
     )
 
 

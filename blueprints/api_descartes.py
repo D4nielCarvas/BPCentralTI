@@ -48,5 +48,10 @@ def criar_descarte() -> Response:
                     f"UPDATE {tabela} SET status='Descartado' WHERE id_ativo=%s",
                     (d["id_ativo"],),
                 )
+                
+            if d["tipo_equipamento"] in ("Celular", "Celular Ponto", "Celular Turma", "Celular Inspeção"):
+                from blueprints.celulares import desvincular_linha_para_estoque
+                desvincular_linha_para_estoque(cur, d["id_ativo"])
+                
             log_historico(cur, d["id_ativo"], d["tipo_equipamento"], "Descarte")
     return jsonify({"ok": True, "msg": "Descarte registrado!"})
