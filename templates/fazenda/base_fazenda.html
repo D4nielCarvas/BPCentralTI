@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,344 +10,357 @@
   {% block head %}{% endblock %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
 </head>
+
 <body>
 
-<!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
-<div id="sidebar">
-  <div class="sidebar-logo" style="position: relative;">
-    <div class="logo-icon">🖥️</div>
-    <h1>BP Central TI</h1>
-    <p>v3.0 · Portal Fazenda</p>
-    <a href="{{ url_for('auth.logout') }}" style="position: absolute; top: 20px; right: 20px; color:var(--red); text-decoration:none; font-size:12px; font-weight:bold;">⏻ Sair</a>
-  </div>
-
-  {% if session.usuario_nome %}
-  <div class="sidebar-user">
-    <div class="user-avatar">{{ session.usuario_nome[0] | upper }}</div>
-    <div class="user-info">
-      <div class="user-name">{{ session.usuario_nome }}</div>
-      <div class="user-role">{{ session.role }}</div>
+  <!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
+  <div id="sidebar">
+    <div class="sidebar-logo" style="position: relative;">
+      <div class="logo-icon">🖥️</div>
+      <h1>BP Central TI</h1>
+      <p>v3.0 · Portal Fazenda</p>
+      <a href="{{ url_for('auth.logout') }}"
+        style="position: absolute; top: 20px; right: 20px; color:var(--red); text-decoration:none; font-size:12px; font-weight:bold;">⏻
+        Sair</a>
     </div>
-  </div>
-  {% endif %}
 
-  <nav>
-    <div class="nav-label">Portal Fazenda</div>
-    {% if session.role != 'apoio' %}
-    <a href="{{ url_for('fazenda.listar_itens') }}"
-       class="nav-item {% if request.endpoint == 'fazenda.listar_itens' %}active{% endif %}">
-      <span class="icon">💻</span> Equipamentos
-    </a>
-    <a href="{{ url_for('fazenda.listar_estoque') }}"
-       class="nav-item {% if request.endpoint == 'fazenda.listar_estoque' %}active{% endif %}">
-      <span class="icon">📦</span> Estoque
-    </a>
-    {% endif %}
-    <a href="{{ url_for('fazenda.listar_manutencoes') }}"
-       class="nav-item {% if request.endpoint == 'fazenda.listar_manutencoes' %}active{% endif %}">
-      <span class="icon">🔧</span> Manutenções
-    </a>
-    <a href="{{ url_for('fazenda.listar_pedidos') }}"
-       class="nav-item {% if request.endpoint in ['fazenda.listar_pedidos','fazenda.detalhe_pedido'] %}active{% endif %}">
-      <span class="icon">📋</span> Meus Pedidos
-    </a>
-    <a href="{{ url_for('chamados.listar_chamados') }}"
-       class="nav-item {% if request.endpoint and 'chamados' in request.endpoint and not request.endpoint.startswith('admin') %}active{% endif %}">
-      <span class="icon">🎫</span> Suporte TI
-    </a>
-
-    <div class="nav-label">Ajuda</div>
-    <a href="{{ url_for('fazenda.tutoriais') }}"
-       class="nav-item {% if request.endpoint == 'fazenda.tutoriais' %}active{% endif %}">
-      <span class="icon">🎓</span> Tutoriais
-    </a>
-
-    {% if session.role == 'apoio' %}
-    <div class="nav-label" style="margin-top:8px">Administração</div>
-    <a href="{{ url_for('apoio.celulares_inspecao') }}"
-       class="nav-item {% if request.endpoint == 'apoio.celulares_inspecao' %}active{% endif %}"
-       style="color:var(--cyan)">
-      <span class="icon">📱</span> Celulares de Inspeção
-    </a>
-    {% endif %}
-
-    {% if session.role == 'admin' %}
-    <div class="nav-label" style="margin-top:8px">Administração</div>
-    <a href="{{ url_for('admin_pedidos.listar_pedidos_admin') }}"
-       class="nav-item {% if request.endpoint and 'admin_pedidos' in request.endpoint %}active{% endif %}">
-      <span class="icon">📊</span> Todos os Pedidos
-    </a>
-    <a href="{{ url_for('admin_chamados.dashboard_chamados') }}"
-       class="nav-item {% if request.endpoint and 'admin_chamados.dashboard' in request.endpoint %}active{% endif %}">
-      <span class="icon">🛠️</span> Painel de Chamados
-    </a>
-    <a href="{{ url_for('admin_chamados.gerenciar_modelos') }}"
-       class="nav-item {% if request.endpoint and 'admin_chamados.gerenciar_modelos' in request.endpoint %}active{% endif %}">
-      <span class="icon">📝</span> Modelos de Chamados
-    </a>
-    <a href="{{ url_for('admin.listar_usuarios') }}"
-       class="nav-item {% if request.endpoint and request.endpoint == 'admin.listar_usuarios' %}active{% endif %}">
-      <span class="icon">👥</span> Usuários
-    </a>
-    <a href="{{ url_for('admin.listar_perfis') }}"
-       class="nav-item {% if request.endpoint and 'perfil' in (request.endpoint or '') %}active{% endif %}">
-      <span class="icon">🔐</span> Cargos e Permissões
-    </a>
-    <a href="/" class="nav-item">
-      <span class="icon">🏠</span> Painel Principal
-    </a>
-    {% endif %}
-  </nav>
-
-
-</div>
-
-<!-- ── Main Content ───────────────────────────────────────────────────────── -->
-<div id="main">
-  <div id="topbar">
-    <button class="btn btn-ghost mobile-only" id="mobile-menu-btn" style="margin-right: 12px; padding: 4px 10px;" onclick="document.getElementById('sidebar').style.display = document.getElementById('sidebar').style.display === 'flex' ? 'none' : 'flex'">
-      ☰
-    </button>
-    <h2>{% block page_title %}{% endblock %}</h2>
-    <div style="flex:1"></div>
-    {% block topbar_actions %}{% endblock %}
-
-    {% if session.role == 'admin' %}
-    <div style="position:relative;">
-      <div class="notif-bell" onclick="document.getElementById('notif-dropdown').classList.toggle('show')">
-        🔔
-        {% if qtd_notificacoes > 0 %}
-        <div class="notif-badge">{{ qtd_notificacoes }}</div>
-        {% endif %}
+    {% if session.usuario_nome %}
+    <div class="sidebar-user">
+      <div class="user-avatar">{{ session.usuario_nome[0] | upper }}</div>
+      <div class="user-info">
+        <div class="user-name">{{ session.usuario_nome }}</div>
+        <div class="user-role">{{ session.role }}</div>
       </div>
-      
-      <div id="notif-dropdown" class="notif-dropdown">
-        <div class="notif-header">
-          <span>Notificações</span>
+    </div>
+    {% endif %}
+
+    <nav>
+      <div class="nav-label">Portal Fazenda</div>
+      {% if session.role != 'apoio' %}
+      <a href="{{ url_for('fazenda.listar_itens') }}"
+        class="nav-item {% if request.endpoint == 'fazenda.listar_itens' %}active{% endif %}">
+        <span class="icon">💻</span> Equipamentos
+      </a>
+      <a href="{{ url_for('fazenda.listar_estoque') }}"
+        class="nav-item {% if request.endpoint == 'fazenda.listar_estoque' %}active{% endif %}">
+        <span class="icon">📦</span> Estoque
+      </a>
+      {% endif %}
+      <a href="{{ url_for('fazenda.listar_manutencoes') }}"
+        class="nav-item {% if request.endpoint == 'fazenda.listar_manutencoes' %}active{% endif %}">
+        <span class="icon">🔧</span> Manutenções
+      </a>
+      <a href="{{ url_for('fazenda.listar_pedidos') }}"
+        class="nav-item {% if request.endpoint in ['fazenda.listar_pedidos','fazenda.detalhe_pedido'] %}active{% endif %}">
+        <span class="icon">📋</span> Meus Pedidos
+      </a>
+      <a href="{{ url_for('chamados.listar_chamados') }}"
+        class="nav-item {% if request.endpoint and 'chamados' in request.endpoint and not request.endpoint.startswith('admin') %}active{% endif %}">
+        <span class="icon">🎫</span> Suporte TI
+      </a>
+
+      <div class="nav-label">Ajuda</div>
+      <a href="{{ url_for('fazenda.tutoriais') }}"
+        class="nav-item {% if request.endpoint == 'fazenda.tutoriais' %}active{% endif %}">
+        <span class="icon">🎓</span> Tutoriais
+      </a>
+
+      {% if session.role == 'apoio' %}
+      <div class="nav-label" style="margin-top:8px">Administração</div>
+      <a href="{{ url_for('apoio.celulares_inspecao') }}"
+        class="nav-item {% if request.endpoint == 'apoio.celulares_inspecao' %}active{% endif %}"
+        style="color:var(--cyan)">
+        <span class="icon">📱</span> Celulares de Inspeção
+      </a>
+      {% endif %}
+
+      {% if session.role == 'admin' %}
+      <div class="nav-label" style="margin-top:8px">Administração</div>
+      <a href="{{ url_for('admin_pedidos.listar_pedidos_admin') }}"
+        class="nav-item {% if request.endpoint and 'admin_pedidos' in request.endpoint %}active{% endif %}">
+        <span class="icon">📊</span> Todos os Pedidos
+      </a>
+      <a href="{{ url_for('admin_chamados.dashboard_chamados') }}"
+        class="nav-item {% if request.endpoint and 'admin_chamados.dashboard' in request.endpoint %}active{% endif %}">
+        <span class="icon">🛠️</span> Painel de Chamados
+      </a>
+      <a href="{{ url_for('admin_chamados.gerenciar_modelos') }}"
+        class="nav-item {% if request.endpoint and 'admin_chamados.gerenciar_modelos' in request.endpoint %}active{% endif %}">
+        <span class="icon">📝</span> Modelos de Chamados
+      </a>
+      <a href="{{ url_for('admin.listar_usuarios') }}"
+        class="nav-item {% if request.endpoint and request.endpoint == 'admin.listar_usuarios' %}active{% endif %}">
+        <span class="icon">👥</span> Usuários
+      </a>
+      <a href="{{ url_for('admin.listar_perfis') }}"
+        class="nav-item {% if request.endpoint and 'perfil' in (request.endpoint or '') %}active{% endif %}">
+        <span class="icon">🔐</span> Cargos e Permissões
+      </a>
+      <a href="/" class="nav-item">
+        <span class="icon">🏠</span> Painel Principal
+      </a>
+      {% endif %}
+    </nav>
+
+
+  </div>
+
+  <!-- ── Main Content ───────────────────────────────────────────────────────── -->
+  <div id="main">
+    <div id="topbar">
+      <button class="btn btn-ghost mobile-only" id="mobile-menu-btn" style="margin-right: 12px; padding: 4px 10px;"
+        onclick="document.getElementById('sidebar').style.display = document.getElementById('sidebar').style.display === 'flex' ? 'none' : 'flex'">
+        ☰
+      </button>
+      <h2>{% block page_title %}{% endblock %}</h2>
+      <div style="flex:1"></div>
+      {% block topbar_actions %}{% endblock %}
+
+      {% if session.role == 'admin' %}
+      <div style="position:relative;">
+        <div class="notif-bell" onclick="document.getElementById('notif-dropdown').classList.toggle('show')">
+          🔔
           {% if qtd_notificacoes > 0 %}
-          <span class="badge badge-desc">{{ qtd_notificacoes }}</span>
+          <div class="notif-badge">{{ qtd_notificacoes }}</div>
           {% endif %}
         </div>
-        <div class="notif-list">
-          {% if notificacoes_lista %}
+
+        <div id="notif-dropdown" class="notif-dropdown">
+          <div class="notif-header">
+            <span>Notificações</span>
+            {% if qtd_notificacoes > 0 %}
+            <span class="badge badge-desc">{{ qtd_notificacoes }}</span>
+            {% endif %}
+          </div>
+          <div class="notif-list">
+            {% if notificacoes_lista %}
             {% for notif in notificacoes_lista %}
             <a href="{{ url_for('admin_chamados.ler_notificacao', notif_id=notif.id) }}" class="notif-item">
               <div class="notif-item-title">{{ notif.mensagem }}</div>
               <div style="font-size:10px; color:var(--text3);">{{ notif.criado_em | fdt }}</div>
             </a>
             {% endfor %}
-          {% else %}
+            {% else %}
             <div class="notif-empty">Nenhuma notificação nova.</div>
-          {% endif %}
+            {% endif %}
+          </div>
         </div>
       </div>
-    </div>
-    <script>
-      document.addEventListener('click', function(event) {
-        var bell = document.querySelector('.notif-bell');
-        var dropdown = document.getElementById('notif-dropdown');
-        if (bell && dropdown) {
-          if (!bell.contains(event.target) && !dropdown.contains(event.target)) {
-            dropdown.classList.remove('show');
+      <script>
+        document.addEventListener('click', function (event) {
+          var bell = document.querySelector('.notif-bell');
+          var dropdown = document.getElementById('notif-dropdown');
+          if (bell && dropdown) {
+            if (!bell.contains(event.target) && !dropdown.contains(event.target)) {
+              dropdown.classList.remove('show');
+            }
           }
-        }
-      });
-    </script>
-    {% endif %}
-  </div>
+        });
+      </script>
+      {% endif %}
+    </div>
 
-  <div id="content">
-    {% if get_flashed_messages() %}
-    <div class="flash-container">
-      {% for category, message in get_flashed_messages(with_categories=true) %}
-      <div class="flash flash-{{ category }}">
-        {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'warning' %}⚠️{% else %}ℹ️{% endif %}
-        {{ message }}
+    <div id="content">
+      {% if get_flashed_messages() %}
+      <div class="flash-container">
+        {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="flash flash-{{ category }}">
+          {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'warning' %}⚠️{% else
+          %}ℹ️{% endif %}
+          {{ message }}
+        </div>
+        {% endfor %}
       </div>
-      {% endfor %}
+      {% endif %}
+
+      {% block content %}{% endblock %}
     </div>
-    {% endif %}
-
-    {% block content %}{% endblock %}
   </div>
-</div>
 
-{% if session.role == 'admin' or session.is_admin_master %}
-<script>
-  // ─── NOTIFICAÇÕES DESKTOP PUSH ───────────────────────────────────────────────
-  (function() {
-    let lastNotifId = parseInt(localStorage.getItem('lastNotifId')) || 0;
-    
-    if (!("Notification" in window)) return;
+  {% if session.role == 'admin' or session.is_admin_master %}
+  <script>
+    // ─── NOTIFICAÇÕES DESKTOP PUSH ───────────────────────────────────────────────
+    (function () {
+      let lastNotifId = parseInt(localStorage.getItem('lastNotifId')) || 0;
 
-    if (Notification.permission === "default") {
-      Notification.requestPermission();
-    }
+      if (!("Notification" in window)) return;
 
-    setInterval(async () => {
-      if (Notification.permission !== "granted") return;
-      try {
-        const res = await fetch('/api/notificacoes/poll');
-        const data = await res.json();
-        if (data.ok && data.notificacoes) {
-          // Atualiza a UI em tempo real
-          const totalUnread = data.notificacoes.length;
-          const bellIcon = document.querySelector('.notif-bell');
-          if (bellIcon) {
-            let badge = bellIcon.querySelector('.notif-badge');
-            if (totalUnread > 0) {
-              if (!badge) {
-                badge = document.createElement('div');
-                badge.className = 'notif-badge';
-                bellIcon.appendChild(badge);
+      if (Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+
+      setInterval(async () => {
+        if (Notification.permission !== "granted") return;
+        try {
+          const res = await fetch('/api/notificacoes/poll');
+          const data = await res.json();
+          if (data.ok && data.notificacoes) {
+            // Atualiza a UI em tempo real
+            const totalUnread = data.notificacoes.length;
+            const bellIcon = document.querySelector('.notif-bell');
+            if (bellIcon) {
+              let badge = bellIcon.querySelector('.notif-badge');
+              if (totalUnread > 0) {
+                if (!badge) {
+                  badge = document.createElement('div');
+                  badge.className = 'notif-badge';
+                  bellIcon.appendChild(badge);
+                }
+                badge.innerText = totalUnread;
+              } else if (badge) {
+                badge.remove();
               }
-              badge.innerText = totalUnread;
-            } else if (badge) {
-              badge.remove();
             }
-          }
 
-          const header = document.querySelector('.notif-header');
-          if (header) {
-            let badgeDesc = header.querySelector('.badge-desc');
-            if (totalUnread > 0) {
-              if (!badgeDesc) {
-                badgeDesc = document.createElement('span');
-                badgeDesc.className = 'badge badge-desc';
-                header.appendChild(badgeDesc);
+            const header = document.querySelector('.notif-header');
+            if (header) {
+              let badgeDesc = header.querySelector('.badge-desc');
+              if (totalUnread > 0) {
+                if (!badgeDesc) {
+                  badgeDesc = document.createElement('span');
+                  badgeDesc.className = 'badge badge-desc';
+                  header.appendChild(badgeDesc);
+                }
+                badgeDesc.innerText = totalUnread;
+              } else if (badgeDesc) {
+                badgeDesc.remove();
               }
-              badgeDesc.innerText = totalUnread;
-            } else if (badgeDesc) {
-              badgeDesc.remove();
             }
-          }
 
-          const listContainer = document.querySelector('.notif-list');
-          if (listContainer) {
-            if (totalUnread > 0) {
-              listContainer.innerHTML = data.notificacoes.map(n => {
-                const dt = n.criado_em ? new Date(n.criado_em).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'}) : '';
-                return `<a href="/admin/chamados/notificacao/${n.id}/ler" class="notif-item">
+            const listContainer = document.querySelector('.notif-list');
+            if (listContainer) {
+              if (totalUnread > 0) {
+                listContainer.innerHTML = data.notificacoes.map(n => {
+                  const dt = n.criado_em ? new Date(n.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+                  return `<a href="/admin/chamados/notificacao/${n.id}/ler" class="notif-item">
                   <div class="notif-item-title">${n.mensagem}</div>
                   <div style="font-size:10px; color:var(--text3);">${dt}</div>
                 </a>`;
-              }).join('');
-            } else {
-              listContainer.innerHTML = '<div class="notif-empty">Nenhuma notificação nova.</div>';
+                }).join('');
+              } else {
+                listContainer.innerHTML = '<div class="notif-empty">Nenhuma notificação nova.</div>';
+              }
+            }
+
+            const newNotifs = data.notificacoes.filter(n => n.id > lastNotifId);
+            if (newNotifs.length > 0) {
+              const maxId = Math.max(...newNotifs.map(n => n.id));
+              lastNotifId = maxId;
+              localStorage.setItem('lastNotifId', maxId);
+
+              newNotifs.forEach(n => {
+                const notif = new Notification("BP Central TI - Novo Chamado", {
+                  body: n.mensagem,
+                  icon: '/static/img/logo.png',
+                  requireInteraction: true
+                });
+                notif.onclick = function () {
+                  window.focus();
+                  if (n.chamado_id) {
+                    window.location.href = `/admin/chamados/${n.chamado_id}`;
+                  } else {
+                    window.location.href = '/';
+                  }
+                  notif.close();
+                };
+              });
             }
           }
-
-          const newNotifs = data.notificacoes.filter(n => n.id > lastNotifId);
-          if (newNotifs.length > 0) {
-            const maxId = Math.max(...newNotifs.map(n => n.id));
-            lastNotifId = maxId;
-            localStorage.setItem('lastNotifId', maxId);
-
-            newNotifs.forEach(n => {
-              const notif = new Notification("BP Central TI - Novo Chamado", {
-                body: n.mensagem,
-                icon: '/static/img/logo.png',
-                requireInteraction: true
-              });
-              notif.onclick = function() {
-                window.focus();
-                if (n.chamado_id) {
-                  window.location.href = `/admin/chamados/${n.chamado_id}`;
-                } else {
-                  window.location.href = '/';
-                }
-                notif.close();
-              };
-            });
-          }
+        } catch (e) {
+          console.error("Erro no polling de notificações:", e);
         }
-      } catch (e) {
-        console.error("Erro no polling de notificações:", e);
+      }, 30000);
+    })();
+  </script>
+  {% endif %}
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    th {
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    th:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+  </style>
+  <script>
+    // Ordenação de tabelas genérica
+    document.addEventListener('click', function (e) {
+      if (e.target.tagName === 'TH') {
+        const th = e.target;
+        const table = th.closest('table');
+        if (!table) return;
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+
+        const thText = th.innerText.trim().toLowerCase();
+        if (thText === 'ações' || thText === 'termo') return;
+
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const index = Array.from(th.parentNode.children).indexOf(th);
+
+        const asc = th.dataset.sort !== 'asc';
+        th.dataset.sort = asc ? 'asc' : 'desc';
+
+        Array.from(th.parentNode.children).forEach(sibling => {
+          if (sibling !== th) sibling.dataset.sort = '';
+          sibling.innerHTML = sibling.innerHTML.replace(/ ▲| ▼/g, '');
+        });
+
+        th.innerHTML = th.innerHTML.replace(/ ▲| ▼/g, '') + (asc ? ' ▲' : ' ▼');
+
+        rows.sort((a, b) => {
+          const cellA = a.children[index]?.innerText.trim() || '';
+          const cellB = b.children[index]?.innerText.trim() || '';
+          const numA = parseFloat(cellA.replace(',', '.'));
+          const numB = parseFloat(cellB.replace(',', '.'));
+          if (!isNaN(numA) && !isNaN(numB) && cellA.match(/^[0-9.,]+$/) && cellB.match(/^[0-9.,]+$/)) {
+            return asc ? numA - numB : numB - numA;
+          }
+          return asc ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+        });
+
+        tbody.innerHTML = '';
+        rows.forEach(r => tbody.appendChild(r));
       }
-    }, 30000);
-  })();
-</script>
-{% endif %}
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<style>
-  th { cursor: pointer; user-select: none; transition: background 0.2s; }
-  th:hover { background: rgba(255,255,255,0.05); }
-</style>
-<script>
-// Ordenação de tabelas genérica
-document.addEventListener('click', function(e) {
-  if (e.target.tagName === 'TH') {
-    const th = e.target;
-    const table = th.closest('table');
-    if (!table) return;
-    const tbody = table.querySelector('tbody');
-    if (!tbody) return;
-    
-    const thText = th.innerText.trim().toLowerCase();
-    if (thText === 'ações' || thText === 'termo') return;
-
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    const index = Array.from(th.parentNode.children).indexOf(th);
-    
-    const asc = th.dataset.sort !== 'asc';
-    th.dataset.sort = asc ? 'asc' : 'desc';
-    
-    Array.from(th.parentNode.children).forEach(sibling => {
-      if (sibling !== th) sibling.dataset.sort = '';
-      sibling.innerHTML = sibling.innerHTML.replace(/ ▲| ▼/g, '');
     });
-    
-    th.innerHTML = th.innerHTML.replace(/ ▲| ▼/g, '') + (asc ? ' ▲' : ' ▼');
-    
-    rows.sort((a, b) => {
-      const cellA = a.children[index]?.innerText.trim() || '';
-      const cellB = b.children[index]?.innerText.trim() || '';
-      const numA = parseFloat(cellA.replace(',', '.'));
-      const numB = parseFloat(cellB.replace(',', '.'));
-      if (!isNaN(numA) && !isNaN(numB) && cellA.match(/^[0-9.,]+$/) && cellB.match(/^[0-9.,]+$/)) {
-         return asc ? numA - numB : numB - numA;
-      }
-      return asc ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
-    });
-    
-    tbody.innerHTML = '';
-    rows.forEach(r => tbody.appendChild(r));
-  }
-});
 
-// Exportação Excel da tabela HTML (filtrada e sem coluna Ações)
-function exportarExcelDaTabela(tableId, fileName) {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-    const clone = table.cloneNode(true);
-    const ths = clone.querySelectorAll('th');
-    let actionColIdx = -1;
-    ths.forEach((th, idx) => {
+    // Exportação Excel da tabela HTML (filtrada e sem coluna Ações)
+    function exportarExcelDaTabela(tableId, fileName) {
+      const table = document.getElementById(tableId);
+      if (!table) return;
+      const clone = table.cloneNode(true);
+      const ths = clone.querySelectorAll('th');
+      let actionColIdx = -1;
+      ths.forEach((th, idx) => {
         const text = th.innerText.trim().toLowerCase();
         if (text === 'ações' || text === 'termo') {
-            actionColIdx = idx;
-            th.remove();
+          actionColIdx = idx;
+          th.remove();
         }
-    });
-    if (actionColIdx > -1) {
+      });
+      if (actionColIdx > -1) {
         const rows = clone.querySelectorAll('tbody tr');
         rows.forEach(tr => {
-            if (tr.children[actionColIdx]) {
-                tr.children[actionColIdx].remove();
-            }
+          if (tr.children[actionColIdx]) {
+            tr.children[actionColIdx].remove();
+          }
         });
+      }
+      const ws = XLSX.utils.table_to_sheet(clone);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Dados");
+      XLSX.writeFile(wb, `${fileName}.xlsx`);
     }
-    const ws = XLSX.utils.table_to_sheet(clone);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Dados");
-    XLSX.writeFile(wb, `${fileName}.xlsx`);
-}
-</script>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/sw.js');
-  }
-</script>
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/sw.js');
+    }
+  </script>
 </body>
+
 </html>
