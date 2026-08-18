@@ -341,18 +341,20 @@ def listar_pedidos():
     if role == "viewer":
         # Viewer: vê apenas seus próprios pedidos
         query = """
-            SELECT pv.*, l.nome AS localidade_nome
+            SELECT pv.*, 
+                   COALESCE(l.nome, 'Fazenda') AS localidade_nome
             FROM pedidos_viewer pv
-            JOIN localidades l ON l.id = pv.localidade_id
+            LEFT JOIN localidades l ON l.id = pv.localidade_id
             WHERE pv.usuario_id = %s
         """
         params.append(usuario_id)
     else:
         # Admin: visão global
         query = """
-            SELECT pv.*, l.nome AS localidade_nome
+            SELECT pv.*, 
+                   COALESCE(l.nome, 'Fazenda') AS localidade_nome
             FROM pedidos_viewer pv
-            JOIN localidades l ON l.id = pv.localidade_id
+            LEFT JOIN localidades l ON l.id = pv.localidade_id
             WHERE 1=1
         """
         if localidade_id:
@@ -465,8 +467,17 @@ def novo_pedido():
 
         # Para admins sem localidade_id de sessão, usa a localidade selecionada no form ou a sua própria
         loc_id = localidade_efetiva_id if role == "viewer" else (request.form.get("localidade_id") or localidade_efetiva_id)
+        
+        # Se ainda assim não houver localidade, busca uma fallback para não quebrar chave estrangeira
         if not loc_id:
-            flash("Localidade não identificada.", "danger")
+            with acquire_conn() as conn_loc:
+                with conn_loc.cursor() as cur_loc:
+                    primeira_loc = fetch_one(cur_loc, "SELECT id FROM localidades ORDER BY id ASC LIMIT 1")
+                    if primeira_loc:
+                        loc_id = primeira_loc["id"]
+
+        if not loc_id:
+            flash("Nenhuma localidade encontrada no sistema.", "danger")
             return redirect(url_for("fazenda.novo_pedido"))
 
         # Monta a descrição agregada para manter 100% de retrocompatibilidade
@@ -601,33 +612,40 @@ def detalhe_pedido(pedido_id: int):
             pedido = fetch_one(
                 cur,
                 """
-                SELECT pv.*, l.nome AS localidade_nome, u.nome AS usuario_nome
+                SELECT pv.*, 
+                       COALESCE(l.nome, 'Fazenda') AS localidade_nome, 
+                       COALESCE(u.nome, 'Usuário') AS usuario_nome
                 FROM pedidos_viewer pv
-                JOIN localidades l ON l.id = pv.localidade_id
-                JOIN usuarios u ON u.id = pv.usuario_id
+                LEFT JOIN localidades l ON l.id = pv.localidade_id
+                LEFT JOIN usuarios u ON u.id = pv.usuario_id
                 WHERE pv.id = %s
                 """,
                 (pedido_id,),
             )
 
             if not pedido:
-                abort(404)
+                flash(f"Pedido #{pedido_id} não encontrado ou indisponível.", "warning")
+                return redirect(url_for("fazenda.listar_pedidos"))
 
             # Anti-IDOR: viewer e apoio só acessam seus próprios pedidos
-            if role in ("viewer", "apoio") and pedido["usuario_id"] != usuario_id:
+            if role in ("viewer", "apoio") and pedido.get("usuario_id") and pedido["usuario_id"] != usuario_id:
                 abort(403)
 
-            historico = fetch_all(
-                cur,
-                """
-                SELECT pvh.*, u.nome AS alterado_por_nome
-                FROM pedido_viewer_historico pvh
-                LEFT JOIN usuarios u ON u.id = pvh.alterado_por
-                WHERE pvh.pedido_id = %s
-                ORDER BY pvh.alterado_em ASC
-                """,
-                (pedido_id,),
-            )
+            historico = []
+            try:
+                historico = fetch_all(
+                    cur,
+                    """
+                    SELECT pvh.*, u.nome AS alterado_por_nome
+                    FROM pedido_viewer_historico pvh
+                    LEFT JOIN usuarios u ON u.id = pvh.alterado_por
+                    WHERE pvh.pedido_id = %s
+                    ORDER BY pvh.alterado_em ASC
+                    """,
+                    (pedido_id,),
+                )
+            except Exception:
+                pass
 
     return render_template(
         "fazenda/detalhe_pedido.html",

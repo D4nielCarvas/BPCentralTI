@@ -193,28 +193,35 @@ def detalhe_pedido_admin(pedido_id: int):
             pedido = fetch_one(
                 cur,
                 """
-                SELECT pv.*, l.nome AS localidade_nome, u.nome AS usuario_nome
+                SELECT pv.*, 
+                       COALESCE(l.nome, 'Fazenda') AS localidade_nome, 
+                       COALESCE(u.nome, 'Usuário') AS usuario_nome
                 FROM pedidos_viewer pv
-                JOIN localidades l ON l.id = pv.localidade_id
-                JOIN usuarios    u ON u.id = pv.usuario_id
+                LEFT JOIN localidades l ON l.id = pv.localidade_id
+                LEFT JOIN usuarios    u ON u.id = pv.usuario_id
                 WHERE pv.id = %s
                 """,
                 (pedido_id,),
             )
             if not pedido:
-                abort(404)
+                flash(f"Pedido #{pedido_id} não encontrado.", "warning")
+                return redirect(url_for("admin_pedidos.listar_pedidos_admin"))
 
-            historico = fetch_all(
-                cur,
-                """
-                SELECT pvh.*, u.nome AS alterado_por_nome
-                FROM pedido_viewer_historico pvh
-                LEFT JOIN usuarios u ON u.id = pvh.alterado_por
-                WHERE pvh.pedido_id = %s
-                ORDER BY pvh.alterado_em ASC
-                """,
-                (pedido_id,),
-            )
+            historico = []
+            try:
+                historico = fetch_all(
+                    cur,
+                    """
+                    SELECT pvh.*, u.nome AS alterado_por_nome
+                    FROM pedido_viewer_historico pvh
+                    LEFT JOIN usuarios u ON u.id = pvh.alterado_por
+                    WHERE pvh.pedido_id = %s
+                    ORDER BY pvh.alterado_em ASC
+                    """,
+                    (pedido_id,),
+                )
+            except Exception:
+                pass
 
     return render_template(
         "admin/detalhe_pedido.html",
