@@ -339,17 +339,18 @@ def listar_pedidos():
     params: list[Any] = []
 
     if role == "viewer":
-        # Viewer: vê apenas seus próprios pedidos
+        # Viewer: vê seus próprios pedidos OU pedidos da sua fazenda
+        loc_id_viewer = session.get("localidade_id") or -1
         query = """
             SELECT pv.*, 
                    COALESCE(l.nome, 'Fazenda') AS localidade_nome
             FROM pedidos_viewer pv
             LEFT JOIN localidades l ON l.id = pv.localidade_id
-            WHERE pv.usuario_id = %s
+            WHERE (pv.usuario_id = %s OR pv.localidade_id = %s)
         """
-        params.append(usuario_id)
+        params.extend([usuario_id, loc_id_viewer])
     else:
-        # Admin: visão global
+        # Admin: visão global de todos os pedidos
         query = """
             SELECT pv.*, 
                    COALESCE(l.nome, 'Fazenda') AS localidade_nome
@@ -357,9 +358,6 @@ def listar_pedidos():
             LEFT JOIN localidades l ON l.id = pv.localidade_id
             WHERE 1=1
         """
-        if localidade_id:
-            query += " AND pv.localidade_id = %s"
-            params.append(localidade_id)
 
     if filtro_status and filtro_status in _STATUS_VALIDOS:
         query += " AND pv.status = %s"

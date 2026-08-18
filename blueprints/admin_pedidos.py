@@ -121,11 +121,11 @@ def listar_pedidos_admin():
     query = """
         SELECT
             pv.*,
-            l.nome  AS localidade_nome,
-            u.nome  AS usuario_nome
+            COALESCE(l.nome, 'Fazenda')  AS localidade_nome,
+            COALESCE(u.nome, 'Usuário')  AS usuario_nome
         FROM pedidos_viewer pv
-        JOIN localidades l ON l.id = pv.localidade_id
-        JOIN usuarios    u ON u.id = pv.usuario_id
+        LEFT JOIN localidades l ON l.id = pv.localidade_id
+        LEFT JOIN usuarios    u ON u.id = pv.usuario_id
         WHERE 1=1
     """
 
