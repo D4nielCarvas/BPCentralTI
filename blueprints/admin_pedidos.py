@@ -26,24 +26,38 @@ _STATUS_VALIDOS = frozenset({"pendente", "em_analise", "aprovado", "recusado", "
 
 import re
 
-def _tentar_baixa_estoque(cur, pedido_id: int, descricao: str, localidade_id: int, admin_id: int) -> str:
+def _tentar_baixa_estoque(
+    cur, 
+    pedido_id: int, 
+    descricao: str, 
+    localidade_id: int | None, 
+    admin_id: int,
+    item_direto: str | None = None,
+    quantidade_direta: int | None = None,
+) -> str:
     """
-    Tenta realizar a baixa automática de itens de estoque analisando o corpo da descrição de um pedido.
+    Tenta realizar a baixa automática de itens de estoque para um pedido aprovado/concluído.
+    Prioriza dados estruturados (item_direto, quantidade_direta) com fallback para regex na descrição.
     Complexidade: O(1) tempo | O(1) espaço.
     """
-    # 1. Regex para extração (limpeza aprimorada do dado recebido)
-    match_item = re.search(r'(?i)(?:item do estoque|produto do estoque|item|produto|estoque)\s*:\s*([^\n\r]+)', descricao)
-    match_qtd = re.search(r'(?i)(?:quantidade|qtd|quant)\s*:\s*(\d+)', descricao)
-    
-    if not match_item:
-        return "Baixa não realizada: Item não identificado (Use o formato padronizado 'Item: Nome do Produto')."
+    # 1. Obtenção dos dados do item
+    item_nome = (item_direto or "").strip()
+    quantidade = quantidade_direta if (quantidade_direta is not None and quantidade_direta > 0) else None
+
+    if not item_nome or quantidade is None:
+        # Regex para extração (limpeza aprimorada do dado recebido na descrição legada)
+        match_item = re.search(r'(?i)(?:item do estoque|produto do estoque|item|produto|estoque)\s*:\s*([^\n\r|]+)', descricao or "")
+        match_qtd = re.search(r'(?i)(?:quantidade|qtd|quant)\s*:\s*(\d+)', descricao or "")
         
-    # Tratamento da string isolando lixo e formatações indesejadas que poderiam burlar o match
-    item_nome = match_item.group(1).strip()
-    quantidade = int(match_qtd.group(1)) if match_qtd else 1
-    
-    if quantidade <= 0:
-        return "Baixa não realizada: Quantidade informada é inválida."
+        if match_item:
+            item_nome = match_item.group(1).strip()
+        if match_qtd:
+            quantidade = int(match_qtd.group(1))
+
+    if not item_nome:
+        return "Baixa não realizada: Item não identificado no pedido."
+        
+    quantidade = quantidade if (quantidade and quantidade > 0) else 1
 
     # 2. Busca e Lock da tabela (Boas Práticas de Transação)
     cur.execute(
@@ -53,24 +67,20 @@ def _tentar_baixa_estoque(cur, pedido_id: int, descricao: str, localidade_id: in
     itens = cur.fetchall()
     
     if not itens:
-        return f"Baixa não realizada: Item '{item_nome}' sem saldo ou inexistente na localidade."
+        return f"Baixa não realizada: Item '{item_nome}' sem saldo ou inexistente no estoque."
     
     # 3. Resolução Estratégica de Ambiguidade
     estoque_item = None
     exatos = [i for i in itens if i["item"].lower() == item_nome.lower()]
     
-    if len(exatos) == 1:
-        # Match Perfeito foi encontrado.
+    if len(exatos) >= 1:
         estoque_item = exatos[0]
     elif len(itens) == 1:
-        # Só encontrou um resultado com a string parcial.
-        # REGRA DE NEGÓCIO: Se a string parcial tem menos que 4 caracteres, rejeitamos por segurança.
-        if len(item_nome) < 4 and item_nome.lower() not in itens[0]["item"].lower():
+        if len(item_nome) < 3 and item_nome.lower() not in itens[0]["item"].lower():
              return f"Baixa não realizada: O termo '{item_nome}' é genérico demais. Especifique melhor."
         estoque_item = itens[0]
     else:
-        # Encontrou vários semelhantes e nenhum é o 'nome exato'.
-        nomes_sugestoes = ", ".join([i["item"] for i in itens[:3]]) # Limitamos a mostrar até 3 opções
+        nomes_sugestoes = ", ".join([i["item"] for i in itens[:3]])
         return f"Baixa não realizada: Ambiguidade para '{item_nome}'. Qual deles? (Encontrados: {nomes_sugestoes}...)"
         
     # 4. Checagem de Saldo (Princípio de Early Return)
@@ -78,7 +88,7 @@ def _tentar_baixa_estoque(cur, pedido_id: int, descricao: str, localidade_id: in
     if nova_qtd < 0:
         return f"Baixa não realizada: Saldo insuficiente do produto '{estoque_item['item']}' (Requerido: {quantidade}, Disponível: {estoque_item['quantidade']})."
         
-    # 5. Persistência
+    # 5. Persistência Atômica
     cur.execute(
         "UPDATE estoque SET quantidade = %s, updated_at = NOW() WHERE id = %s",
         (nova_qtd, estoque_item["id"])
@@ -87,7 +97,7 @@ def _tentar_baixa_estoque(cur, pedido_id: int, descricao: str, localidade_id: in
     cur.execute(
         """INSERT INTO estoque_movimentacoes (estoque_id, tipo, quantidade, motivo, responsavel)
            VALUES (%s, 'saida', %s, %s, %s)""",
-        (estoque_item["id"], quantidade, f"Baixa via Pedido #{pedido_id}", f"Admin ID {admin_id}")
+        (estoque_item["id"], quantidade, f"Baixa via Pedido #{pedido_id} (Aprovado)", f"Admin ID {admin_id}")
     )
     
     return f"Baixa automática com sucesso: {quantidade}x '{estoque_item['item']}' (Saldo restante: {nova_qtd})."
@@ -260,7 +270,7 @@ def atualizar_status_pedido(pedido_id: int):
             # 2. Lê status anterior (do banco — nunca do body)
             pedido = fetch_one(
                 cur,
-                "SELECT id, status, descricao, localidade_id FROM pedidos_viewer WHERE id = %s",
+                "SELECT id, status, item, quantidade, descricao, localidade_id FROM pedidos_viewer WHERE id = %s",
                 (pedido_id,),
             )
             if not pedido:
@@ -275,13 +285,32 @@ def atualizar_status_pedido(pedido_id: int):
                     url_for("admin_pedidos.detalhe_pedido_admin", pedido_id=pedido_id)
                 )
 
-            if status_anterior != "concluido" and novo_status == "concluido":
-                msg_baixa = _tentar_baixa_estoque(cur, pedido_id, pedido["descricao"], pedido["localidade_id"], admin_id)
-                observacao_final = observacao or ""
-                observacao_final += f"\n[Estoque] {msg_baixa}"
-                observacao_final = observacao_final.strip()
+            # Baixa no estoque ocorre no status 'aprovado' (ou 'concluido' se aprovação for ignorada)
+            observacao_final = observacao or ""
+            if novo_status in ("aprovado", "concluido"):
+                # Verifica se já houve baixa com sucesso no histórico deste pedido
+                ja_baixou = fetch_one(
+                    cur,
+                    """
+                    SELECT id FROM pedido_viewer_historico 
+                    WHERE pedido_id = %s AND observacao ILIKE %s
+                    """,
+                    (pedido_id, "%[Estoque] Baixa automática com sucesso%"),
+                )
+                if not ja_baixou:
+                    msg_baixa = _tentar_baixa_estoque(
+                        cur,
+                        pedido_id,
+                        pedido.get("descricao") or "",
+                        pedido.get("localidade_id"),
+                        admin_id,
+                        item_direto=pedido.get("item"),
+                        quantidade_direta=pedido.get("quantidade"),
+                    )
+                    observacao_final += f"\n[Estoque] {msg_baixa}"
+                    observacao_final = observacao_final.strip()
             else:
-                observacao_final = observacao
+                observacao_final = observacao_final.strip() or observacao
 
             # 3. Insere histórico
             cur.execute(

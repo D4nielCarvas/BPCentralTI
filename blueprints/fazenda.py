@@ -478,6 +478,40 @@ def novo_pedido():
             flash("Nenhuma localidade encontrada no sistema.", "danger")
             return redirect(url_for("fazenda.novo_pedido"))
 
+        # Validação de disponibilidade de estoque
+        with acquire_conn() as conn_check:
+            with conn_check.cursor() as cur_check:
+                params_check = [item, f"%{item}%"]
+                query_check = """
+                    SELECT id, item, quantidade, unidade
+                    FROM estoque
+                    WHERE (LOWER(item) = LOWER(%s) OR item ILIKE %s)
+                """
+                if loc_id:
+                    query_check += " AND (localidade_id IS NULL OR localidade_id = %s)"
+                    params_check.append(loc_id)
+                query_check += " ORDER BY CASE WHEN LOWER(item) = LOWER(%s) THEN 0 ELSE 1 END, quantidade DESC LIMIT 1"
+                params_check.append(item)
+
+                estoque_item = fetch_one(cur_check, query_check, tuple(params_check))
+
+        if not estoque_item or (estoque_item.get("quantidade") or 0) <= 0:
+            qtd_disp = estoque_item.get("quantidade", 0) if estoque_item else 0
+            flash(
+                f"O item '{item}' não possui saldo disponível em estoque no momento (Saldo: {qtd_disp}). "
+                "Por favor, aguarde a solicitação/reposição do item pelo setor de TI.",
+                "warning",
+            )
+            return redirect(url_for("fazenda.novo_pedido"))
+
+        if (estoque_item.get("quantidade") or 0) < quantidade:
+            flash(
+                f"Quantidade solicitada ({quantidade}) excede o saldo disponível em estoque ({estoque_item.get('quantidade', 0)}). "
+                "Por favor, ajuste a quantidade ou aguarde a reposição do item.",
+                "warning",
+            )
+            return redirect(url_for("fazenda.novo_pedido"))
+
         # Monta a descrição agregada para manter 100% de retrocompatibilidade
         descricao_retro = f"Item: {item} | Quantidade: {quantidade}\nUrgência: {urgencia.title()}\nMotivo: {motivo}"
         novo_id = None
@@ -581,12 +615,20 @@ def novo_pedido():
         return redirect(url_for("fazenda.detalhe_pedido", pedido_id=novo_id))
 
     localidades: list[dict] = []
+    itens_estoque: list[dict] = []
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             if role == "admin":
                 localidades = fetch_all(
                     cur, "SELECT id, nome, tipo FROM localidades ORDER BY nome ASC"
                 )
+            params_est = []
+            query_est = "SELECT id, item, quantidade, unidade, localidade_id FROM estoque WHERE 1=1"
+            if localidade_efetiva_id:
+                query_est += " AND (localidade_id IS NULL OR localidade_id = %s)"
+                params_est.append(localidade_efetiva_id)
+            query_est += " ORDER BY item ASC"
+            itens_estoque = fetch_all(cur, query_est, tuple(params_est))
 
     item_pre_selecionado = request.args.get("item", "").strip()
 
@@ -596,6 +638,7 @@ def novo_pedido():
         localidade_id_sessao=localidade_efetiva_id,
         fazenda_usuario_nome=fazenda_usuario_nome,
         item_pre_selecionado=item_pre_selecionado,
+        itens_estoque=itens_estoque,
     )
 
 

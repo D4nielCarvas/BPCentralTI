@@ -63,19 +63,50 @@
       {% endif %}
 
       {# ── Grid: Item & Quantidade ── #}
-      <div style="display:grid;grid-template-columns:1fr 140px;gap:16px;margin-bottom:18px">
+      <div style="display:grid;grid-template-columns:1fr 140px;gap:16px;margin-bottom:12px">
         <div class="form-group">
           <label for="item">Item Solicitado *</label>
           <input type="text" name="item" id="item" required maxlength="255"
+                 list="lista-estoque" autocomplete="off"
                  value="{{ item_pre_selecionado or '' }}"
-                 placeholder="Ex: Teclado USB, Monitor 24'', Bobina de Impressora, Cabo de Rede..."
+                 placeholder="Selecione ou busque um item no estoque..."
                  style="font-size:14px">
+          <datalist id="lista-estoque">
+            {% for est in itens_estoque %}
+            <option value="{{ est.item }}" data-qtd="{{ est.quantidade }}" data-unidade="{{ est.unidade or 'un' }}">
+              Disponível: {{ est.quantidade }} {{ est.unidade or 'un' }}
+            </option>
+            {% endfor %}
+          </datalist>
         </div>
 
         <div class="form-group">
           <label for="quantidade">Quantidade *</label>
           <input type="number" name="quantidade" id="quantidade" min="1" max="9999" value="1" required
                  style="font-size:14px;text-align:center;font-weight:600">
+        </div>
+      </div>
+
+      {# ── Painel Dinâmico de Status do Estoque ── #}
+      <div id="painel-status-estoque" style="margin-bottom:18px;display:none">
+        <div id="aviso-estoque-disponivel" style="display:none;padding:10px 14px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:8px;font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:10px">
+          <span style="font-size:18px">✅</span>
+          <div>
+            <strong style="color:#10b981">Disponível em Estoque:</strong> 
+            <span id="texto-qtd-disponivel" style="font-weight:600">0 un</span>
+          </div>
+        </div>
+
+        <div id="aviso-estoque-indisponivel" style="display:none;padding:12px 14px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);border-radius:8px;font-size:12.5px;color:var(--text);line-height:1.4">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <span style="font-size:20px;line-height:1">⚠️</span>
+            <div>
+              <strong style="color:#ef4444;display:block;margin-bottom:2px">Item Sem Estoque Disponível!</strong>
+              <span id="texto-alerta-sem-estoque">
+                Este item não possui saldo em estoque no momento. Por favor, <strong>aguarde a solicitação / reposição do item</strong> pela equipe de TI antes de registrar a retirada.
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -155,6 +186,84 @@
 </style>
 
 <script>
+  // Mapa de itens de estoque no cliente
+  const catalogoEstoque = [
+    {% for est in itens_estoque %}
+    {
+      id: {{ est.id }},
+      item: {{ est.item | tojson }},
+      quantidade: {{ est.quantidade or 0 }},
+      unidade: {{ (est.unidade or 'un') | tojson }}
+    },
+    {% endfor %}
+  ];
+
+  const inputItem = document.getElementById('item');
+  const inputQuantidade = document.getElementById('quantidade');
+  const painelStatusEstoque = document.getElementById('painel-status-estoque');
+  const avisoDisponivel = document.getElementById('aviso-estoque-disponivel');
+  const avisoIndisponivel = document.getElementById('aviso-estoque-indisponivel');
+  const textoQtdDisponivel = document.getElementById('texto-qtd-disponivel');
+  const textoAlertaSemEstoque = document.getElementById('texto-alerta-sem-estoque');
+  const btnEnviar = document.getElementById('btn-enviar');
+
+  function verificarEstoque() {
+    const termo = (inputItem.value || '').trim().toLowerCase();
+    const qtdSolicitada = parseInt(inputQuantidade.value, 10) || 1;
+
+    if (!termo) {
+      painelStatusEstoque.style.display = 'none';
+      avisoDisponivel.style.display = 'none';
+      avisoIndisponivel.style.display = 'none';
+      btnEnviar.disabled = false;
+      return;
+    }
+
+    painelStatusEstoque.style.display = 'block';
+
+    // Busca exata ou que contém
+    let match = catalogoEstoque.find(e => e.item.toLowerCase() === termo);
+    if (!match) {
+      match = catalogoEstoque.find(e => e.item.toLowerCase().includes(termo));
+    }
+
+    if (!match) {
+      // Item não encontrado no estoque cadastrado
+      avisoDisponivel.style.display = 'none';
+      avisoIndisponivel.style.display = 'block';
+      textoAlertaSemEstoque.innerHTML = `O item <strong>"${inputItem.value}"</strong> não foi encontrado no estoque da unidade. Por favor, <strong>aguarde a solicitação / reposição do item</strong> pela equipe de TI.`;
+      btnEnviar.disabled = true;
+    } else if (match.quantidade <= 0) {
+      // Item cadastrado mas com saldo zerado
+      avisoDisponivel.style.display = 'none';
+      avisoIndisponivel.style.display = 'block';
+      textoAlertaSemEstoque.innerHTML = `O item <strong>"${match.item}"</strong> está com <strong>saldo zerado (0 ${match.unidade})</strong> em estoque. É necessário <strong>aguardar a solicitação / reposição do item</strong> antes de abrir o pedido.`;
+      btnEnviar.disabled = true;
+    } else if (qtdSolicitada > match.quantidade) {
+      // Quantidade solicitada excede o saldo disponível
+      avisoDisponivel.style.display = 'none';
+      avisoIndisponivel.style.display = 'block';
+      textoAlertaSemEstoque.innerHTML = `A quantidade informada (${qtdSolicitada}) excede o saldo disponível de <strong>"${match.item}"</strong> (${match.quantidade} ${match.unidade}). Ajuste a quantidade para no máximo ${match.quantidade}.`;
+      btnEnviar.disabled = true;
+    } else {
+      // Disponível!
+      avisoIndisponivel.style.display = 'none';
+      avisoDisponivel.style.display = 'flex';
+      textoQtdDisponivel.textContent = `${match.quantidade} ${match.unidade} (Saldo suficiente)`;
+      btnEnviar.disabled = false;
+    }
+  }
+
+  inputItem.addEventListener('input', verificarEstoque);
+  inputItem.addEventListener('change', verificarEstoque);
+  inputQuantidade.addEventListener('input', verificarEstoque);
+  inputQuantidade.addEventListener('change', verificarEstoque);
+
+  // Executa na carga se já houver item pré-selecionado
+  if (inputItem.value) {
+    verificarEstoque();
+  }
+
   const inputUrgencia = document.getElementById('input-urgencia');
   const cards = document.querySelectorAll('.urgencia-card');
   const avisoUrgente = document.getElementById('alerta-urgente-aviso');
@@ -199,7 +308,6 @@
 
   const textarea  = document.getElementById('motivo');
   const charCount = document.getElementById('char-count');
-  const btnEnviar = document.getElementById('btn-enviar');
 
   function atualizarContador() {
     const len = textarea.value.length;
