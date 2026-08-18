@@ -142,7 +142,12 @@ def login():
         viewer -> /fazenda/itens
     """
     if "usuario_id" in session:
-        return redirect(url_for("core.index"))
+        role = session.get("role", "")
+        if role == "admin" or session.get("is_admin_master"):
+            return redirect(url_for("core.index"))
+        if role == "apoio":
+            return redirect(url_for("apoio.celulares_inspecao"))
+        return redirect(url_for("fazenda.listar_itens"))
 
     if request.method == "POST":
         login_input = (request.form.get("email") or "").strip().lower()

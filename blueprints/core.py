@@ -9,14 +9,19 @@ def index():
     if "usuario_id" not in session:
         return redirect(url_for("auth.login"))
         
-    if session.get("role") == "viewer":
-        # Se for um viewer, mas tiver permissão para ver ou editar o dashboard principal, permite acesso
-        if has_permission("ver_equipamentos") or has_permission("editar_equipamentos") or has_permission("ver_dashboard"):
-            return render_template("index.html")
-        else:
-            return redirect(url_for("fazenda.listar_itens"))
-            
-    return render_template("index.html")
+    role = session.get("role", "")
+    is_admin = session.get("is_admin_master", False) or role == "admin"
+
+    # Administradores acessam o painel central de TI
+    if is_admin:
+        return render_template("index.html")
+
+    # Usuários com papel de Apoio vão para o módulo de inspeção
+    if role == "apoio":
+        return redirect(url_for("apoio.celulares_inspecao"))
+
+    # Usuários com papel de Viewer (e qualquer papel não-admin) vão estritamente para o Portal Fazenda
+    return redirect(url_for("fazenda.listar_itens"))
 
 
 @core_bp.route("/termos/<filename>")

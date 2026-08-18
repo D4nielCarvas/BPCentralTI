@@ -120,15 +120,7 @@ def listar_pedidos_admin():
     params: list = []
     query = """
         SELECT
-            pv.id,
-            pv.descricao,
-            COALESCE(pv.item, '') AS item,
-            COALESCE(pv.quantidade, 1) AS quantidade,
-            COALESCE(pv.motivo, pv.descricao) AS motivo,
-            COALESCE(pv.urgencia, 'media') AS urgencia,
-            pv.status,
-            pv.criado_em,
-            pv.atualizado_em,
+            pv.*,
             l.nome  AS localidade_nome,
             u.nome  AS usuario_nome
         FROM pedidos_viewer pv
@@ -145,24 +137,11 @@ def listar_pedidos_admin():
         query += " AND pv.localidade_id = %s"
         params.append(filtro_local)
 
-    if filtro_urgencia and filtro_urgencia in _URGENCIAS_VALIDAS:
-        query += " AND pv.urgencia = %s"
-        params.append(filtro_urgencia)
-
     if busca:
-        query += " AND (pv.descricao ILIKE %s OR pv.item ILIKE %s OR pv.motivo ILIKE %s)"
-        params.extend([f"%{busca}%", f"%{busca}%", f"%{busca}%"])
+        query += " AND pv.descricao ILIKE %s"
+        params.append(f"%{busca}%")
 
-    query += """
-        ORDER BY 
-            CASE 
-                WHEN pv.status IN ('pendente', 'em_analise') AND pv.urgencia IN ('urgente', 'critica') THEN 0
-                WHEN pv.status IN ('pendente', 'em_analise') AND pv.urgencia = 'alta' THEN 1
-                WHEN pv.status IN ('pendente', 'em_analise') THEN 2
-                ELSE 3 
-            END,
-            pv.id DESC
-    """
+    query += " ORDER BY pv.id DESC"
 
     with acquire_conn() as conn:
         with conn.cursor() as cur:
@@ -170,17 +149,22 @@ def listar_pedidos_admin():
             localidades = fetch_all(
                 cur, "SELECT id, nome FROM localidades ORDER BY nome ASC"
             )
-            # Total de pedidos urgentes/críticos pendentes de atendimento
-            alertas_urgentes = fetch_one(
-                cur,
-                """
-                SELECT COUNT(*) as qtd
-                FROM pedidos_viewer
-                WHERE status IN ('pendente', 'em_analise')
-                  AND urgencia IN ('alta', 'urgente', 'critica')
-                """
-            )
-            qtd_pedidos_urgentes = alertas_urgentes["qtd"] if alertas_urgentes else 0
+            # Total de pedidos urgentes/críticos pendentes de atendimento (com resiliência)
+            qtd_pedidos_urgentes = 0
+            try:
+                alertas_urgentes = fetch_one(
+                    cur,
+                    """
+                    SELECT COUNT(*) as qtd
+                    FROM pedidos_viewer
+                    WHERE status IN ('pendente', 'em_analise')
+                      AND urgencia IN ('alta', 'urgente', 'critica')
+                    """
+                )
+                qtd_pedidos_urgentes = alertas_urgentes["qtd"] if alertas_urgentes else 0
+            except Exception:
+                conn.rollback()
+                qtd_pedidos_urgentes = 0
 
     return render_template(
         "admin/pedidos.html",

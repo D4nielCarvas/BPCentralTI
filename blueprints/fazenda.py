@@ -341,13 +341,7 @@ def listar_pedidos():
     if role == "viewer":
         # Viewer: vê apenas seus próprios pedidos
         query = """
-            SELECT pv.id, pv.localidade_id, pv.usuario_id, pv.descricao, pv.status,
-                   COALESCE(pv.item, '') AS item,
-                   COALESCE(pv.quantidade, 1) AS quantidade,
-                   COALESCE(pv.motivo, pv.descricao) AS motivo,
-                   COALESCE(pv.urgencia, 'media') AS urgencia,
-                   pv.criado_em, pv.atualizado_em,
-                   l.nome AS localidade_nome
+            SELECT pv.*, l.nome AS localidade_nome
             FROM pedidos_viewer pv
             JOIN localidades l ON l.id = pv.localidade_id
             WHERE pv.usuario_id = %s
@@ -356,13 +350,7 @@ def listar_pedidos():
     else:
         # Admin: visão global
         query = """
-            SELECT pv.id, pv.localidade_id, pv.usuario_id, pv.descricao, pv.status,
-                   COALESCE(pv.item, '') AS item,
-                   COALESCE(pv.quantidade, 1) AS quantidade,
-                   COALESCE(pv.motivo, pv.descricao) AS motivo,
-                   COALESCE(pv.urgencia, 'media') AS urgencia,
-                   pv.criado_em, pv.atualizado_em,
-                   l.nome AS localidade_nome
+            SELECT pv.*, l.nome AS localidade_nome
             FROM pedidos_viewer pv
             JOIN localidades l ON l.id = pv.localidade_id
             WHERE 1=1
@@ -486,26 +474,67 @@ def novo_pedido():
 
         with acquire_conn() as conn:
             with conn.cursor() as cur:
-                # 1. Inserir o pedido com os campos estruturados
-                cur.execute(
-                    """
-                    INSERT INTO pedidos_viewer (localidade_id, usuario_id, item, quantidade, motivo, urgencia, descricao, status)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, 'pendente')
-                    RETURNING id
-                    """,
-                    (loc_id, usuario_id, item, quantidade, motivo, urgencia, descricao_retro),
-                )
-                novo_id = cur.fetchone()["id"]
+                # 1. Inserir o pedido com tratamento automático de schema
+                try:
+                    cur.execute(
+                        """
+                        INSERT INTO pedidos_viewer (localidade_id, usuario_id, item, quantidade, motivo, urgencia, descricao, status)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, 'pendente')
+                        RETURNING id
+                        """,
+                        (loc_id, usuario_id, item, quantidade, motivo, urgencia, descricao_retro),
+                    )
+                    novo_id = cur.fetchone()["id"]
+                except Exception:
+                    # Se colunas não existirem no banco ainda, auto-cria ou usa fallback
+                    conn.rollback()
+                    with conn.cursor() as cur_fallback:
+                        try:
+                            cur_fallback.execute(
+                                """
+                                ALTER TABLE pedidos_viewer
+                                    ADD COLUMN IF NOT EXISTS item VARCHAR(255),
+                                    ADD COLUMN IF NOT EXISTS quantidade INTEGER DEFAULT 1,
+                                    ADD COLUMN IF NOT EXISTS motivo TEXT,
+                                    ADD COLUMN IF NOT EXISTS urgencia VARCHAR(30) DEFAULT 'media';
+                                """
+                            )
+                            cur_fallback.execute(
+                                """
+                                INSERT INTO pedidos_viewer (localidade_id, usuario_id, item, quantidade, motivo, urgencia, descricao, status)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, 'pendente')
+                                RETURNING id
+                                """,
+                                (loc_id, usuario_id, item, quantidade, motivo, urgencia, descricao_retro),
+                            )
+                            novo_id = cur_fallback.fetchone()["id"]
+                        except Exception:
+                            conn.rollback()
+                            with conn.cursor() as cur_legado:
+                                cur_legado.execute(
+                                    """
+                                    INSERT INTO pedidos_viewer (localidade_id, usuario_id, descricao, status)
+                                    VALUES (%s, %s, %s, 'pendente')
+                                    RETURNING id
+                                    """,
+                                    (loc_id, usuario_id, descricao_retro),
+                                )
+                                novo_id = cur_legado.fetchone()["id"]
 
                 # 2. Obter nome da localidade do pedido para a notificação
-                loc_row = fetch_one(cur, "SELECT nome FROM localidades WHERE id = %s", (loc_id,))
-                nome_fazenda_notif = loc_row["nome"] if loc_row else "Fazenda"
+                nome_fazenda_notif = "Fazenda"
+                try:
+                    loc_row = fetch_one(cur, "SELECT nome FROM localidades WHERE id = %s", (loc_id,))
+                    if loc_row and loc_row.get("nome"):
+                        nome_fazenda_notif = loc_row["nome"]
+                except Exception:
+                    pass
 
                 # 3. Disparo de Notificações para Administradores
                 msg_urgencia = "🚨 [URGENTE] " if urgencia in ("alta", "urgente", "critica") else "📋 "
                 msg_notificacao = f"{msg_urgencia}Novo Pedido #{novo_id} ({nome_fazenda_notif}): {item} (Qtd: {quantidade})"
 
-                # Inserção com fallback para manter compatibilidade com/sem coluna pedido_id
+                # Inserção com fallback para manter compatibilidade
                 try:
                     cur.execute(
                         """
@@ -517,17 +546,18 @@ def novo_pedido():
                         (novo_id, msg_notificacao[:255]),
                     )
                 except Exception:
-                    # Fallback caso a tabela/coluna tenha outro formato
                     try:
-                        cur.execute(
-                            """
-                            INSERT INTO notificacoes (usuario_id, mensagem)
-                            SELECT id, %s
-                            FROM usuarios
-                            WHERE role = 'admin' AND ativo = TRUE
-                            """,
-                            (msg_notificacao[:255],),
-                        )
+                        conn.rollback()
+                        with conn.cursor() as cur_notif_retry:
+                            cur_notif_retry.execute(
+                                """
+                                INSERT INTO notificacoes (usuario_id, mensagem)
+                                SELECT id, %s
+                                FROM usuarios
+                                WHERE role = 'admin' AND ativo = TRUE
+                                """,
+                                (msg_notificacao[:255],),
+                            )
                     except Exception:
                         pass
 
