@@ -480,10 +480,11 @@ def novo_pedido():
 
         # Monta a descrição agregada para manter 100% de retrocompatibilidade
         descricao_retro = f"Item: {item} | Quantidade: {quantidade}\nUrgência: {urgencia.title()}\nMotivo: {motivo}"
+        novo_id = None
 
+        # 1. Inserção e persistência do pedido
         with acquire_conn() as conn:
             with conn.cursor() as cur:
-                # 1. Inserir o pedido com tratamento automático de schema
                 try:
                     cur.execute(
                         """
@@ -494,81 +495,87 @@ def novo_pedido():
                         (loc_id, usuario_id, item, quantidade, motivo, urgencia, descricao_retro),
                     )
                     novo_id = cur.fetchone()["id"]
+                    conn.commit()
                 except Exception:
-                    # Se colunas não existirem no banco ainda, auto-cria ou usa fallback
                     conn.rollback()
-                    with conn.cursor() as cur_fallback:
-                        try:
-                            cur_fallback.execute(
-                                """
-                                ALTER TABLE pedidos_viewer
-                                    ADD COLUMN IF NOT EXISTS item VARCHAR(255),
-                                    ADD COLUMN IF NOT EXISTS quantidade INTEGER DEFAULT 1,
-                                    ADD COLUMN IF NOT EXISTS motivo TEXT,
-                                    ADD COLUMN IF NOT EXISTS urgencia VARCHAR(30) DEFAULT 'media';
-                                """
-                            )
-                            cur_fallback.execute(
-                                """
-                                INSERT INTO pedidos_viewer (localidade_id, usuario_id, item, quantidade, motivo, urgencia, descricao, status)
-                                VALUES (%s, %s, %s, %s, %s, %s, %s, 'pendente')
-                                RETURNING id
-                                """,
-                                (loc_id, usuario_id, item, quantidade, motivo, urgencia, descricao_retro),
-                            )
-                            novo_id = cur_fallback.fetchone()["id"]
-                        except Exception:
-                            conn.rollback()
-                            with conn.cursor() as cur_legado:
-                                cur_legado.execute(
-                                    """
-                                    INSERT INTO pedidos_viewer (localidade_id, usuario_id, descricao, status)
-                                    VALUES (%s, %s, %s, 'pendente')
-                                    RETURNING id
-                                    """,
-                                    (loc_id, usuario_id, descricao_retro),
-                                )
-                                novo_id = cur_legado.fetchone()["id"]
-
-                # 2. Obter nome da localidade do pedido para a notificação
-                nome_fazenda_notif = "Fazenda"
-                try:
-                    loc_row = fetch_one(cur, "SELECT nome FROM localidades WHERE id = %s", (loc_id,))
-                    if loc_row and loc_row.get("nome"):
-                        nome_fazenda_notif = loc_row["nome"]
-                except Exception:
-                    pass
-
-                # 3. Disparo de Notificações para Administradores
-                msg_urgencia = "🚨 [URGENTE] " if urgencia in ("alta", "urgente", "critica") else "📋 "
-                msg_notificacao = f"{msg_urgencia}Novo Pedido #{novo_id} ({nome_fazenda_notif}): {item} (Qtd: {quantidade})"
-
-                # Inserção com fallback para manter compatibilidade
-                try:
-                    cur.execute(
-                        """
-                        INSERT INTO notificacoes (usuario_id, pedido_id, mensagem)
-                        SELECT id, %s, %s
-                        FROM usuarios
-                        WHERE role = 'admin' AND ativo = TRUE
-                        """,
-                        (novo_id, msg_notificacao[:255]),
-                    )
-                except Exception:
                     try:
+                        cur.execute(
+                            """
+                            ALTER TABLE pedidos_viewer
+                                ADD COLUMN IF NOT EXISTS item VARCHAR(255),
+                                ADD COLUMN IF NOT EXISTS quantidade INTEGER DEFAULT 1,
+                                ADD COLUMN IF NOT EXISTS motivo TEXT,
+                                ADD COLUMN IF NOT EXISTS urgencia VARCHAR(30) DEFAULT 'media';
+                            """
+                        )
+                        conn.commit()
+                        cur.execute(
+                            """
+                            INSERT INTO pedidos_viewer (localidade_id, usuario_id, item, quantidade, motivo, urgencia, descricao, status)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, 'pendente')
+                            RETURNING id
+                            """,
+                            (loc_id, usuario_id, item, quantidade, motivo, urgencia, descricao_retro),
+                        )
+                        novo_id = cur.fetchone()["id"]
+                        conn.commit()
+                    except Exception:
                         conn.rollback()
-                        with conn.cursor() as cur_notif_retry:
-                            cur_notif_retry.execute(
-                                """
-                                INSERT INTO notificacoes (usuario_id, mensagem)
-                                SELECT id, %s
-                                FROM usuarios
-                                WHERE role = 'admin' AND ativo = TRUE
-                                """,
-                                (msg_notificacao[:255],),
-                            )
+                        cur.execute(
+                            """
+                            INSERT INTO pedidos_viewer (localidade_id, usuario_id, descricao, status)
+                            VALUES (%s, %s, %s, 'pendente')
+                            RETURNING id
+                            """,
+                            (loc_id, usuario_id, descricao_retro),
+                        )
+                        novo_id = cur.fetchone()["id"]
+                        conn.commit()
+
+        if not novo_id:
+            flash("Não foi possível salvar o pedido. Tente novamente.", "danger")
+            return redirect(url_for("fazenda.novo_pedido"))
+
+        # 2. Disparo de Notificações isolado (não afeta o pedido já persistido)
+        try:
+            nome_fazenda_notif = "Fazenda"
+            with acquire_conn() as conn_notif:
+                with conn_notif.cursor() as cur_notif:
+                    try:
+                        loc_row = fetch_one(cur_notif, "SELECT nome FROM localidades WHERE id = %s", (loc_id,))
+                        if loc_row and loc_row.get("nome"):
+                            nome_fazenda_notif = loc_row["nome"]
                     except Exception:
                         pass
+
+                    msg_urgencia = "🚨 [URGENTE] " if urgencia in ("alta", "urgente", "critica") else "📋 "
+                    msg_notificacao = f"{msg_urgencia}Novo Pedido #{novo_id} ({nome_fazenda_notif}): {item} (Qtd: {quantidade})"
+
+                    try:
+                        cur_notif.execute(
+                            """
+                            INSERT INTO notificacoes (usuario_id, pedido_id, mensagem)
+                            SELECT id, %s, %s
+                            FROM usuarios
+                            WHERE (role = 'admin' OR perfil_id IN (SELECT id FROM perfis_acesso WHERE is_admin_master = TRUE)) 
+                              AND ativo = TRUE
+                            """,
+                            (novo_id, msg_notificacao[:255]),
+                        )
+                    except Exception:
+                        conn_notif.rollback()
+                        cur_notif.execute(
+                            """
+                            INSERT INTO notificacoes (usuario_id, mensagem)
+                            SELECT id, %s
+                            FROM usuarios
+                            WHERE (role = 'admin' OR perfil_id IN (SELECT id FROM perfis_acesso WHERE is_admin_master = TRUE)) 
+                              AND ativo = TRUE
+                            """,
+                            (msg_notificacao[:255],),
+                        )
+        except Exception:
+            pass  # Notificações são secundárias e não bloqueiam o usuário
 
         flash("Pedido enviado com sucesso!", "success")
         return redirect(url_for("fazenda.detalhe_pedido", pedido_id=novo_id))
