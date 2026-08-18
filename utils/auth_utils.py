@@ -22,6 +22,24 @@ from flask import abort, redirect, session, url_for
 
 # ── Filtro de localidade ──────────────────────────────────────────────────────
 
+def is_admin_user() -> bool:
+    """
+    Retorna True se o usuário logado possui privilégios de administrador:
+    - session['is_admin_master'] == True
+    - session['role'] (case-insensitive) == 'admin'
+    - permissão 'acesso_total' ou 'gerenciar_pedidos' no RBAC
+    """
+    if session.get("is_admin_master"):
+        return True
+    role = (session.get("role") or "").strip().lower()
+    if role == "admin":
+        return True
+    permissoes = session.get("permissoes") or {}
+    if isinstance(permissoes, dict) and (permissoes.get("acesso_total") or permissoes.get("gerenciar_pedidos")):
+        return True
+    return False
+
+
 def get_localidade_filter() -> Optional[int]:
     """
     Retorna localidade_id se o usuário logado for viewer, ou None se for admin.
@@ -36,55 +54,50 @@ def get_localidade_filter() -> Optional[int]:
         int  — ID da localidade do viewer (restringe a query).
         None — Usuário é admin; nenhum filtro aplicado.
     """
-    if session.get("is_admin_master") or session.get("role") == "admin":
+    if is_admin_user():
         return None
     return session.get("localidade_id")
 
 def get_fazenda_nome_filter() -> Optional[str]:
     """
     Retorna o nome da fazenda correspondente à localidade do viewer.
-    Evita chamadas ao banco consultando o session cache, se disponível,
-    ou então o dicionário reverso de siglas.
     """
-    if session.get("is_admin_master") or session.get("role") == "admin":
+    if is_admin_user():
         return None
     
     # Se já foi cacheado no login (melhor performance)
     if "fazenda_nome" in session:
         return session["fazenda_nome"]
         
-    return None # O app deve preencher session["fazenda_nome"] no login.
+    return None
 
 
 def get_usuario_id() -> Optional[int]:
     """
     Retorna o ID do usuário logado a partir da sessão Flask.
-
-    Returns:
-        int ou None se não houver sessão ativa.
     """
     return session.get("usuario_id")
 
 
 def get_role() -> Optional[str]:
     """
-    Retorna a role ('admin' ou 'viewer') do usuário logado.
-
-    Returns:
-        str ou None se não houver sessão ativa.
+    Retorna a role ('admin', 'viewer', 'apoio') do usuário logado.
     """
-    return session.get("role")
+    role = session.get("role")
+    return role.lower() if role else None
 
 def has_permission(perm_name: str) -> bool:
     """
     Verifica se o usuário logado possui uma permissão específica.
     """
-    # Administrador Master ou Admin legado têm acesso total
-    if session.get("is_admin_master") or session.get("role") == "admin":
+    # Administradores têm acesso total irrestrito
+    if is_admin_user():
         return True
     
     permissoes = session.get("permissoes") or {}
-    return bool(permissoes.get(perm_name))
+    if isinstance(permissoes, dict):
+        return bool(permissoes.get(perm_name))
+    return False
 
 
 # ── Decorators de acesso ──────────────────────────────────────────────────────
@@ -92,9 +105,6 @@ def has_permission(perm_name: str) -> bool:
 def login_required(f):
     """
     Exige que o usuário esteja autenticado.
-
-    Redireciona para a rota de login se não houver sessão ativa.
-    Aplica-se a qualquer rota (admin ou viewer).
     """
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -106,46 +116,28 @@ def login_required(f):
 
 def viewer_required(f):
     """
-    Exige autenticação E role 'viewer' ou 'admin' (ou is_admin_master).
-
-    P10 CORRIGIDO (Opção B): diferencia viewers de usuários autenticados sem role válida.
-        - Não autenticado → redireciona para /login.
-        - Autenticado mas sem role 'viewer'/'admin' → abort(403) Forbidden.
-        - viewer ou admin → acesso liberado.
-
-    Uso semântico: rotas acessíveis por qualquer usuário do sistema,
-    mas não por sessões anônimas ou com roles desconhecidas.
-
-    Args:
-        f: Função de view a decorar.
-
-    Returns:
-        View decorada com verificação de autenticação e role.
+    Exige autenticação E role 'viewer' ou privilégio admin.
     """
     @wraps(f)
     def decorated(*args, **kwargs):
         if "usuario_id" not in session:
             return redirect(url_for("auth.login"))
-        # P10: verifica role explicitamente — sem role válida → 403 Forbidden
-        if (
-            session.get("role") not in ("viewer", "admin")
-            and not session.get("is_admin_master")
-        ):
+        role = (session.get("role") or "").strip().lower()
+        if not (is_admin_user() or role in ("viewer", "apoio")):
             abort(403)
         return f(*args, **kwargs)
     return decorated
 
 
-
 def admin_required(f):
     """
-    Exige autenticação E (role == 'admin' ou is_admin_master == True).
+    Exige autenticação E privilégios de administrador (is_admin_user).
     """
     @wraps(f)
     def decorated(*args, **kwargs):
         if "usuario_id" not in session:
             return redirect(url_for("auth.login"))
-        if not (session.get("is_admin_master") or session.get("role") == "admin"):
+        if not is_admin_user():
             abort(403)
         return f(*args, **kwargs)
     return decorated
