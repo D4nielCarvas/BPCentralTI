@@ -15,22 +15,49 @@
 
     {# Detalhes do pedido #}
     <div class="form-card" style="margin-bottom:20px">
-      <div class="form-card-header" style="display:flex;align-items:center;gap:10px">
-        <h3>Detalhes do Pedido</h3>
-        {% set s = pedido.status | lower %}
-        <span class="badge badge-{{ s | replace(' ','_') }}">
-          {{ s | replace('_',' ') | title }}
-        </span>
+      <div class="form-card-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <h3>Detalhes do Pedido #{{ pedido.id }}</h3>
+          {% set s = pedido.status | lower %}
+          <span class="badge badge-{{ s | replace(' ','_') }}">
+            {{ s | replace('_',' ') | title }}
+          </span>
+        </div>
+        {% set urg = (pedido.urgencia or 'media') | lower %}
+        <div>
+          {% if urg in ('urgente', 'critica') %}
+            <span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);font-weight:700">🚨 Urgente / Crítica</span>
+          {% elif urg == 'alta' %}
+            <span class="badge" style="background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.4);font-weight:700">🟠 Alta Prioridade</span>
+          {% elif urg == 'baixa' %}
+            <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3)">🟢 Baixa</span>
+          {% else %}
+            <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)">🟡 Média</span>
+          {% endif %}
+        </div>
       </div>
       <div class="form-card-body">
+
+        {# Bloco de Destaque: Item & Quantidade #}
+        <div style="display:grid;grid-template-columns:1fr 120px;gap:14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
+          <div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Item Solicitado</div>
+            <div style="font-size:16px;font-weight:700;color:var(--text)">{{ pedido.item or pedido.descricao }}</div>
+          </div>
+          <div style="text-align:center;border-left:1px solid var(--border);padding-left:14px">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Quantidade</div>
+            <div style="font-size:18px;font-weight:800;color:var(--accent)">{{ pedido.quantidade or 1 }}x</div>
+          </div>
+        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
           <div>
             <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Solicitante</div>
             <div style="font-size:13px;color:var(--text)">{{ pedido.usuario_nome }}</div>
           </div>
           <div>
-            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Localidade</div>
-            <div style="font-size:13px;color:var(--text)">{{ pedido.localidade_nome }}</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Fazenda / Localidade</div>
+            <div style="font-size:13px;color:var(--text);font-weight:600">🌾 {{ pedido.localidade_nome }}</div>
           </div>
           <div>
             <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Criado em</div>
@@ -48,8 +75,8 @@
           </div>
         </div>
         <div>
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Descrição completa</div>
-          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap">{{ pedido.descricao }}</div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Motivo / Descrição Detalhada</div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap">{{ pedido.motivo or pedido.descricao }}</div>
         </div>
       </div>
     </div>

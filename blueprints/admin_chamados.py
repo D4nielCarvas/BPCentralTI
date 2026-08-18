@@ -632,21 +632,38 @@ def toggle_modelo(modelo_id: int):
 @admin_chamados_bp.route("/notificacao/<int:notif_id>/ler")
 @admin_required
 def ler_notificacao(notif_id: int):
-    """Marca a notificação como lida e redireciona para o chamado."""
+    """Marca a notificação como lida e redireciona para o chamado ou pedido correspondente."""
     usuario_id = get_usuario_id()
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            notificacao = fetch_one(
-                cur, 
-                "SELECT chamado_id FROM notificacoes WHERE id = %s AND usuario_id = %s", 
-                (notif_id, usuario_id)
-            )
-            if notificacao:
-                cur.execute(
-                    "UPDATE notificacoes SET lida = TRUE WHERE id = %s",
-                    (notif_id,)
+            # Consulta com fallback para garantir compatibilidade com schemas anteriores
+            notificacao = None
+            try:
+                notificacao = fetch_one(
+                    cur, 
+                    "SELECT chamado_id, pedido_id FROM notificacoes WHERE id = %s AND usuario_id = %s", 
+                    (notif_id, usuario_id)
                 )
-                return redirect(url_for('admin_chamados.detalhe_chamado_admin', chamado_id=notificacao['chamado_id']))
+            except Exception:
+                conn.rollback()
+                with conn.cursor() as cur_fallback:
+                    notificacao = fetch_one(
+                        cur_fallback, 
+                        "SELECT chamado_id FROM notificacoes WHERE id = %s AND usuario_id = %s", 
+                        (notif_id, usuario_id)
+                    )
+
+            if notificacao:
+                with conn.cursor() as cur_update:
+                    cur_update.execute(
+                        "UPDATE notificacoes SET lida = TRUE WHERE id = %s",
+                        (notif_id,)
+                    )
+                if notificacao.get("pedido_id"):
+                    return redirect(url_for('admin_pedidos.detalhe_pedido_admin', pedido_id=notificacao['pedido_id']))
+                if notificacao.get("chamado_id"):
+                    return redirect(url_for('admin_chamados.detalhe_chamado_admin', chamado_id=notificacao['chamado_id']))
+                return redirect(url_for('admin_pedidos.listar_pedidos_admin'))
     
     flash("Notificação não encontrada.", "warning")
     return redirect(url_for('admin_chamados.dashboard_chamados'))

@@ -4,63 +4,200 @@
 {% block page_title %}Novo Pedido{% endblock %}
 
 {% block topbar_actions %}
-<a href="{{ url_for('fazenda.listar_pedidos') }}" class="btn btn-ghost btn-sm">← Voltar</a>
+<a href="{{ url_for('fazenda.listar_pedidos') }}" class="btn btn-ghost btn-sm">← Voltar para Pedidos</a>
 {% endblock %}
 
 {% block content %}
-<div class="form-card" style="max-width:640px">
-  <div class="form-card-header">
-    <h3>📋 Abrir Novo Pedido</h3>
-    <p style="font-size:12px;color:var(--text3);margin-top:4px">
-      Descreva detalhadamente o que você precisa. O setor de TI analisará sua solicitação.
-    </p>
+<div class="form-card" style="max-width:760px;margin:0 auto">
+  <div class="form-card-header" style="border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:20px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);display:flex;align-items:center;justify-content:center;font-size:20px">
+        📦
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:17px;font-weight:700;color:var(--text)">Solicitar Equipamento / Material</h3>
+        <p style="font-size:12px;color:var(--text3);margin:4px 0 0 0">
+          Preencha as informações do item desejado. A equipe de TI receberá e analisará sua solicitação.
+        </p>
+      </div>
+    </div>
   </div>
+
   <div class="form-card-body">
     <form method="POST" action="{{ url_for('fazenda.novo_pedido') }}" id="form-novo-pedido">
 
-      {# Admin pode escolher a localidade; viewer usa a da sessão #}
+      {# ── Identificação da Fazenda / Localidade ── #}
       {% if session.role == 'admin' and localidades %}
-      <div class="form-group">
-        <label for="localidade_id">Localidade *</label>
-        <select name="localidade_id" id="localidade_id" required>
+      <div class="form-group" style="margin-bottom:18px">
+        <label for="localidade_id" style="display:flex;align-items:center;gap:6px">
+          <span>📍 Localidade de Destino *</span>
+        </label>
+        <select name="localidade_id" id="localidade_id" required style="font-size:14px">
           <option value="">Selecione a localidade…</option>
           {% for loc in localidades %}
           <option value="{{ loc.id }}"
-            {% if localidade_id_sessao == loc.id %}selected{% endif %}>
-            {{ loc.nome }} <span style="color:var(--text3)">({{ loc.tipo }})</span>
+            {% if (localidade_id_sessao | string) == (loc.id | string) %}selected{% endif %}>
+            {{ loc.nome }} ({{ loc.tipo }})
           </option>
           {% endfor %}
         </select>
-      </div>
-      {% elif localidade_id_sessao %}
-      {# Viewer: localidade vinculada automaticamente — campo oculto #}
-      <input type="hidden" name="localidade_id" value="{{ localidade_id_sessao }}">
-      {% endif %}
-
-      <div class="form-group">
-        <label for="descricao">Descrição do Pedido *</label>
-        <textarea name="descricao" id="descricao" rows="6" maxlength="2000"
-                  placeholder="Descreva o item, quantidade, urgência e motivo da solicitação…"
-                  required>{{ descricao or '' }}</textarea>
-        <span id="char-count" style="font-size:11px;color:var(--text3);text-align:right">
-          0 / 2000 caracteres
+        <span style="font-size:11px;color:var(--text3);margin-top:4px">
+          Como administrador, você pode registrar o pedido para qualquer unidade ou manter a sua vinculada.
         </span>
       </div>
+      {% else %}
+      {# Auto-detecção da Fazenda do Usuário #}
+      <div style="margin-bottom:20px;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:18px">🌾</div>
+          <div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Sua Fazenda / Unidade</div>
+            <div style="font-size:14px;color:var(--text);font-weight:600">
+              {{ fazenda_usuario_nome or session.get('fazenda_nome') or 'Fazenda Vinculada' }}
+            </div>
+          </div>
+        </div>
+        <span class="badge badge-info" style="font-size:11px">Auto-identificado</span>
+      </div>
+      <input type="hidden" name="localidade_id" value="{{ localidade_id_sessao or '' }}">
+      {% endif %}
 
+      {# ── Grid: Item & Quantidade ── #}
+      <div style="display:grid;grid-template-columns:1fr 140px;gap:16px;margin-bottom:18px">
+        <div class="form-group">
+          <label for="item">Item Solicitado *</label>
+          <input type="text" name="item" id="item" required maxlength="255"
+                 value="{{ item_pre_selecionado or '' }}"
+                 placeholder="Ex: Teclado USB, Monitor 24'', Bobina de Impressora, Cabo de Rede..."
+                 style="font-size:14px">
+        </div>
 
+        <div class="form-group">
+          <label for="quantidade">Quantidade *</label>
+          <input type="number" name="quantidade" id="quantidade" min="1" max="9999" value="1" required
+                 style="font-size:14px;text-align:center;font-weight:600">
+        </div>
+      </div>
 
-      <div class="form-actions">
+      {# ── Nível de Urgência (Seletores Visuais Modernos) ── #}
+      <div class="form-group" style="margin-bottom:20px">
+        <label style="margin-bottom:8px;display:block">Nível de Urgência *</label>
+        <input type="hidden" name="urgencia" id="input-urgencia" value="media">
+        
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px" id="urgencia-cards">
+          
+          {# Opção Baixa #}
+          <div class="urgencia-card" data-val="baixa" onclick="selecionarUrgencia('baixa')"
+               style="cursor:pointer;padding:12px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);text-align:center;transition:all .2s ease">
+            <div style="font-size:18px;margin-bottom:4px">🟢</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text)">Baixa</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">Reposição / Rotina</div>
+          </div>
+
+          {# Opção Média (Default) #}
+          <div class="urgencia-card selected" data-val="media" onclick="selecionarUrgencia('media')"
+               style="cursor:pointer;padding:12px 10px;border-radius:8px;border:1px solid var(--accent);background:rgba(59,130,246,0.12);text-align:center;transition:all .2s ease">
+            <div style="font-size:18px;margin-bottom:4px">🟡</div>
+            <div style="font-size:12px;font-weight:600;color:var(--accent)">Média</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:2px">Uso Normal</div>
+          </div>
+
+          {# Opção Alta #}
+          <div class="urgencia-card" data-val="alta" onclick="selecionarUrgencia('alta')"
+               style="cursor:pointer;padding:12px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);text-align:center;transition:all .2s ease">
+            <div style="font-size:18px;margin-bottom:4px">🟠</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text)">Alta</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">Impacto no Setor</div>
+          </div>
+
+          {# Opção Urgente / Crítica #}
+          <div class="urgencia-card" data-val="urgente" onclick="selecionarUrgencia('urgente')"
+               style="cursor:pointer;padding:12px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);text-align:center;transition:all .2s ease">
+            <div style="font-size:18px;margin-bottom:4px">🚨</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text)">Urgente</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">Parada / Alerta</div>
+          </div>
+
+        </div>
+        <div id="alerta-urgente-aviso" style="display:none;margin-top:8px;font-size:11px;color:#f87171;background:rgba(239,68,68,0.1);padding:8px 12px;border-radius:6px;border:1px solid rgba(239,68,68,0.25)">
+          ⚠️ Solicitações de urgência <strong>Alta</strong> ou <strong>Urgente</strong> disparam alertas imediatos para a equipe administrativa de TI.
+        </div>
+      </div>
+
+      {# ── Motivo / Justificativa ── #}
+      <div class="form-group" style="margin-bottom:24px">
+        <label for="motivo">Descrição / Motivo da Solicitação *</label>
+        <textarea name="motivo" id="motivo" rows="5" maxlength="2000"
+                  placeholder="Explique por que o item é necessário, em qual setor/máquina será utilizado e qualquer observação relevante…"
+                  required style="font-size:13.5px;line-height:1.5"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span style="font-size:11px;color:var(--text3)">Seja o mais específico possível para agilizar a aprovação.</span>
+          <span id="char-count" style="font-size:11px;color:var(--text3)">0 / 2000 caracteres</span>
+        </div>
+      </div>
+
+      {# ── Ações do Formulário ── #}
+      <div class="form-actions" style="display:flex;justify-content:flex-end;gap:12px;border-top:1px solid var(--border);padding-top:16px">
         <a href="{{ url_for('fazenda.listar_pedidos') }}" class="btn btn-ghost">Cancelar</a>
-        <button type="submit" id="btn-enviar" class="btn btn-primary">
-          📤 Enviar Pedido
+        <button type="submit" id="btn-enviar" class="btn btn-primary" style="padding:10px 24px;font-weight:600">
+          🚀 Enviar Solicitação
         </button>
       </div>
     </form>
   </div>
 </div>
 
+<style>
+  .urgencia-card:hover {
+    border-color: var(--accent) !important;
+    transform: translateY(-2px);
+  }
+</style>
+
 <script>
-  const textarea  = document.getElementById('descricao');
+  const inputUrgencia = document.getElementById('input-urgencia');
+  const cards = document.querySelectorAll('.urgencia-card');
+  const avisoUrgente = document.getElementById('alerta-urgente-aviso');
+
+  function selecionarUrgencia(val) {
+    inputUrgencia.value = val;
+    cards.forEach(c => {
+      const cVal = c.getAttribute('data-val');
+      if (cVal === val) {
+        c.classList.add('selected');
+        if (val === 'urgente') {
+          c.style.borderColor = 'var(--red, #ef4444)';
+          c.style.background = 'rgba(239,68,68,0.15)';
+          c.querySelector('div:nth-child(2)').style.color = '#f87171';
+        } else if (val === 'alta') {
+          c.style.borderColor = 'var(--orange, #f97316)';
+          c.style.background = 'rgba(249,115,22,0.15)';
+          c.querySelector('div:nth-child(2)').style.color = '#fb923c';
+        } else if (val === 'baixa') {
+          c.style.borderColor = 'var(--green, #10b981)';
+          c.style.background = 'rgba(16,185,129,0.15)';
+          c.querySelector('div:nth-child(2)').style.color = '#34d399';
+        } else {
+          c.style.borderColor = 'var(--accent, #3b82f6)';
+          c.style.background = 'rgba(59,130,246,0.15)';
+          c.querySelector('div:nth-child(2)').style.color = 'var(--accent)';
+        }
+      } else {
+        c.classList.remove('selected');
+        c.style.borderColor = 'var(--border)';
+        c.style.background = 'var(--bg3)';
+        c.querySelector('div:nth-child(2)').style.color = 'var(--text)';
+      }
+    });
+
+    if (val === 'alta' || val === 'urgente') {
+      avisoUrgente.style.display = 'block';
+    } else {
+      avisoUrgente.style.display = 'none';
+    }
+  }
+
+  const textarea  = document.getElementById('motivo');
   const charCount = document.getElementById('char-count');
   const btnEnviar = document.getElementById('btn-enviar');
 
@@ -75,7 +212,7 @@
 
   document.getElementById('form-novo-pedido').addEventListener('submit', function () {
     btnEnviar.disabled = true;
-    btnEnviar.textContent = '⏳ Enviando…';
+    btnEnviar.textContent = '⏳ Enviando Solicitação…';
   });
 </script>
 {% endblock %}

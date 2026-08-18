@@ -41,7 +41,7 @@
 
 <div class="table-card">
   <div class="table-header">
-    <h3>Pedidos
+    <h3>Minhas Solicitações de Pedidos
       {% if filtro_status %}<span style="color:var(--accent);font-weight:400"> — {{ filtro_status | replace('_',' ') | title }}</span>{% endif %}
     </h3>
     <span style="font-size:12px;color:var(--text3)">{{ pedidos | length }} pedido(s)</span>
@@ -53,22 +53,42 @@
     <thead>
       <tr>
         <th>#</th>
-        <th>Localidade</th>
-        <th>Descrição</th>
+        <th>Item Solicitado</th>
+        <th>Qtd</th>
+        <th>Urgência</th>
+        <th>Motivo / Descrição</th>
         <th>Status</th>
-        <th>Criado em</th>
-        <th>Atualizado em</th>
+        <th>Data de Envio</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       {% for p in pedidos %}
       {% set s = p.status | lower %}
+      {% set urg = (p.urgencia or 'media') | lower %}
       <tr>
         <td class="td-id">#{{ p.id }}</td>
-        <td style="color:var(--text2)">{{ p.localidade_nome }}</td>
-        <td style="max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ p.descricao }}">
-          {{ p.descricao | truncate(80, True, '…') }}
+        <td style="font-weight:600;color:var(--text)">
+          {{ p.item or p.descricao | truncate(35, True, '…') }}
+        </td>
+        <td>
+          <span style="display:inline-block;padding:2px 8px;border-radius:6px;background:var(--bg3);font-size:12px;font-weight:700;color:var(--text2)">
+            {{ p.quantidade or 1 }}x
+          </span>
+        </td>
+        <td>
+          {% if urg in ('urgente', 'critica') %}
+            <span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4)">🚨 Urgente</span>
+          {% elif urg == 'alta' %}
+            <span class="badge" style="background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.4)">🟠 Alta</span>
+          {% elif urg == 'baixa' %}
+            <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3)">🟢 Baixa</span>
+          {% else %}
+            <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)">🟡 Média</span>
+          {% endif %}
+        </td>
+        <td style="max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text3)" title="{{ p.motivo or p.descricao }}">
+          {{ p.motivo or p.descricao }}
         </td>
         <td>
           <span class="badge badge-{{ s | replace(' ','_') }}">
@@ -79,13 +99,9 @@
           {{ p.criado_em.strftime('%d/%m/%Y %H:%M') if p.criado_em is not string
              else p.criado_em[:16] | replace('T',' ') }}
         </td>
-        <td style="font-size:12px;color:var(--text3)">
-          {{ p.atualizado_em.strftime('%d/%m/%Y %H:%M') if p.atualizado_em is not string
-             else p.atualizado_em[:16] | replace('T',' ') }}
-        </td>
         <td>
           <a href="{{ url_for('fazenda.detalhe_pedido', pedido_id=p.id) }}" class="btn btn-ghost btn-xs">
-            Ver →
+            Ver Detalhes →
           </a>
         </td>
       </tr>
@@ -97,7 +113,7 @@
   <div style="padding:40px;text-align:center;color:var(--text3)">
     Nenhum pedido encontrado.
     <div style="margin-top:12px">
-      <a href="{{ url_for('fazenda.novo_pedido') }}" class="btn btn-primary btn-sm">＋ Criar primeiro pedido</a>
+      <a href="{{ url_for('fazenda.novo_pedido') }}" class="btn btn-primary btn-sm">＋ Fazer primeiro pedido</a>
     </div>
   </div>
   {% endif %}

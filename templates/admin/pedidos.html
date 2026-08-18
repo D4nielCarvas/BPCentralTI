@@ -7,32 +7,62 @@
 {% block topbar_actions %}
 <form method="GET" action="{{ url_for('admin_pedidos.listar_pedidos_admin') }}" style="display:contents">
   <div class="filter-bar">
-    <input type="text" name="q" value="{{ busca }}" placeholder="Buscar na descrição…" style="width:180px">
+    <input type="text" name="q" value="{{ busca }}" placeholder="Buscar item, motivo…" style="width:160px">
+    
     <select name="status" id="sel-status-adm" onchange="this.form.submit()">
-      <option value="">Todos os status</option>
+      <option value="">Status (Todos)</option>
       {% for s in status_validos %}
       <option value="{{ s }}" {% if filtro_status == s %}selected{% endif %}>
         {{ s | replace('_',' ') | title }}
       </option>
       {% endfor %}
     </select>
+
+    <select name="urgencia" id="sel-urgencia-adm" onchange="this.form.submit()">
+      <option value="">Urgência (Todas)</option>
+      {% for u in urgencias %}
+      <option value="{{ u }}" {% if filtro_urgencia == u %}selected{% endif %}>
+        {{ u | title }}
+      </option>
+      {% endfor %}
+    </select>
+
     <select name="localidade" id="sel-local-adm" onchange="this.form.submit()">
-      <option value="">Todas as localidades</option>
+      <option value="">Localidade (Todas)</option>
       {% for loc in localidades %}
       <option value="{{ loc.id }}" {% if filtro_local | string == loc.id | string %}selected{% endif %}>
         {{ loc.nome }}
       </option>
       {% endfor %}
     </select>
+    
     <button type="submit" class="btn btn-primary btn-sm">🔍</button>
-    {% if busca or filtro_status or filtro_local %}
-    <a href="{{ url_for('admin_pedidos.listar_pedidos_admin') }}" class="btn btn-ghost btn-sm">✖</a>
+    {% if busca or filtro_status or filtro_local or filtro_urgencia %}
+    <a href="{{ url_for('admin_pedidos.listar_pedidos_admin') }}" class="btn btn-ghost btn-sm" title="Limpar Filtros">✖</a>
     {% endif %}
   </div>
 </form>
 {% endblock %}
 
 {% block content %}
+
+{# ── Banner de Alerta para Administradores de Pedidos Urgentes ── #}
+{% if qtd_pedidos_urgentes > 0 %}
+<div style="margin-bottom:18px;background:linear-gradient(90deg, rgba(239,68,68,0.18), rgba(249,115,22,0.12));border:1px solid rgba(239,68,68,0.4);border-radius:10px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 15px rgba(239,68,68,0.15)">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="font-size:22px;animation:pulse 1.5s infinite">🚨</div>
+    <div>
+      <div style="font-size:14px;font-weight:700;color:#f87171">Atenção da Administração de TI</div>
+      <div style="font-size:12px;color:var(--text2)">
+        Existem <strong>{{ qtd_pedidos_urgentes }}</strong> pedido(s) com nível de urgência <strong>ALTA ou CRÍTICA</strong> aguardando atendimento!
+      </div>
+    </div>
+  </div>
+  <a href="{{ url_for('admin_pedidos.listar_pedidos_admin', urgencia='urgente', status='pendente') }}" class="btn btn-danger btn-sm" style="font-weight:600">
+    ⚡ Filtrar Urgentes
+  </a>
+</div>
+{% endif %}
 
 {# ── Totalizadores ──────────────────────────────────────────────────────────── #}
 <div class="stat-mini">
@@ -42,7 +72,7 @@
   {% set aprovados   = pedidos | selectattr('status','equalto','aprovado')   | list | length %}
   {% set recusados   = pedidos | selectattr('status','equalto','recusado')   | list | length %}
   <div class="stat-mini-card">
-    <div class="label">Total exibido</div>
+    <div class="label">Total listado</div>
     <div class="val">{{ total }}</div>
   </div>
   <div class="stat-mini-card">
@@ -65,33 +95,52 @@
 
 <div class="table-card">
   <div class="table-header">
-    <h3>Todos os Pedidos das Fazendas</h3>
+    <h3>Gestão Central de Pedidos das Fazendas</h3>
     <span style="font-size:12px;color:var(--text3)">{{ pedidos | length }} resultado(s)</span>
   </div>
 
   {% if pedidos %}
+  <div class="table-responsive">
   <table>
     <thead>
       <tr>
         <th>#</th>
-        <th>Localidade</th>
+        <th>Fazenda / Local</th>
         <th>Solicitante</th>
-        <th>Descrição</th>
+        <th>Item Solicitado</th>
+        <th>Qtd</th>
+        <th>Urgência</th>
         <th>Status</th>
         <th>Criado em</th>
-        <th>Atualizado em</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       {% for p in pedidos %}
       {% set s = p.status | lower %}
-      <tr>
+      {% set urg = (p.urgencia or 'media') | lower %}
+      <tr {% if urg in ('urgente', 'critica') and s in ('pendente', 'em_analise') %}style="background:rgba(239,68,68,0.05)"{% endif %}>
         <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">#{{ p.id }}</td>
-        <td style="font-weight:500;color:var(--text)">{{ p.localidade_nome }}</td>
+        <td style="font-weight:600;color:var(--text)">{{ p.localidade_nome }}</td>
         <td style="color:var(--text2)">{{ p.usuario_nome }}</td>
-        <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ p.descricao }}">
-          {{ p.descricao | truncate(70, True, '…') }}
+        <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600" title="{{ p.item or p.descricao }}">
+          {{ p.item or p.descricao }}
+        </td>
+        <td>
+          <span style="display:inline-block;padding:2px 7px;border-radius:5px;background:var(--bg3);font-size:11px;font-weight:700;color:var(--text2)">
+            {{ p.quantidade or 1 }}x
+          </span>
+        </td>
+        <td>
+          {% if urg in ('urgente', 'critica') %}
+            <span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);font-weight:700">🚨 Urgente</span>
+          {% elif urg == 'alta' %}
+            <span class="badge" style="background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.4)">🟠 Alta</span>
+          {% elif urg == 'baixa' %}
+            <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3)">🟢 Baixa</span>
+          {% else %}
+            <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)">🟡 Média</span>
+          {% endif %}
         </td>
         <td>
           <span class="badge badge-{{ s | replace(' ','_') }}">
@@ -102,10 +151,6 @@
           {{ p.criado_em.strftime('%d/%m/%y %H:%M') if p.criado_em is not string
              else p.criado_em[:16] | replace('T',' ') }}
         </td>
-        <td style="font-size:11px;color:var(--text3)">
-          {{ p.atualizado_em.strftime('%d/%m/%y %H:%M') if p.atualizado_em is not string
-             else p.atualizado_em[:16] | replace('T',' ') }}
-        </td>
         <td>
           <a href="{{ url_for('admin_pedidos.detalhe_pedido_admin', pedido_id=p.id) }}"
              class="btn btn-primary btn-xs">Gerenciar →</a>
@@ -114,6 +159,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <div style="padding:40px;text-align:center;color:var(--text3)">
     Nenhum pedido encontrado com os filtros aplicados.

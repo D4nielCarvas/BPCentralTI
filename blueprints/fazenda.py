@@ -299,7 +299,6 @@ def listar_manutencoes():
         busca=busca,
     )
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # TUTORIAIS
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -335,22 +334,20 @@ def listar_pedidos():
     usuario_id = get_usuario_id()
     localidade_id = get_localidade_filter()
     filtro_status = request.args.get("status", "").strip()
+    _URGENCIAS_VALIDAS = frozenset({"baixa", "media", "alta", "urgente", "critica"})
 
     params: list[Any] = []
 
     if role == "viewer":
-        # Viewer: todos os pedidos da sua fazenda/localidade
+        # Viewer: vê apenas seus próprios pedidos
         query = """
-            SELECT pv.*, l.nome AS localidade_nome
-            FROM pedidos_viewer pv
-            JOIN localidades l ON l.id = pv.localidade_id
-            WHERE pv.localidade_id = %s
-        """
-        params.append(localidade_id)
-    elif role == "apoio":
-        # Apoio: somente pedidos criados pelo próprio usuário
-        query = """
-            SELECT pv.*, l.nome AS localidade_nome
+            SELECT pv.id, pv.localidade_id, pv.usuario_id, pv.descricao, pv.status,
+                   COALESCE(pv.item, '') AS item,
+                   COALESCE(pv.quantidade, 1) AS quantidade,
+                   COALESCE(pv.motivo, pv.descricao) AS motivo,
+                   COALESCE(pv.urgencia, 'media') AS urgencia,
+                   pv.criado_em, pv.atualizado_em,
+                   l.nome AS localidade_nome
             FROM pedidos_viewer pv
             JOIN localidades l ON l.id = pv.localidade_id
             WHERE pv.usuario_id = %s
@@ -359,7 +356,13 @@ def listar_pedidos():
     else:
         # Admin: visão global
         query = """
-            SELECT pv.*, l.nome AS localidade_nome
+            SELECT pv.id, pv.localidade_id, pv.usuario_id, pv.descricao, pv.status,
+                   COALESCE(pv.item, '') AS item,
+                   COALESCE(pv.quantidade, 1) AS quantidade,
+                   COALESCE(pv.motivo, pv.descricao) AS motivo,
+                   COALESCE(pv.urgencia, 'media') AS urgencia,
+                   pv.criado_em, pv.atualizado_em,
+                   l.nome AS localidade_nome
             FROM pedidos_viewer pv
             JOIN localidades l ON l.id = pv.localidade_id
             WHERE 1=1
@@ -392,69 +395,161 @@ def novo_pedido():
     """
     Formulário para criar um novo pedido (GET) e processar o envio (POST).
 
-    Segurança: localidade_id e usuario_id são lidos da sessão — nunca do body.
-    Validação: descrição é obrigatória e limitada a 2000 caracteres.
+    Segurança e Integridade:
+        - Localidade detectada automaticamente a partir da fazenda do usuário.
+        - Campos estruturados: Item, Quantidade, Motivo/Descrição, Urgência.
+        - Alertas automáticos para administradores para novos pedidos.
     """
-    localidade_id = get_localidade_filter()
+    localidade_id_sessao = get_localidade_filter()
     usuario_id = get_usuario_id()
+    role = session.get("role")
+
+    # Identificar nome da localidade/fazenda do usuário
+    fazenda_usuario_nome = session.get("fazenda_nome") or ""
+    localidade_efetiva_id = localidade_id_sessao
+
+    with acquire_conn() as conn:
+        with conn.cursor() as cur:
+            # Se não tiver o nome da fazenda ou ID na sessão, busca no cadastro do usuário
+            if not fazenda_usuario_nome or not localidade_efetiva_id:
+                user_info = fetch_one(
+                    cur,
+                    """
+                    SELECT u.localidade_id, l.nome AS localidade_nome
+                    FROM usuarios u
+                    LEFT JOIN localidades l ON l.id = u.localidade_id
+                    WHERE u.id = %s
+                    """,
+                    (usuario_id,),
+                )
+                if user_info:
+                    if not localidade_efetiva_id and user_info.get("localidade_id"):
+                        localidade_efetiva_id = user_info["localidade_id"]
+                    if not fazenda_usuario_nome and user_info.get("localidade_nome"):
+                        fazenda_usuario_nome = user_info["localidade_nome"]
 
     # Viewers sem localidade configurada não podem abrir pedidos
-    if session.get("role") == "viewer" and not localidade_id:
-        flash("Sua conta não está vinculada a uma localidade. Contate o administrador.", "danger")
+    if role == "viewer" and not localidade_efetiva_id:
+        flash("Sua conta não está vinculada a uma fazenda/localidade. Contate o administrador.", "danger")
         return redirect(url_for("fazenda.listar_pedidos"))
 
+    _URGENCIAS_VALIDAS = {"baixa", "media", "alta", "urgente", "critica"}
+
     if request.method == "POST":
-        descricao = (request.form.get("descricao") or "").strip()
-        etiqueta_ids = request.form.getlist("etiqueta_ids")  # lista de IDs selecionados
+        item = (request.form.get("item") or "").strip()
+        quantidade_raw = (request.form.get("quantidade") or "1").strip()
+        urgencia = (request.form.get("urgencia") or "media").strip().lower()
+        motivo = (request.form.get("motivo") or request.form.get("descricao") or "").strip()
 
-        if not descricao:
-            flash("A descrição do pedido é obrigatória.", "warning")
-            return render_template("fazenda/novo_pedido.html")
+        # Validação de quantidade
+        try:
+            quantidade = int(quantidade_raw)
+            if quantidade <= 0:
+                raise ValueError
+        except ValueError:
+            flash("A quantidade informada deve ser um número inteiro positivo.", "warning")
+            return redirect(url_for("fazenda.novo_pedido"))
 
-        if len(descricao) > 2000:
-            flash("A descrição não pode ultrapassar 2000 caracteres.", "warning")
-            return render_template("fazenda/novo_pedido.html", descricao=descricao)
+        # Validação de urgência
+        if urgencia not in _URGENCIAS_VALIDAS:
+            urgencia = "media"
 
-        # Para admins sem localidade_id de sessão, usa a localidade do form
-        loc_id = localidade_id or request.form.get("localidade_id")
+        # Validações obrigatórias
+        if not item and not motivo:
+            flash("Informe o item desejado e o motivo da solicitação.", "warning")
+            return redirect(url_for("fazenda.novo_pedido"))
+
+        if not item:
+            flash("O campo Item é obrigatório.", "warning")
+            return redirect(url_for("fazenda.novo_pedido"))
+
+        if not motivo:
+            flash("O campo Motivo/Descrição é obrigatório.", "warning")
+            return redirect(url_for("fazenda.novo_pedido"))
+
+        if len(item) > 255:
+            flash("O nome do item não pode ultrapassar 255 caracteres.", "warning")
+            return redirect(url_for("fazenda.novo_pedido"))
+
+        if len(motivo) > 2000:
+            flash("O motivo/descrição não pode ultrapassar 2000 caracteres.", "warning")
+            return redirect(url_for("fazenda.novo_pedido"))
+
+        # Para admins sem localidade_id de sessão, usa a localidade selecionada no form ou a sua própria
+        loc_id = localidade_efetiva_id if role == "viewer" else (request.form.get("localidade_id") or localidade_efetiva_id)
         if not loc_id:
             flash("Localidade não identificada.", "danger")
-            return render_template("fazenda/novo_pedido.html", descricao=descricao)
+            return redirect(url_for("fazenda.novo_pedido"))
+
+        # Monta a descrição agregada para manter 100% de retrocompatibilidade
+        descricao_retro = f"Item: {item} | Quantidade: {quantidade}\nUrgência: {urgencia.title()}\nMotivo: {motivo}"
 
         with acquire_conn() as conn:
             with conn.cursor() as cur:
+                # 1. Inserir o pedido com os campos estruturados
                 cur.execute(
                     """
-                    INSERT INTO pedidos_viewer (localidade_id, usuario_id, descricao, status)
-                    VALUES (%s, %s, %s, 'pendente')
+                    INSERT INTO pedidos_viewer (localidade_id, usuario_id, item, quantidade, motivo, urgencia, descricao, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, 'pendente')
                     RETURNING id
                     """,
-                    (loc_id, usuario_id, descricao),
+                    (loc_id, usuario_id, item, quantidade, motivo, urgencia, descricao_retro),
                 )
                 novo_id = cur.fetchone()["id"]
+
+                # 2. Obter nome da localidade do pedido para a notificação
+                loc_row = fetch_one(cur, "SELECT nome FROM localidades WHERE id = %s", (loc_id,))
+                nome_fazenda_notif = loc_row["nome"] if loc_row else "Fazenda"
+
+                # 3. Disparo de Notificações para Administradores
+                msg_urgencia = "🚨 [URGENTE] " if urgencia in ("alta", "urgente", "critica") else "📋 "
+                msg_notificacao = f"{msg_urgencia}Novo Pedido #{novo_id} ({nome_fazenda_notif}): {item} (Qtd: {quantidade})"
+
+                # Inserção com fallback para manter compatibilidade com/sem coluna pedido_id
+                try:
+                    cur.execute(
+                        """
+                        INSERT INTO notificacoes (usuario_id, pedido_id, mensagem)
+                        SELECT id, %s, %s
+                        FROM usuarios
+                        WHERE role = 'admin' AND ativo = TRUE
+                        """,
+                        (novo_id, msg_notificacao[:255]),
+                    )
+                except Exception:
+                    # Fallback caso a tabela/coluna tenha outro formato
+                    try:
+                        cur.execute(
+                            """
+                            INSERT INTO notificacoes (usuario_id, mensagem)
+                            SELECT id, %s
+                            FROM usuarios
+                            WHERE role = 'admin' AND ativo = TRUE
+                            """,
+                            (msg_notificacao[:255],),
+                        )
+                    except Exception:
+                        pass
 
         flash("Pedido enviado com sucesso!", "success")
         return redirect(url_for("fazenda.detalhe_pedido", pedido_id=novo_id))
 
-    etiquetas: list[dict] = []
     localidades: list[dict] = []
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            etiquetas = fetch_all(cur, "SELECT id, nome, cor_hex FROM chamado_etiquetas ORDER BY nome ASC")
-            if session.get("role") == "admin":
+            if role == "admin":
                 localidades = fetch_all(
                     cur, "SELECT id, nome, tipo FROM localidades ORDER BY nome ASC"
                 )
 
     item_pre_selecionado = request.args.get("item", "").strip()
-    descricao_inicial = f"Solicito o item do estoque: {item_pre_selecionado}\nQuantidade: " if item_pre_selecionado else ""
 
     return render_template(
         "fazenda/novo_pedido.html",
         localidades=localidades,
-        localidade_id_sessao=localidade_id,
-        etiquetas=etiquetas,
-        descricao=descricao_inicial,
+        localidade_id_sessao=localidade_efetiva_id,
+        fazenda_usuario_nome=fazenda_usuario_nome,
+        item_pre_selecionado=item_pre_selecionado,
     )
 
 

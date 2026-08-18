@@ -98,6 +98,8 @@ def _tentar_baixa_estoque(cur, pedido_id: int, descricao: str, localidade_id: in
 # LISTAGEM GERAL DE PEDIDOS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+_URGENCIAS_VALIDAS = ["baixa", "media", "alta", "urgente"]
+
 @admin_pedidos_bp.route("/pedidos")
 @admin_required
 def listar_pedidos_admin():
@@ -107,12 +109,12 @@ def listar_pedidos_admin():
     Query params:
         status      — Filtra por status do pedido.
         localidade  — Filtra por localidade_id.
-        etiqueta    — Filtra por etiqueta_id.
-        q           — Busca textual na descrição.
+        urgencia    — Filtra por nível de urgência.
+        q           — Busca textual no item, motivo ou descrição.
     """
     filtro_status = request.args.get("status", "").strip()
     filtro_local = request.args.get("localidade", "").strip()
-    filtro_etiqueta = request.args.get("etiqueta", "").strip()
+    filtro_urgencia = request.args.get("urgencia", "").strip().lower()
     busca = request.args.get("q", "").strip()
 
     params: list = []
@@ -120,6 +122,10 @@ def listar_pedidos_admin():
         SELECT
             pv.id,
             pv.descricao,
+            COALESCE(pv.item, '') AS item,
+            COALESCE(pv.quantidade, 1) AS quantidade,
+            COALESCE(pv.motivo, pv.descricao) AS motivo,
+            COALESCE(pv.urgencia, 'media') AS urgencia,
             pv.status,
             pv.criado_em,
             pv.atualizado_em,
@@ -139,11 +145,24 @@ def listar_pedidos_admin():
         query += " AND pv.localidade_id = %s"
         params.append(filtro_local)
 
-    if busca:
-        query += " AND pv.descricao ILIKE %s"
-        params.append(f"%{busca}%")
+    if filtro_urgencia and filtro_urgencia in _URGENCIAS_VALIDAS:
+        query += " AND pv.urgencia = %s"
+        params.append(filtro_urgencia)
 
-    query += " ORDER BY pv.id DESC"
+    if busca:
+        query += " AND (pv.descricao ILIKE %s OR pv.item ILIKE %s OR pv.motivo ILIKE %s)"
+        params.extend([f"%{busca}%", f"%{busca}%", f"%{busca}%"])
+
+    query += """
+        ORDER BY 
+            CASE 
+                WHEN pv.status IN ('pendente', 'em_analise') AND pv.urgencia IN ('urgente', 'critica') THEN 0
+                WHEN pv.status IN ('pendente', 'em_analise') AND pv.urgencia = 'alta' THEN 1
+                WHEN pv.status IN ('pendente', 'em_analise') THEN 2
+                ELSE 3 
+            END,
+            pv.id DESC
+    """
 
     with acquire_conn() as conn:
         with conn.cursor() as cur:
@@ -151,6 +170,17 @@ def listar_pedidos_admin():
             localidades = fetch_all(
                 cur, "SELECT id, nome FROM localidades ORDER BY nome ASC"
             )
+            # Total de pedidos urgentes/críticos pendentes de atendimento
+            alertas_urgentes = fetch_one(
+                cur,
+                """
+                SELECT COUNT(*) as qtd
+                FROM pedidos_viewer
+                WHERE status IN ('pendente', 'em_analise')
+                  AND urgencia IN ('alta', 'urgente', 'critica')
+                """
+            )
+            qtd_pedidos_urgentes = alertas_urgentes["qtd"] if alertas_urgentes else 0
 
     return render_template(
         "admin/pedidos.html",
@@ -158,8 +188,11 @@ def listar_pedidos_admin():
         localidades=localidades,
         filtro_status=filtro_status,
         filtro_local=filtro_local,
+        filtro_urgencia=filtro_urgencia,
+        qtd_pedidos_urgentes=qtd_pedidos_urgentes,
         busca=busca,
         status_validos=sorted(_STATUS_VALIDOS),
+        urgencias=_URGENCIAS_VALIDAS,
     )
 
 
