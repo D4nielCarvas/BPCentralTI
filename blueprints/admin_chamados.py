@@ -14,14 +14,16 @@ from __future__ import annotations
 from typing import Any
 import uuid
 from werkzeug.utils import secure_filename
+from datetime import datetime, timedelta
 
 from flask import (
     Blueprint, abort, flash, redirect,
-    render_template, request, session, url_for,
+    render_template, request, session, url_for, jsonify
 )
 
 from utils.auth_utils import admin_required, get_usuario_id
 from utils.db_layer import acquire_conn, fetch_all, fetch_one
+from utils.anexos_utils import ALLOWED_EXTENSIONS, allowed_file, save_anexo
 import psycopg2
 
 admin_chamados_bp = Blueprint("admin_chamados", __name__, url_prefix="/admin/chamados")
@@ -30,35 +32,6 @@ _STATUS_VALIDOS = frozenset({
     "aberto", "em_atendimento", "pendente_usuario", "resolvido", "fechado"
 })
 _PRIORIDADES = ["baixa", "media", "alta", "urgente"]
-
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'zip', 'rar', 'txt', 'csv'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def save_anexo(arquivo, chamado_id, mensagem_id, usuario_id, cur):
-    if arquivo and arquivo.filename and allowed_file(arquivo.filename):
-        filename = secure_filename(arquivo.filename)
-        unique_name = f"{uuid.uuid4().hex[:8]}_{filename}"
-        
-        arquivo.seek(0)
-        file_bytes = arquivo.read()
-        
-        cur.execute(
-            """INSERT INTO arquivos_storage (nome_arquivo, dados, mimetype) 
-               VALUES (%s, %s, %s)
-               ON CONFLICT (nome_arquivo) DO NOTHING""",
-            (unique_name, psycopg2.Binary(file_bytes), arquivo.mimetype)
-        )
-        
-        caminho_db = f"/arquivos/{unique_name}"
-        cur.execute(
-            """
-            INSERT INTO chamado_anexos (chamado_id, mensagem_id, usuario_id, nome_arquivo, caminho_arquivo)
-            VALUES (%s, %s, %s, %s, %s)
-            """,
-            (chamado_id, mensagem_id, usuario_id, filename, caminho_db)
-        )
 
 # ── Helper: query base de chamados com etiquetas ──────────────────────────────
 _QUERY_CHAMADOS = """
@@ -209,9 +182,11 @@ def detalhe_chamado_admin(chamado_id: int):
                 cur,
                 """
                 SELECT cm.id, cm.mensagem, cm.criado_em, cm.is_sistema,
-                       u.nome AS autor_nome, u.role AS autor_role, u.id AS autor_id
+                       u.nome AS autor_nome, u.role AS autor_role, u.id AS autor_id,
+                       ca.caminho_arquivo, ca.nome_arquivo
                 FROM chamado_mensagens cm
                 JOIN usuarios u ON u.id = cm.usuario_id
+                LEFT JOIN chamado_anexos ca ON ca.mensagem_id = cm.id
                 WHERE cm.chamado_id = %s
                 ORDER BY cm.criado_em ASC
                 """,
@@ -259,28 +234,56 @@ def detalhe_chamado_admin(chamado_id: int):
     if request.method == "POST":
         mensagem   = (request.form.get("mensagem") or "").strip()
         novo_status = (request.form.get("novo_status") or "").strip()
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest" or "application/json" in request.headers.get("Accept", "")
 
-        if not mensagem:
+        if not mensagem and not novo_status:
+            if is_ajax:
+                return jsonify({"ok": False, "error": "A mensagem não pode estar vazia."}), 400
             flash("A mensagem não pode estar vazia.", "warning")
             return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
 
+        anexo_info = None
+        status_final = chamado["status"]
+        nova_msg_id = None
+
         with acquire_conn() as conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    "INSERT INTO chamado_mensagens (chamado_id, usuario_id, mensagem) VALUES (%s, %s, %s) RETURNING id",
-                    (chamado_id, usuario_id, mensagem),
-                )
-                nova_msg_id = cur.fetchone()["id"]
+                if mensagem:
+                    cur.execute(
+                        "INSERT INTO chamado_mensagens (chamado_id, usuario_id, mensagem) VALUES (%s, %s, %s) RETURNING id",
+                        (chamado_id, usuario_id, mensagem),
+                    )
+                    nova_msg_id = cur.fetchone()["id"]
 
-                arquivo = request.files.get("anexo")
-                if arquivo:
-                    save_anexo(arquivo, chamado_id, nova_msg_id, usuario_id, cur)
+                    arquivo = request.files.get("anexo")
+                    if arquivo:
+                        anexo_info = save_anexo(arquivo, chamado_id, nova_msg_id, usuario_id, cur)
 
                 if novo_status and novo_status in _STATUS_VALIDOS:
                     cur.execute(
                         "UPDATE chamados SET status = %s WHERE id = %s",
                         (novo_status, chamado_id),
                     )
+                    status_final = novo_status
+
+        if is_ajax:
+            dt_now = datetime.utcnow() - timedelta(hours=3)
+            return jsonify({
+                "ok": True,
+                "mensagem": {
+                    "id": nova_msg_id,
+                    "mensagem": mensagem,
+                    "is_sistema": False,
+                    "autor_nome": session.get("nome", "Técnico"),
+                    "autor_role": "admin",
+                    "autor_id": usuario_id,
+                    "criado_em": dt_now.strftime("%d/%m/%y %H:%M"),
+                    "caminho_arquivo": anexo_info["caminho_arquivo"] if anexo_info else None,
+                    "nome_arquivo": anexo_info["nome_arquivo"] if anexo_info else None,
+                } if nova_msg_id else None,
+                "status": status_final,
+                "status_label": status_final.replace("_", " ").title()
+            })
 
         return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
 

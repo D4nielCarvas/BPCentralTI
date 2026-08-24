@@ -84,12 +84,16 @@
     line-height: 1.6;
   }
   
-  /* --- Chat Components --- */
+    /* --- Chat Components --- */
   .chat-history {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     margin-bottom: 24px;
+    max-height: 520px;
+    overflow-y: auto;
+    padding: 8px 4px;
+    scroll-behavior: smooth;
   }
   
   .chat-row { display: flex; flex-direction: column; }
@@ -104,6 +108,8 @@
     line-height: 1.5;
     border-radius: 16px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    word-break: break-word;
+    position: relative;
   }
   
   .chat-row.me .chat-bubble {
@@ -128,29 +134,55 @@
     padding: 6px 16px;
   }
   
+  .chat-bubble.sending {
+    opacity: 0.75;
+  }
+  .chat-bubble.sending::after {
+    content: ' ⏳';
+    font-size: 11px;
+  }
+  
   .chat-info {
     font-size: 11px;
     color: var(--text3, #94a3b8);
-    margin-top: 6px;
+    margin-top: 5px;
   }
   
   .chat-attachment {
-    margin-top: 12px;
-    padding-top: 12px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 1px solid rgba(128,128,128,0.2);
   }
   
   .chat-attachment img {
     max-width: 100%;
-    max-height: 250px;
+    max-height: 280px;
     border-radius: 8px;
     display: block;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    object-fit: contain;
+    background: rgba(0,0,0,0.04);
+  }
+  .chat-attachment img:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   }
   
-  /* --- Forms --- */
+  /* Drag and drop highlight */
+  .chat-panel-container {
+    position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .chat-panel-container.dragover {
+    border-color: var(--accent, #3b82f6) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+  }
+  
+  /* --- Forms & Attachment Previews --- */
   .reply-form {
     border-top: 1px solid var(--border, #e2e8f0);
-    padding-top: 24px;
+    padding-top: 18px;
   }
   
   .reply-textarea {
@@ -160,10 +192,17 @@
     padding: 12px 16px;
     font-size: 14px;
     resize: vertical;
-    min-height: 80px;
-    margin-bottom: 16px;
+    min-height: 70px;
+    margin-bottom: 12px;
     background: var(--bg3, #f8fafc);
     color: var(--text);
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .reply-textarea:focus {
+    outline: none;
+    border-color: var(--accent, #3b82f6);
+    background: var(--bg2, #fff);
   }
   
   .reply-actions {
@@ -174,9 +213,64 @@
     gap: 12px;
   }
   
+  /* Preview de Anexo / Print */
+  .anexo-preview-box {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px dashed var(--accent, #3b82f6);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    animation: fadeIn 0.2s ease;
+  }
+  .anexo-preview-box.active {
+    display: flex;
+  }
+  .anexo-preview-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: #000;
+    border: 1px solid var(--border);
+  }
+  .anexo-preview-info {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text);
+    overflow: hidden;
+  }
+  .anexo-preview-name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .anexo-preview-size {
+    color: var(--text3);
+    font-size: 11px;
+  }
+  .anexo-preview-remove {
+    background: none;
+    border: none;
+    color: var(--red, #ef4444);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+  .anexo-preview-remove:hover {
+    background: rgba(239, 68, 68, 0.1);
+  }
+
   /* Input File Estilizado */
-  input[type="file"]::file-selector-button {
-    padding: 8px 16px;
+  .custom-file-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
     border-radius: 8px;
     border: 1px solid var(--border, #e2e8f0);
     background: var(--bg2, #fff);
@@ -184,10 +278,11 @@
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
   }
-  input[type="file"]::file-selector-button:hover {
+  .custom-file-label:hover {
     background: var(--bg3, #f1f5f9);
+    border-color: var(--accent, #3b82f6);
   }
   
   /* --- Timeline Sidebar --- */
@@ -201,6 +296,74 @@
   .timeline-item:last-child {
     border-bottom: none;
     padding-bottom: 0;
+  }
+  
+  /* --- Lightbox Modal --- */
+  .lightbox-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    animation: fadeIn 0.15s ease;
+  }
+  .lightbox-modal.active {
+    display: flex;
+  }
+  .lightbox-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .lightbox-img {
+    max-width: 90vw;
+    max-height: 82vh;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    object-fit: contain;
+    cursor: zoom-in;
+    transition: transform 0.2s ease;
+  }
+  .lightbox-img.zoomed {
+    transform: scale(1.5);
+    cursor: zoom-out;
+  }
+  .lightbox-toolbar {
+    margin-top: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .lightbox-btn {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .lightbox-btn:hover {
+    background: rgba(255,255,255,0.3);
+    color: #fff;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   
   /* --- Responsive Breakpoints --- */
@@ -220,7 +383,7 @@
       <div class="panel-header">
         <h3 class="panel-title">{{ chamado.titulo }}</h3>
         {% set s = chamado.status | lower | replace(' ','_') %}
-        <span class="badge badge-{{ s }}">{{ chamado.status | replace('_',' ') | title }}</span>
+        <span class="badge badge-{{ s }}" id="ticket-status-badge">{{ chamado.status | replace('_',' ') | title }}</span>
         {% set cor_p = {'urgente':'var(--red)','alta':'var(--orange)','media':'var(--accent)','baixa':'var(--text3)'}[chamado.prioridade] %}
         {% set style_attr = 'style="font-size:12px;font-weight:700;color:' ~ cor_p ~ '"' %}
         <span {{ style_attr | safe }}>{{ chamado.prioridade | upper }}</span>
@@ -250,58 +413,92 @@
     </div>
 
     <!-- CHAT -->
-    <div class="panel">
-      <div class="panel-header" style="border:none; margin-bottom:8px; padding-bottom:0;">
+    <div class="panel chat-panel-container" id="chat-panel">
+      <div class="panel-header" style="border:none; margin-bottom:8px; padding-bottom:0; display:flex; justify-content:space-between; align-items:center;">
         <h3 class="panel-title" style="font-size: 16px;">💬 Histórico de Atendimento</h3>
+        <span style="font-size:11px; color:var(--text3);" title="Prints podem ser colados com Ctrl+V ou arrastados para esta janela">
+          💡 Dica: cole prints com <kbd style="background:var(--bg3);border:1px solid var(--border);padding:2px 4px;border-radius:4px;font-size:10px;">Ctrl+V</kbd>
+        </span>
       </div>
       
-      {% if mensagens %}
+      {% if anexos_chamado %}
+      <div style="margin-bottom:16px;background:var(--bg3);padding:12px;border-radius:8px;border:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-weight:600;text-transform:uppercase">📎 Anexos Originais da Abertura</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          {% for ax in anexos_chamado %}
+            {% set ext = (ax.nome_arquivo or ax.caminho_arquivo).split('.')[-1] | lower if (ax.nome_arquivo or ax.caminho_arquivo) and '.' in (ax.nome_arquivo or ax.caminho_arquivo) else '' %}
+            {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
+            <div style="cursor:pointer;" onclick="abrirLightbox('{{ ax.caminho_arquivo }}', '{{ ax.nome_arquivo }}')">
+              <img src="{{ ax.caminho_arquivo }}" alt="{{ ax.nome_arquivo }}" style="max-height:120px;border-radius:6px;border:1px solid var(--border);object-fit:cover;">
+            </div>
+            {% else %}
+            <a href="{{ ax.caminho_arquivo }}" target="_blank" style="font-size:12px;color:var(--accent);text-decoration:underline;background:var(--bg2);padding:6px 10px;border-radius:6px;border:1px solid var(--border)">
+              📎 {{ ax.nome_arquivo }}
+            </a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
       <div id="chat-msgs" class="chat-history">
-        {% for msg in mensagens %}
-          {% set e_meu = (msg.autor_id == usuario_id) %}
-          {% set row_class = 'system' if msg.is_sistema else ('me' if e_meu else 'other') %}
-          
-          <div class="chat-row {{ row_class }}">
-            <div class="chat-bubble">
-              {% if msg.is_sistema %}⚙ {% endif %}
-              {{ msg.mensagem }}
-              
-              {% if msg.caminho_arquivo %}
-              <div class="chat-attachment" {% if not e_meu %}style="border-color: var(--border);"{% endif %}>
-                {% set ext = (msg.nome_arquivo or msg.caminho_arquivo).split('.')[-1] | lower if (msg.nome_arquivo or msg.caminho_arquivo) and '.' in (msg.nome_arquivo or msg.caminho_arquivo) else '' %}
-                {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
-                <a href="{{ msg.caminho_arquivo }}" target="_blank">
-                  <img src="{{ msg.caminho_arquivo }}" alt="{{ msg.nome_arquivo }}">
-                </a>
-                {% else %}
-                <a href="{{ msg.caminho_arquivo }}" target="_blank" style="font-size:12px;text-decoration:underline;color:inherit;">
-                  📎 {{ msg.nome_arquivo }}
-                </a>
+        {% if mensagens %}
+          {% for msg in mensagens %}
+            {% set e_meu = (msg.autor_id == usuario_id) %}
+            {% set row_class = 'system' if msg.is_sistema else ('me' if e_meu else 'other') %}
+            
+            <div class="chat-row {{ row_class }}" data-msg-id="{{ msg.id }}">
+              <div class="chat-bubble">
+                {% if msg.is_sistema %}⚙ {% endif %}
+                {{ msg.mensagem }}
+                
+                {% if msg.caminho_arquivo %}
+                <div class="chat-attachment" {% if not e_meu %}style="border-color: var(--border);"{% endif %}>
+                  {% set ext = (msg.nome_arquivo or msg.caminho_arquivo).split('.')[-1] | lower if (msg.nome_arquivo or msg.caminho_arquivo) and '.' in (msg.nome_arquivo or msg.caminho_arquivo) else '' %}
+                  {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
+                  <img src="{{ msg.caminho_arquivo }}" alt="{{ msg.nome_arquivo }}" onclick="abrirLightbox('{{ msg.caminho_arquivo }}', '{{ msg.nome_arquivo }}')">
+                  {% else %}
+                  <a href="{{ msg.caminho_arquivo }}" target="_blank" style="font-size:12px;text-decoration:underline;color:inherit;">
+                    📎 {{ msg.nome_arquivo }}
+                  </a>
+                  {% endif %}
+                </div>
                 {% endif %}
+              </div>
+              
+              {% if not msg.is_sistema %}
+              <div class="chat-info">
+                {% if not e_meu %}🔧 {% endif %}{{ msg.autor_nome }} · {{ msg.criado_em | fdt }}
               </div>
               {% endif %}
             </div>
-            
-            {% if not msg.is_sistema %}
-            <div class="chat-info">
-              {% if not e_meu %}🔧 {% endif %}{{ msg.autor_nome }} · {{ msg.criado_em | fdt }}
-            </div>
-            {% endif %}
+          {% endfor %}
+        {% else %}
+          <div id="no-msgs-placeholder" style="text-align:center;color:var(--text3);padding:32px 0;font-size:14px;">
+            Nenhuma mensagem ainda. A equipe de TI responderá em breve.
           </div>
-        {% endfor %}
+        {% endif %}
       </div>
-      {% else %}
-      <div style="text-align:center;color:var(--text3);padding:32px 0;font-size:14px;">
-        Nenhuma mensagem ainda. A equipe de TI responderá em breve.
+
+      <!-- PREVIEW DE ANEXO / PRINT COLADO -->
+      <div id="anexo-preview-box" class="anexo-preview-box">
+        <img id="anexo-preview-img" class="anexo-preview-thumb" src="" alt="Preview">
+        <div class="anexo-preview-info">
+          <div id="anexo-preview-nome" class="anexo-preview-name">imagem.jpg</div>
+          <div id="anexo-preview-tamanho" class="anexo-preview-size">0 KB</div>
+        </div>
+        <button type="button" id="anexo-preview-btn-remove" class="anexo-preview-remove" title="Remover este anexo">✕</button>
       </div>
-      {% endif %}
 
       <!-- FORMULÁRIO -->
       {% if chamado.status not in ['resolvido', 'fechado'] %}
       <form method="POST" action="{{ url_for('chamados.detalhe_chamado', chamado_id=chamado.id) }}" id="form-msg" class="reply-form" enctype="multipart/form-data">
-        <textarea name="mensagem" class="reply-textarea" maxlength="2000" placeholder="Escreva para a equipe de TI…" required></textarea>
+        <textarea name="mensagem" id="reply-textarea" class="reply-textarea" maxlength="2000" placeholder="Escreva para a equipe de TI… (Pressione Ctrl+Enter para enviar)" required></textarea>
         <div class="reply-actions">
-          <input type="file" name="anexo" accept=".png,.jpg,.jpeg,.gif,.pdf,.zip,.rar,.txt,.csv">
+          <label class="custom-file-label">
+            📎 Anexar Arquivo ou Print
+            <input type="file" name="anexo" id="input-anexo" accept=".png,.jpg,.jpeg,.gif,.webp,.bmp,.pdf,.zip,.rar,.txt,.csv" style="display:none;">
+          </label>
           <button type="submit" id="btn-send" class="btn btn-primary">📨 Enviar Mensagem</button>
         </div>
       </form>
@@ -322,7 +519,7 @@
         <div class="meta-group">
           <span class="meta-label">Status</span>
           {% set s = chamado.status | lower | replace(' ','_') %}
-          <span class="badge badge-{{ s }}" style="width:max-content;margin-top:4px;">{{ chamado.status | replace('_',' ') | title }}</span>
+          <span class="badge badge-{{ s }}" id="sidebar-status-badge" style="width:max-content;margin-top:4px;">{{ chamado.status | replace('_',' ') | title }}</span>
         </div>
         <div class="meta-group">
           <span class="meta-label">Aberto em</span>
@@ -357,93 +554,426 @@
     </div>
     {% endif %}
 
-    {% if chamado.status == 'pendente_usuario' %}
-    <div style="background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); border-radius:12px; padding:16px; font-size:14px; color:var(--yellow); font-weight:500;">
+    <div id="box-pendente-aviso" style="display:{% if chamado.status == 'pendente_usuario' %}block{% else %}none{% endif %}; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); border-radius:12px; padding:16px; font-size:14px; color:var(--yellow); font-weight:500;">
       ⚠️ A TI aguarda sua resposta para retomar o atendimento.
     </div>
-    {% endif %}
     
   </div>
 </div>
 
+<!-- ====== LIGHTBOX MODAL PARA PRINTS E IMAGENS ====== -->
+<div id="chat-lightbox" class="lightbox-modal" onclick="fecharLightbox(event)">
+  <div class="lightbox-content" onclick="event.stopPropagation()">
+    <img id="lightbox-img" class="lightbox-img" src="" alt="Visualização ampliada" onclick="toggleZoom(this)">
+    <div class="lightbox-toolbar">
+      <a id="lightbox-download-link" href="#" target="_blank" download class="lightbox-btn">⬇ Baixar Imagem</a>
+      <button type="button" class="lightbox-btn" onclick="fecharLightboxDirect()">✕ Fechar (ESC)</button>
+    </div>
+  </div>
+</div>
+
 <script>
-  // UI UX feedback for form submissions
-  document.getElementById('form-msg') && document.getElementById('form-msg').addEventListener('submit', function() {
-    const b = document.getElementById('btn-send');
-    if (b) { b.disabled = true; b.textContent = '⏳ Enviando…'; }
+  // ── Constantes & Estado ──────────────────────────────────────────────────
+  const CHAMADO_ID = Number("{{ chamado.id }}");
+  const MEU_ID = Number("{{ usuario_id }}");
+  let ultimoId = Number("{{ mensagens[-1].id if mensagens else 0 }}");
+  let arquivoAtual = null;
+
+  // ── Elementos do DOM ─────────────────────────────────────────────────────
+  const chatMsgs = document.getElementById('chat-msgs');
+  const formMsg = document.getElementById('form-msg');
+  const textareaMsg = document.getElementById('reply-textarea');
+  const inputAnexo = document.getElementById('input-anexo');
+  const btnSend = document.getElementById('btn-send');
+  const previewBox = document.getElementById('anexo-preview-box');
+  const previewImg = document.getElementById('anexo-preview-img');
+  const previewNome = document.getElementById('anexo-preview-nome');
+  const previewTamanho = document.getElementById('anexo-preview-tamanho');
+  const btnRemoveAnexo = document.getElementById('anexo-preview-btn-remove');
+  const chatPanel = document.getElementById('chat-panel');
+
+  // ── Lightbox Functions ───────────────────────────────────────────────────
+  function abrirLightbox(src, nome) {
+    const modal = document.getElementById('chat-lightbox');
+    const img = document.getElementById('lightbox-img');
+    const dlLink = document.getElementById('lightbox-download-link');
+    if (!modal || !img) return;
+    img.src = src;
+    img.classList.remove('zoomed');
+    if (dlLink) {
+      dlLink.href = src;
+      dlLink.download = nome || 'imagem_chamado.jpg';
+    }
+    modal.classList.add('active');
+  }
+
+  function fecharLightbox(e) {
+    if (e.target.id === 'chat-lightbox') fecharLightboxDirect();
+  }
+
+  function fecharLightboxDirect() {
+    const modal = document.getElementById('chat-lightbox');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function toggleZoom(imgEl) {
+    imgEl.classList.toggle('zoomed');
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') fecharLightboxDirect();
   });
 
+  // ── Client-Side Image Compressor (Canvas) ────────────────────────────────
+  async function comprimirImagemSeNecessario(file, maxDim = 1920, quality = 0.85) {
+    if (!file.type.startsWith('image/') || file.type === 'image/gif') {
+      return file;
+    }
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (!blob || blob.size >= file.size) {
+              resolve(file);
+            } else {
+              const baseName = file.name ? file.name.replace(/\.[^/.]+$/, "") : 'print';
+              const optimizedFile = new File([blob], `${baseName}.jpg`, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              });
+              resolve(optimizedFile);
+            }
+          }, 'image/jpeg', quality);
+        };
+        img.onerror = () => resolve(file);
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve(file);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(2) + ' MB';
+  }
+
+  // ── Gerenciamento do Arquivo/Print Selecionado ────────────────────────────
+  async function setArquivo(file) {
+    if (!file) {
+      limparArquivo();
+      return;
+    }
+    let processado = file;
+    if (file.type.startsWith('image/')) {
+      processado = await comprimirImagemSeNecessario(file);
+    }
+    arquivoAtual = processado;
+
+    previewNome.textContent = processado.name || 'print_colado.jpg';
+    previewTamanho.textContent = formatBytes(processado.size);
+
+    if (processado.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImg.src = e.target.result;
+        previewImg.style.display = 'block';
+      };
+      reader.readAsDataURL(processado);
+    } else {
+      previewImg.style.display = 'none';
+    }
+
+    previewBox.classList.add('active');
+  }
+
+  function limparArquivo() {
+    arquivoAtual = null;
+    if (inputAnexo) inputAnexo.value = '';
+    previewBox.classList.remove('active');
+    previewImg.src = '';
+  }
+
+  if (btnRemoveAnexo) {
+    btnRemoveAnexo.addEventListener('click', limparArquivo);
+  }
+
+  if (inputAnexo) {
+    inputAnexo.addEventListener('change', function() {
+      if (this.files && this.files.length > 0) {
+        setArquivo(this.files[0]);
+      }
+    });
+  }
+
+  // ── Suporte a Colar Imagens (Ctrl + V) em qualquer lugar ──────────────────
   document.addEventListener('paste', function(e) {
     if (e.clipboardData && e.clipboardData.files.length > 0) {
       const file = e.clipboardData.files[0];
       if (file.type.startsWith('image/')) {
-        const fileInput = document.querySelector('input[type="file"][name="anexo"]');
-        if (fileInput) {
-          fileInput.files = e.clipboardData.files;
-          let feedback = document.getElementById('paste-feedback');
-          if (!feedback) {
-            feedback = document.createElement('div');
-            feedback.id = 'paste-feedback';
-            feedback.style = 'font-size:13px; color:var(--green); margin-top:8px; font-weight:600; padding:8px 12px; background:rgba(16,185,129,0.1); border-radius:8px; border:1px solid rgba(16,185,129,0.3); display:inline-block;';
-            fileInput.parentNode.appendChild(feedback);
-          }
-          feedback.textContent = `✅ Imagem colada e pronta para envio: ${file.name || 'imagem_colada.png'}`;
-        }
+        e.preventDefault();
+        setArquivo(file);
+        if (textareaMsg) textareaMsg.focus();
       }
     }
   });
 
-  const CHAMADO_ID = Number("{{ chamado.id }}");
-  const MEU_ID = Number("{{ usuario_id }}");
-  let ultimoId = Number("{{ mensagens[-1].id if mensagens else 0 }}");
+  // ── Drag & Drop de Prints/Arquivos ────────────────────────────────────────
+  if (chatPanel) {
+    ['dragenter', 'dragover'].forEach(eventName => {
+      chatPanel.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        chatPanel.classList.add('dragover');
+      }, false);
+    });
 
-  function buildMsg(m) {
+    ['dragleave', 'drop'].forEach(eventName => {
+      chatPanel.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        chatPanel.classList.remove('dragover');
+      }, false);
+    });
+
+    chatPanel.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        setArquivo(dt.files[0]);
+      }
+    });
+  }
+
+  // ── Renderizador de Bolhas de Mensagens ───────────────────────────────────
+  function buildMsg(m, isSending = false) {
     let anexoHtml = '';
     if (m.caminho_arquivo) {
       const ext = (m.nome_arquivo || m.caminho_arquivo).split('.').pop().toLowerCase();
       const isMe = (m.autor_id == MEU_ID);
       const borderStyle = isMe ? '' : 'style="border-color: var(--border);"';
 
-      if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
-        anexoHtml = `<div class="chat-attachment" ${borderStyle}><a href="${m.caminho_arquivo}" target="_blank"><img src="${m.caminho_arquivo}" alt="${m.nome_arquivo}"></a></div>`;
+      if (['jpg','jpeg','png','gif','webp','bmp'].includes(ext)) {
+        anexoHtml = `<div class="chat-attachment" ${borderStyle}>
+          <img src="${m.caminho_arquivo}" alt="${m.nome_arquivo || 'print'}" onclick="abrirLightbox('${m.caminho_arquivo}', '${m.nome_arquivo || ''}')">
+        </div>`;
       } else {
-        anexoHtml = `<div class="chat-attachment" ${borderStyle}><a href="${m.caminho_arquivo}" target="_blank" style="font-size:12px;text-decoration:underline;color:inherit;">📎 ${m.nome_arquivo}</a></div>`;
+        anexoHtml = `<div class="chat-attachment" ${borderStyle}>
+          <a href="${m.caminho_arquivo}" target="_blank" style="font-size:12px;text-decoration:underline;color:inherit;">📎 ${m.nome_arquivo}</a>
+        </div>`;
       }
     }
     
     if (m.is_sistema) {
-      return `<div class="chat-row system"><div class="chat-bubble">⚙ ${m.mensagem}</div></div>`;
+      return `<div class="chat-row system" data-msg-id="${m.id || 0}"><div class="chat-bubble">⚙ ${m.mensagem}</div></div>`;
     }
     
     const isMe = (m.autor_id == MEU_ID);
     const rowClass = isMe ? 'me' : 'other';
     const authorPrefix = isMe ? '' : '🔧 ';
+    const sendingClass = isSending ? ' sending' : '';
     
-    return `<div class="chat-row ${rowClass}">
-      <div class="chat-bubble">${m.mensagem}${anexoHtml}</div>
+    return `<div class="chat-row ${rowClass}" data-msg-id="${m.id || 0}">
+      <div class="chat-bubble${sendingClass}">${m.mensagem}${anexoHtml}</div>
       <div class="chat-info">${authorPrefix}${m.autor_nome} · ${m.criado_em}</div>
     </div>`;
   }
 
+  function scrollToBottom() {
+    if (chatMsgs) {
+      chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    }
+  }
+  scrollToBottom();
+
+  // ── Envio Assíncrono via AJAX / Fetch ─────────────────────────────────────
+  if (formMsg) {
+    // Atalho Ctrl+Enter
+    if (textareaMsg) {
+      textareaMsg.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+          e.preventDefault();
+          formMsg.requestSubmit();
+        }
+      });
+    }
+
+    formMsg.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const texto = (textareaMsg.value || '').trim();
+      if (!texto && !arquivoAtual) return;
+
+      const placeholder = document.getElementById('no-msgs-placeholder');
+      if (placeholder) placeholder.remove();
+
+      // Desabilita botão durante envio
+      btnSend.disabled = true;
+      btnSend.textContent = '⏳ Enviando…';
+
+      // Mensagem otimista temporária
+      const tempId = 'temp_' + Date.now();
+      const horaAtual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      let previewUrl = arquivoAtual && arquivoAtual.type.startsWith('image/') ? URL.createObjectURL(arquivoAtual) : null;
+
+      const msgOtimista = {
+        id: tempId,
+        mensagem: texto,
+        is_sistema: false,
+        autor_nome: 'Você',
+        autor_id: MEU_ID,
+        criado_em: horaAtual,
+        caminho_arquivo: previewUrl,
+        nome_arquivo: arquivoAtual ? arquivoAtual.name : null
+      };
+
+      chatMsgs.insertAdjacentHTML('beforeend', buildMsg(msgOtimista, true));
+      scrollToBottom();
+
+      // Limpa formulário imediatamente para o usuário continuar
+      const textoEnviado = texto;
+      const arquivoEnviado = arquivoAtual;
+      textareaMsg.value = '';
+      limparArquivo();
+
+      try {
+        const formData = new FormData();
+        formData.append('mensagem', textoEnviado);
+        if (arquivoEnviado) {
+          formData.append('anexo', arquivoEnviado);
+        }
+
+        const res = await fetch(formMsg.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!res.ok) {
+          throw new Error('Falha no envio');
+        }
+
+        const data = await res.json();
+        if (data.ok && data.mensagem) {
+          // Substitui a bolha temporária pela resposta confirmada
+          const tempEl = document.querySelector(`[data-msg-id="${tempId}"]`);
+          if (tempEl) {
+            tempEl.outerHTML = buildMsg(data.mensagem, false);
+            ultimoId = Math.max(ultimoId, data.mensagem.id);
+          }
+          // Atualiza status se mudou
+          if (data.status) {
+            atualizarStatusUI(data.status, data.status_label);
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao enviar mensagem:', err);
+        const tempEl = document.querySelector(`[data-msg-id="${tempId}"]`);
+        if (tempEl) {
+          const bubble = tempEl.querySelector('.chat-bubble');
+          if (bubble) {
+            bubble.classList.remove('sending');
+            bubble.style.background = 'var(--red, #ef4444)';
+            bubble.innerHTML += '<div style="font-size:11px;margin-top:4px;">⚠️ Erro ao enviar mensagem. Recarregue a página.</div>';
+          }
+        }
+      } finally {
+        btnSend.disabled = false;
+        btnSend.textContent = '📨 Enviar Mensagem';
+        scrollToBottom();
+      }
+    });
+  }
+
+  function atualizarStatusUI(status, label) {
+    const badgeTop = document.getElementById('ticket-status-badge');
+    const badgeSide = document.getElementById('sidebar-status-badge');
+    const aviso = document.getElementById('box-pendente-aviso');
+
+    const sClass = 'badge badge-' + status.toLowerCase().replace(' ', '_');
+    if (badgeTop) {
+      badgeTop.className = sClass;
+      badgeTop.textContent = label || status;
+    }
+    if (badgeSide) {
+      badgeSide.className = sClass;
+      badgeSide.textContent = label || status;
+    }
+    if (aviso) {
+      aviso.style.display = (status === 'pendente_usuario') ? 'block' : 'none';
+    }
+  }
+
+  // ── Delta Polling Adaptativo ──────────────────────────────────────────────
+  let pollTimer = null;
   async function pollMensagens() {
     try {
-      const res = await fetch(`/fazenda/chamados/${CHAMADO_ID}/poll`);
+      const url = `/fazenda/chamados/${CHAMADO_ID}/poll?since_id=${ultimoId}`;
+      const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
       if (!res.ok) return;
-      const msgs = await res.json();
-      if (!Array.isArray(msgs) || msgs.length === 0) return;
-      const novas = msgs.filter(m => m.id > ultimoId);
-      if (novas.length === 0) return;
+      const data = await res.json();
       
-      const container = document.getElementById('chat-msgs');
-      if (!container) return;
-      
-      novas.forEach(m => {
-        container.insertAdjacentHTML('beforeend', buildMsg(m));
-        ultimoId = Math.max(ultimoId, m.id);
-      });
-      container.lastElementChild && container.lastElementChild.scrollIntoView({ behavior: 'smooth' });
-    } catch(e) { /* silent fail on poll */ }
+      const lista = Array.isArray(data) ? data : (data.mensagens || []);
+      if (Array.isArray(lista) && lista.length > 0) {
+        const novas = lista.filter(m => m.id > ultimoId);
+        if (novas.length > 0) {
+          const placeholder = document.getElementById('no-msgs-placeholder');
+          if (placeholder) placeholder.remove();
+
+          novas.forEach(m => {
+            // Evita duplicata caso seja mensagem própria já renderizada
+            if (!document.querySelector(`[data-msg-id="${m.id}"]`)) {
+              chatMsgs.insertAdjacentHTML('beforeend', buildMsg(m, false));
+            }
+            ultimoId = Math.max(ultimoId, m.id);
+          });
+          scrollToBottom();
+        }
+      }
+
+      if (data.status) {
+        atualizarStatusUI(data.status, data.status_label);
+      }
+    } catch(e) { /* silencioso */ }
   }
-  setInterval(pollMensagens, 5000);
+
+  function agendarPoll() {
+    clearTimeout(pollTimer);
+    // 2.5s se a aba estiver visível, 15s se em segundo plano
+    const intervalo = document.hidden ? 15000 : 2500;
+    pollTimer = setTimeout(async () => {
+      await pollMensagens();
+      agendarPoll();
+    }, intervalo);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      pollMensagens();
+    }
+    agendarPoll();
+  });
+
+  agendarPoll();
 </script>
 {% endblock %}
+

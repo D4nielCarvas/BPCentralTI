@@ -49,95 +49,110 @@
     </div>
 
     {# Chat de mensagens #}
-    <div class="form-card">
-      <div class="form-card-header"><h3>💬 Histórico de Atendimento</h3></div>
+    {# Chat de mensagens #}
+    <div class="form-card" id="chat-panel" style="position:relative;transition:border-color 0.2s, box-shadow 0.2s;">
+      <div class="form-card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h3>💬 Histórico de Atendimento</h3>
+        <span style="font-size:11px;color:var(--text3);" title="Cole prints diretamente com Ctrl+V ou arraste para esta área">
+          💡 Dica: cole prints com <kbd style="background:var(--bg3);border:1px solid var(--border);padding:2px 4px;border-radius:4px;font-size:10px;">Ctrl+V</kbd>
+        </span>
+      </div>
       <div class="form-card-body">
         {% if anexos_chamado %}
-        <div style="margin-bottom:15px;background:var(--bg2);padding:10px;border-radius:8px;border:1px solid var(--border)">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:5px;font-weight:600;text-transform:uppercase">📎 Anexos Originais do Chamado</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;flex-direction:column">
+        <div style="margin-bottom:16px;background:var(--bg2);padding:12px;border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-weight:600;text-transform:uppercase">📎 Anexos Originais do Chamado</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
             {% for ax in anexos_chamado %}
               {% set ext = (ax.nome_arquivo or ax.caminho_arquivo).split('.')[-1] | lower if (ax.nome_arquivo or ax.caminho_arquivo) and '.' in (ax.nome_arquivo or ax.caminho_arquivo) else '' %}
-              {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
-              <a href="{{ ax.caminho_arquivo }}" target="_blank" style="display:inline-block;max-width:100%">
-                <img src="{{ ax.caminho_arquivo }}" alt="{{ ax.nome_arquivo }}" style="max-width:100%;max-height:300px;border-radius:6px;border:1px solid var(--border);object-fit:contain;background:var(--bg3)">
-              </a>
+              {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'] %}
+              <div style="cursor:pointer;" onclick="abrirLightbox('{{ ax.caminho_arquivo }}', '{{ ax.nome_arquivo }}')">
+                <img src="{{ ax.caminho_arquivo }}" alt="{{ ax.nome_arquivo }}" style="max-height:120px;border-radius:6px;border:1px solid var(--border);object-fit:cover;background:var(--bg3)">
+              </div>
               {% else %}
-              <a href="{{ ax.caminho_arquivo }}" target="_blank" style="align-self:flex-start;font-size:12px;color:var(--accent);text-decoration:underline;background:var(--bg3);padding:4px 8px;border-radius:4px">📎 {{ ax.nome_arquivo }}</a>
+              <a href="{{ ax.caminho_arquivo }}" target="_blank" style="align-self:flex-start;font-size:12px;color:var(--accent);text-decoration:underline;background:var(--bg3);padding:6px 10px;border-radius:6px;border:1px solid var(--border)">📎 {{ ax.nome_arquivo }}</a>
               {% endif %}
             {% endfor %}
           </div>
         </div>
         {% endif %}
 
-        {% if mensagens %}
-        <div id="chat-msgs" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
-          {% for msg in mensagens %}
-            {% set e_meu = (msg.autor_id == usuario_id) %}
-            {% if msg.is_sistema %}
-            <div style="text-align:center">
-              <span style="font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 12px">
-                ⚙ {{ msg.mensagem }}
-              </span>
-            </div>
-            {% elif e_meu %}
-            <div style="display:flex;flex-direction:column;align-items:flex-end">
-              <div style="max-width:75%;background:var(--accent);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:13px;line-height:1.5">
-                {{ msg.mensagem }}
-                {% if msg.caminho_arquivo %}
-                <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.2)">
-                  {% set ext = (msg.nome_arquivo or msg.caminho_arquivo).split('.')[-1] | lower if (msg.nome_arquivo or msg.caminho_arquivo) and '.' in (msg.nome_arquivo or msg.caminho_arquivo) else '' %}
-                  {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
-                  <a href="{{ msg.caminho_arquivo }}" target="_blank" style="display:block">
-                    <img src="{{ msg.caminho_arquivo }}" alt="{{ msg.nome_arquivo }}" style="max-width:100%;max-height:250px;border-radius:4px;margin-top:4px">
-                  </a>
-                  {% else %}
-                  <a href="{{ msg.caminho_arquivo }}" target="_blank" style="color:#fff;font-size:11px;text-decoration:underline">📎 {{ msg.nome_arquivo }}</a>
+        <div id="chat-msgs" style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px;max-height:520px;overflow-y:auto;padding:8px 4px;scroll-behavior:smooth;">
+          {% if mensagens %}
+            {% for msg in mensagens %}
+              {% set e_meu = (msg.autor_id == usuario_id) %}
+              {% if msg.is_sistema %}
+              <div class="chat-row system" data-msg-id="{{ msg.id }}" style="text-align:center">
+                <span style="font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 12px">
+                  ⚙ {{ msg.mensagem }}
+                </span>
+              </div>
+              {% elif e_meu %}
+              <div class="chat-row me" data-msg-id="{{ msg.id }}" style="display:flex;flex-direction:column;align-items:flex-end">
+                <div class="chat-bubble" style="max-width:75%;background:var(--accent);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:13px;line-height:1.5;word-break:break-word;">
+                  {{ msg.mensagem }}
+                  {% if msg.caminho_arquivo %}
+                  <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.2)">
+                    {% set ext = (msg.nome_arquivo or msg.caminho_arquivo).split('.')[-1] | lower if (msg.nome_arquivo or msg.caminho_arquivo) and '.' in (msg.nome_arquivo or msg.caminho_arquivo) else '' %}
+                    {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'] %}
+                    <img src="{{ msg.caminho_arquivo }}" alt="{{ msg.nome_arquivo }}" onclick="abrirLightbox('{{ msg.caminho_arquivo }}', '{{ msg.nome_arquivo }}')" style="max-width:100%;max-height:260px;border-radius:6px;margin-top:4px;cursor:pointer;object-fit:contain;background:rgba(0,0,0,0.15)">
+                    {% else %}
+                    <a href="{{ msg.caminho_arquivo }}" target="_blank" style="color:#fff;font-size:11px;text-decoration:underline">📎 {{ msg.nome_arquivo }}</a>
+                    {% endif %}
+                  </div>
                   {% endif %}
                 </div>
-                {% endif %}
+                <div style="font-size:10px;color:var(--text3);margin-top:3px">🔧 {{ msg.autor_nome }} · {{ msg.criado_em | fdt }}</div>
               </div>
-              <div style="font-size:10px;color:var(--text3);margin-top:3px">🔧 {{ msg.autor_nome }} · {{ msg.criado_em | fdt }}</div>
-            </div>
-            {% else %}
-            <div style="display:flex;flex-direction:column;align-items:flex-start">
-              <div style="max-width:75%;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:13px;line-height:1.5;color:var(--text)">
-                {{ msg.mensagem }}
-                {% if msg.caminho_arquivo %}
-                <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(16,185,129,.2)">
-                  {% set ext = (msg.nome_arquivo or msg.caminho_arquivo).split('.')[-1] | lower if (msg.nome_arquivo or msg.caminho_arquivo) and '.' in (msg.nome_arquivo or msg.caminho_arquivo) else '' %}
-                  {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
-                  <a href="{{ msg.caminho_arquivo }}" target="_blank" style="display:block">
-                    <img src="{{ msg.caminho_arquivo }}" alt="{{ msg.nome_arquivo }}" style="max-width:100%;max-height:250px;border-radius:4px;margin-top:4px">
-                  </a>
-                  {% else %}
-                  <a href="{{ msg.caminho_arquivo }}" target="_blank" style="color:var(--green);font-size:11px;text-decoration:underline">📎 {{ msg.nome_arquivo }}</a>
+              {% else %}
+              <div class="chat-row other" data-msg-id="{{ msg.id }}" style="display:flex;flex-direction:column;align-items:flex-start">
+                <div class="chat-bubble" style="max-width:75%;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:13px;line-height:1.5;color:var(--text);word-break:break-word;">
+                  {{ msg.mensagem }}
+                  {% if msg.caminho_arquivo %}
+                  <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(16,185,129,.2)">
+                    {% set ext = (msg.nome_arquivo or msg.caminho_arquivo).split('.')[-1] | lower if (msg.nome_arquivo or msg.caminho_arquivo) and '.' in (msg.nome_arquivo or msg.caminho_arquivo) else '' %}
+                    {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'] %}
+                    <img src="{{ msg.caminho_arquivo }}" alt="{{ msg.nome_arquivo }}" onclick="abrirLightbox('{{ msg.caminho_arquivo }}', '{{ msg.nome_arquivo }}')" style="max-width:100%;max-height:260px;border-radius:6px;margin-top:4px;cursor:pointer;object-fit:contain;background:rgba(0,0,0,0.05)">
+                    {% else %}
+                    <a href="{{ msg.caminho_arquivo }}" target="_blank" style="color:var(--green);font-size:11px;text-decoration:underline">📎 {{ msg.nome_arquivo }}</a>
+                    {% endif %}
+                  </div>
                   {% endif %}
                 </div>
-                {% endif %}
+                <div style="font-size:10px;color:var(--text3);margin-top:3px">👤 {{ msg.autor_nome }} · {{ msg.criado_em | fdt }}</div>
               </div>
-              <div style="font-size:10px;color:var(--text3);margin-top:3px">👤 {{ msg.autor_nome }} · {{ msg.criado_em | fdt }}</div>
-            </div>
-            {% endif %}
-          {% endfor %}
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <div id="no-msgs-placeholder" style="text-align:center;color:var(--text3);padding:24px 0;font-size:13px">Sem mensagens ainda.</div>
+          {% endif %}
         </div>
-        {% else %}
-        <div id="chat-msgs" style="text-align:center;color:var(--text3);padding:24px 0;font-size:13px">Sem mensagens ainda.</div>
-        {% endif %}
+
+        <!-- PREVIEW DE ANEXO / PRINT COLADO -->
+        <div id="anexo-preview-box" style="display:none;align-items:center;gap:12px;padding:8px 12px;background:rgba(59,130,246,0.08);border:1px dashed var(--accent);border-radius:8px;margin-bottom:12px;">
+          <img id="anexo-preview-img" style="width:44px;height:44px;border-radius:6px;object-fit:cover;border:1px solid var(--border);" src="" alt="Preview">
+          <div style="flex:1;font-size:12px;overflow:hidden;">
+            <div id="anexo-preview-nome" style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">anexo.jpg</div>
+            <div id="anexo-preview-tamanho" style="font-size:11px;color:var(--text3);">0 KB</div>
+          </div>
+          <button type="button" id="anexo-preview-btn-remove" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:4px 8px;" title="Remover anexo">✕</button>
+        </div>
 
         {# Form de resposta + mudança de status #}
         {% if chamado.status not in ['resolvido', 'fechado'] %}
         <form method="POST" action="{{ url_for('admin_chamados.detalhe_chamado_admin', chamado_id=chamado.id) }}"
               id="form-resp" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px" enctype="multipart/form-data">
           <div class="form-group" style="margin-bottom:10px">
-            <textarea name="mensagem" rows="3" maxlength="2000" placeholder="Resposta ao solicitante…" style="resize:none" required></textarea>
+            <textarea name="mensagem" id="reply-textarea" rows="3" maxlength="2000" placeholder="Resposta ao solicitante… (Pressione Ctrl+Enter para enviar)" style="resize:vertical;font-family:inherit;" required></textarea>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <div style="flex:1">
-              <input type="file" name="anexo" accept=".png,.jpg,.jpeg,.gif,.pdf,.zip,.rar,.txt,.csv" style="font-size:11px;color:var(--text3);width:100%">
+            <div style="flex:1;display:flex;align-items:center;gap:8px;">
+              <label style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:12px;">
+                📎 Anexar Print/Arquivo
+                <input type="file" name="anexo" id="input-anexo" accept=".png,.jpg,.jpeg,.gif,.webp,.bmp,.pdf,.zip,.rar,.txt,.csv" style="display:none">
+              </label>
             </div>
             <div style="flex:1">
-              <select name="novo_status" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;outline:none">
+              <select name="novo_status" id="select-novo-status" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;outline:none;width:100%">
                 <option value="">Manter status atual</option>
                 {% for s in status_validos %}
                 <option value="{{ s }}" {% if s == chamado.status %}disabled{% endif %}>
@@ -173,12 +188,17 @@
       <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Informações</div>
       <div style="display:flex;flex-direction:column;gap:9px;font-size:12px">
         <div>
+          <span style="color:var(--text3)">Status: </span>
+          {% set s = chamado.status | lower | replace(' ','_') %}
+          <span class="badge badge-{{ s }}" id="ticket-status-badge" style="display:inline-block;padding:2px 8px;font-size:11px;">{{ chamado.status | replace('_',' ') | title }}</span>
+        </div>
+        <div>
           <span style="color:var(--text3)">Aberto em: </span>
           <span style="color:var(--text2)">{{ chamado.criado_em.strftime('%d/%m/%Y %H:%M') if chamado.criado_em is not string else chamado.criado_em[:16] | replace('T',' ') }}</span>
         </div>
         <div>
           <span style="color:var(--text3)">Atualizado: </span>
-          <span style="color:var(--text2)">{{ chamado.atualizado_em.strftime('%d/%m/%Y %H:%M') if chamado.atualizado_em is not string else chamado.atualizado_em[:16] | replace('T',' ') }}</span>
+          <span style="color:var(--text2)" id="ticket-atualizado-em">{{ chamado.atualizado_em.strftime('%d/%m/%Y %H:%M') if chamado.atualizado_em is not string else chamado.atualizado_em[:16] | replace('T',' ') }}</span>
         </div>
         {% if chamado.id_ativo %}
         <div>
@@ -325,35 +345,38 @@
   </div>
 </div>
 
+<!-- ====== LIGHTBOX MODAL PARA PRINTS E IMAGENS ====== -->
+<div id="chat-lightbox" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.85);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;" onclick="fecharLightbox(event)">
+  <div style="position:relative;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;" onclick="event.stopPropagation()">
+    <img id="lightbox-img" src="" alt="Visualização ampliada" style="max-width:90vw;max-height:82vh;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.5);object-fit:contain;cursor:zoom-in;transition:transform 0.2s ease;" onclick="toggleZoom(this)">
+    <div style="margin-top:12px;display:flex;gap:12px;align-items:center;">
+      <a id="lightbox-download-link" href="#" target="_blank" download style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:6px 14px;border-radius:6px;font-size:13px;text-decoration:none;cursor:pointer;">⬇ Baixar Imagem</a>
+      <button type="button" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:6px 14px;border-radius:6px;font-size:13px;cursor:pointer;" onclick="fecharLightboxDirect()">✕ Fechar (ESC)</button>
+    </div>
+  </div>
+</div>
+
 <script>
-  // Desabilita botão ao enviar
-  document.getElementById('form-resp') && document.getElementById('form-resp').addEventListener('submit', function() {
-    const b = document.getElementById('btn-resp');
-    if (b) { b.disabled = true; b.textContent = '⏳ Enviando…'; }
-  });
+  // ── Constantes & Estado ──────────────────────────────────────────────────
+  const CHAMADO_ID = Number("{{ chamado.id }}");
+  const MEU_ID = Number("{{ usuario_id }}");
+  let ultimoId = Number("{{ mensagens[-1].id if mensagens else 0 }}");
+  let arquivoAtual = null;
 
-  // Suporte para colar imagens diretamente
-  document.addEventListener('paste', function(e) {
-    if (e.clipboardData && e.clipboardData.files.length > 0) {
-      const file = e.clipboardData.files[0];
-      if (file.type.startsWith('image/')) {
-        const fileInput = document.querySelector('input[type="file"][name="anexo"]');
-        if (fileInput) {
-          fileInput.files = e.clipboardData.files;
-          let feedback = document.getElementById('paste-feedback');
-          if (!feedback) {
-            feedback = document.createElement('div');
-            feedback.id = 'paste-feedback';
-            feedback.style = 'font-size:11px; color:var(--green); margin-top:6px; font-weight:600; padding:4px 8px; background:rgba(16,185,129,0.1); border-radius:4px; border:1px solid rgba(16,185,129,0.3); display:inline-block;';
-            fileInput.parentNode.appendChild(feedback);
-          }
-          feedback.textContent = `✅ Imagem colada: ${file.name || 'imagem_colada.png'}`;
-        }
-      }
-    }
-  });
+  // ── Elementos do DOM ─────────────────────────────────────────────────────
+  const chatMsgs = document.getElementById('chat-msgs');
+  const formResp = document.getElementById('form-resp');
+  const textareaMsg = document.getElementById('reply-textarea');
+  const inputAnexo = document.getElementById('input-anexo');
+  const btnResp = document.getElementById('btn-resp');
+  const previewBox = document.getElementById('anexo-preview-box');
+  const previewImg = document.getElementById('anexo-preview-img');
+  const previewNome = document.getElementById('anexo-preview-nome');
+  const previewTamanho = document.getElementById('anexo-preview-tamanho');
+  const btnRemoveAnexo = document.getElementById('anexo-preview-btn-remove');
+  const chatPanel = document.getElementById('chat-panel');
 
-  // Aplica cores dinâmicas para evitar erros do linter (Jinja no CSS)
+  // Aplica cores dinâmicas para evitar erros de CSS
   document.querySelectorAll('.dynamic-color-span').forEach(el => {
     if (el.dataset.bg) el.style.background = el.dataset.bg;
     if (el.dataset.color) el.style.color = el.dataset.color;
@@ -362,61 +385,378 @@
     if (el.dataset.accent) el.style.accentColor = el.dataset.accent;
   });
 
-  // ── Polling de mensagens a cada 5 segundos ──────────────────────────────────
-  const CHAMADO_ID = Number("{{ chamado.id }}");
-  const MEU_ID = Number("{{ usuario_id }}");
-  let ultimoId = Number("{{ mensagens[-1].id if mensagens else 0 }}");
+  // ── Lightbox Functions ───────────────────────────────────────────────────
+  function abrirLightbox(src, nome) {
+    const modal = document.getElementById('chat-lightbox');
+    const img = document.getElementById('lightbox-img');
+    const dlLink = document.getElementById('lightbox-download-link');
+    if (!modal || !img) return;
+    img.src = src;
+    img.style.transform = 'none';
+    img.style.cursor = 'zoom-in';
+    if (dlLink) {
+      dlLink.href = src;
+      dlLink.download = nome || 'imagem_chamado.jpg';
+    }
+    modal.style.display = 'flex';
+  }
 
-  function buildMsg(m) {
-    const img_exts = ['jpg','jpeg','png','gif','webp'];
+  function fecharLightbox(e) {
+    if (e.target.id === 'chat-lightbox') fecharLightboxDirect();
+  }
+
+  function fecharLightboxDirect() {
+    const modal = document.getElementById('chat-lightbox');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function toggleZoom(imgEl) {
+    if (imgEl.style.transform === 'scale(1.5)') {
+      imgEl.style.transform = 'none';
+      imgEl.style.cursor = 'zoom-in';
+    } else {
+      imgEl.style.transform = 'scale(1.5)';
+      imgEl.style.cursor = 'zoom-out';
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') fecharLightboxDirect();
+  });
+
+  // ── Client-Side Image Compressor (Canvas) ────────────────────────────────
+  async function comprimirImagemSeNecessario(file, maxDim = 1920, quality = 0.85) {
+    if (!file.type.startsWith('image/') || file.type === 'image/gif') {
+      return file;
+    }
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (!blob || blob.size >= file.size) {
+              resolve(file);
+            } else {
+              const baseName = file.name ? file.name.replace(/\.[^/.]+$/, "") : 'print';
+              const optimizedFile = new File([blob], `${baseName}.jpg`, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              });
+              resolve(optimizedFile);
+            }
+          }, 'image/jpeg', quality);
+        };
+        img.onerror = () => resolve(file);
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve(file);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(2) + ' MB';
+  }
+
+  // ── Gerenciamento do Arquivo/Print Selecionado ────────────────────────────
+  async function setArquivo(file) {
+    if (!file) {
+      limparArquivo();
+      return;
+    }
+    let processado = file;
+    if (file.type.startsWith('image/')) {
+      processado = await comprimirImagemSeNecessario(file);
+    }
+    arquivoAtual = processado;
+
+    previewNome.textContent = processado.name || 'print_colado.jpg';
+    previewTamanho.textContent = formatBytes(processado.size);
+
+    if (processado.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImg.src = e.target.result;
+        previewImg.style.display = 'block';
+      };
+      reader.readAsDataURL(processado);
+    } else {
+      previewImg.style.display = 'none';
+    }
+
+    previewBox.style.display = 'flex';
+  }
+
+  function limparArquivo() {
+    arquivoAtual = null;
+    if (inputAnexo) inputAnexo.value = '';
+    previewBox.style.display = 'none';
+    previewImg.src = '';
+  }
+
+  if (btnRemoveAnexo) {
+    btnRemoveAnexo.addEventListener('click', limparArquivo);
+  }
+
+  if (inputAnexo) {
+    inputAnexo.addEventListener('change', function() {
+      if (this.files && this.files.length > 0) {
+        setArquivo(this.files[0]);
+      }
+    });
+  }
+
+  // ── Suporte a Colar Imagens (Ctrl + V) em qualquer lugar ──────────────────
+  document.addEventListener('paste', function(e) {
+    if (e.clipboardData && e.clipboardData.files.length > 0) {
+      const file = e.clipboardData.files[0];
+      if (file.type.startsWith('image/')) {
+        e.preventDefault();
+        setArquivo(file);
+        if (textareaMsg) textareaMsg.focus();
+      }
+    }
+  });
+
+  // ── Drag & Drop de Prints/Arquivos ────────────────────────────────────────
+  if (chatPanel) {
+    ['dragenter', 'dragover'].forEach(eventName => {
+      chatPanel.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        chatPanel.style.borderColor = 'var(--accent)';
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      chatPanel.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        chatPanel.style.borderColor = 'var(--border)';
+      }, false);
+    });
+
+    chatPanel.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        setArquivo(dt.files[0]);
+      }
+    });
+  }
+
+  // ── Renderizador de Bolhas de Mensagens ───────────────────────────────────
+  function buildMsg(m, isSending = false) {
+    const img_exts = ['jpg','jpeg','png','gif','webp','bmp'];
     let anexoHtml = '';
     if (m.caminho_arquivo) {
       const ext = (m.nome_arquivo || m.caminho_arquivo).split('.').pop().toLowerCase();
       if (img_exts.includes(ext)) {
-        anexoHtml = `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.15)">
-          <a href="${m.caminho_arquivo}" target="_blank" style="display:block">
-            <img src="${m.caminho_arquivo}" alt="${m.nome_arquivo}" style="max-width:100%;max-height:250px;border-radius:4px;margin-top:4px">
-          </a></div>`;
+        anexoHtml = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.2)">
+          <img src="${m.caminho_arquivo}" alt="${m.nome_arquivo || 'print'}" onclick="abrirLightbox('${m.caminho_arquivo}', '${m.nome_arquivo || ''}')" style="max-width:100%;max-height:260px;border-radius:6px;margin-top:4px;cursor:pointer;object-fit:contain;background:rgba(0,0,0,0.15)">
+        </div>`;
       } else {
         anexoHtml = `<div style="margin-top:6px"><a href="${m.caminho_arquivo}" target="_blank" style="font-size:11px;text-decoration:underline">📎 ${m.nome_arquivo}</a></div>`;
       }
     }
     if (m.is_sistema) {
-      return `<div style="text-align:center">
+      return `<div class="chat-row system" data-msg-id="${m.id || 0}" style="text-align:center">
         <span style="font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 12px">⚙ ${m.mensagem}</span></div>`;
     }
     const eMeu = (m.autor_id == MEU_ID);
+    const opacityStyle = isSending ? 'opacity:0.75;' : '';
+    const sendingText = isSending ? ' ⏳' : '';
+
     if (eMeu) {
-      return `<div style="display:flex;flex-direction:column;align-items:flex-end">
-        <div style="max-width:75%;background:var(--accent);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:13px;line-height:1.5">
-          ${m.mensagem}${anexoHtml}</div>
+      return `<div class="chat-row me" data-msg-id="${m.id || 0}" style="display:flex;flex-direction:column;align-items:flex-end;${opacityStyle}">
+        <div class="chat-bubble" style="max-width:75%;background:var(--accent);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:13px;line-height:1.5;word-break:break-word;">
+          ${m.mensagem}${sendingText}${anexoHtml}</div>
         <div style="font-size:10px;color:var(--text3);margin-top:3px">🔧 ${m.autor_nome} · ${m.criado_em}</div></div>`;
     } else {
-      return `<div style="display:flex;flex-direction:column;align-items:flex-start">
-        <div style="max-width:75%;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:13px;line-height:1.5;color:var(--text)">
+      return `<div class="chat-row other" data-msg-id="${m.id || 0}" style="display:flex;flex-direction:column;align-items:flex-start">
+        <div class="chat-bubble" style="max-width:75%;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:13px;line-height:1.5;color:var(--text);word-break:break-word;">
           ${m.mensagem}${anexoHtml}</div>
         <div style="font-size:10px;color:var(--text3);margin-top:3px">👤 ${m.autor_nome} · ${m.criado_em}</div></div>`;
     }
   }
 
+  function scrollToBottom() {
+    if (chatMsgs) {
+      chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    }
+  }
+  scrollToBottom();
+
+  // ── Envio Assíncrono via AJAX / Fetch ─────────────────────────────────────
+  if (formResp) {
+    if (textareaMsg) {
+      textareaMsg.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+          e.preventDefault();
+          formResp.requestSubmit();
+        }
+      });
+    }
+
+    formResp.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const texto = (textareaMsg.value || '').trim();
+      const selectStatus = document.getElementById('select-novo-status');
+      const novoStatus = selectStatus ? selectStatus.value : '';
+
+      if (!texto && !arquivoAtual && !novoStatus) return;
+
+      const placeholder = document.getElementById('no-msgs-placeholder');
+      if (placeholder) placeholder.remove();
+
+      btnResp.disabled = true;
+      btnResp.textContent = '⏳ Enviando…';
+
+      const tempId = 'temp_' + Date.now();
+      const horaAtual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      let previewUrl = arquivoAtual && arquivoAtual.type.startsWith('image/') ? URL.createObjectURL(arquivoAtual) : null;
+
+      if (texto || arquivoAtual) {
+        const msgOtimista = {
+          id: tempId,
+          mensagem: texto,
+          is_sistema: false,
+          autor_nome: 'Você',
+          autor_id: MEU_ID,
+          criado_em: horaAtual,
+          caminho_arquivo: previewUrl,
+          nome_arquivo: arquivoAtual ? arquivoAtual.name : null
+        };
+        chatMsgs.insertAdjacentHTML('beforeend', buildMsg(msgOtimista, true));
+        scrollToBottom();
+      }
+
+      const textoEnviado = texto;
+      const arquivoEnviado = arquivoAtual;
+      textareaMsg.value = '';
+      limparArquivo();
+
+      try {
+        const formData = new FormData();
+        if (textoEnviado) formData.append('mensagem', textoEnviado);
+        if (arquivoEnviado) formData.append('anexo', arquivoEnviado);
+        if (novoStatus) formData.append('novo_status', novoStatus);
+
+        const res = await fetch(formResp.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!res.ok) throw new Error('Falha no envio');
+
+        const data = await res.json();
+        if (data.ok) {
+          if (data.mensagem) {
+            const tempEl = document.querySelector(`[data-msg-id="${tempId}"]`);
+            if (tempEl) {
+              tempEl.outerHTML = buildMsg(data.mensagem, false);
+              ultimoId = Math.max(ultimoId, data.mensagem.id);
+            }
+          }
+          if (data.status) {
+            atualizarStatusUI(data.status, data.status_label);
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao enviar resposta do admin:', err);
+        const tempEl = document.querySelector(`[data-msg-id="${tempId}"]`);
+        if (tempEl) {
+          const bubble = tempEl.querySelector('.chat-bubble');
+          if (bubble) {
+            bubble.style.background = 'var(--red)';
+            bubble.innerHTML += '<div style="font-size:11px;margin-top:4px;">⚠️ Erro ao enviar. Recarregue a página.</div>';
+          }
+        }
+      } finally {
+        btnResp.disabled = false;
+        btnResp.textContent = '📨 Responder';
+        scrollToBottom();
+      }
+    });
+  }
+
+  function atualizarStatusUI(status, label) {
+    const badge = document.getElementById('ticket-status-badge');
+    if (badge) {
+      badge.className = 'badge badge-' + status.toLowerCase().replace(' ', '_');
+      badge.textContent = label || status;
+    }
+  }
+
+  // ── Delta Polling Adaptativo ──────────────────────────────────────────────
+  let pollTimer = null;
   async function pollMensagens() {
     try {
-      const res = await fetch(`/fazenda/chamados/${CHAMADO_ID}/poll`);
+      const url = `/fazenda/chamados/${CHAMADO_ID}/poll?since_id=${ultimoId}`;
+      const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
       if (!res.ok) return;
-      const msgs = await res.json();
-      if (!Array.isArray(msgs) || msgs.length === 0) return;
-      const novas = msgs.filter(m => m.id > ultimoId);
-      if (novas.length === 0) return;
-      const container = document.getElementById('chat-msgs');
-      if (!container) return;
-      novas.forEach(m => {
-        container.insertAdjacentHTML('beforeend', buildMsg(m));
-        ultimoId = Math.max(ultimoId, m.id);
-      });
-      container.lastElementChild && container.lastElementChild.scrollIntoView({ behavior: 'smooth' });
+      const data = await res.json();
+      
+      const lista = Array.isArray(data) ? data : (data.mensagens || []);
+      if (Array.isArray(lista) && lista.length > 0) {
+        const novas = lista.filter(m => m.id > ultimoId);
+        if (novas.length > 0) {
+          const placeholder = document.getElementById('no-msgs-placeholder');
+          if (placeholder) placeholder.remove();
+
+          novas.forEach(m => {
+            if (!document.querySelector(`[data-msg-id="${m.id}"]`)) {
+              chatMsgs.insertAdjacentHTML('beforeend', buildMsg(m, false));
+            }
+            ultimoId = Math.max(ultimoId, m.id);
+          });
+          scrollToBottom();
+        }
+      }
+
+      if (data.status) {
+        atualizarStatusUI(data.status, data.status_label);
+      }
     } catch(e) { /* silencioso */ }
   }
 
-  setInterval(pollMensagens, 5000);
+  function agendarPoll() {
+    clearTimeout(pollTimer);
+    const intervalo = document.hidden ? 15000 : 2500;
+    pollTimer = setTimeout(async () => {
+      await pollMensagens();
+      agendarPoll();
+    }, intervalo);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      pollMensagens();
+    }
+    agendarPoll();
+  });
+
+  agendarPoll();
 </script>
 {% endblock %}

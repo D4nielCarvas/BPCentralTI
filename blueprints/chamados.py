@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 
 from utils.auth_utils import get_localidade_filter, get_usuario_id, viewer_required
 from utils.db_layer import acquire_conn, fetch_all, fetch_one
+from utils.anexos_utils import ALLOWED_EXTENSIONS, allowed_file, save_anexo
 from app import limiter  # [FIX-5] necessário para reativar rate limit no poll
 import psycopg2
 
@@ -37,35 +38,6 @@ _TABELAS_EQUIPAMENTOS = [
     "estabilizadores", "starlink", "celulares_ponto",
 ]
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'zip', 'rar', 'txt', 'csv'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def save_anexo(arquivo, chamado_id, mensagem_id, usuario_id, cur):
-    if arquivo and arquivo.filename and allowed_file(arquivo.filename):
-        filename = secure_filename(arquivo.filename)
-        # prefixa com uuid para evitar colisao
-        unique_name = f"{uuid.uuid4().hex[:8]}_{filename}"
-        
-        arquivo.seek(0)
-        file_bytes = arquivo.read()
-        
-        cur.execute(
-            """INSERT INTO arquivos_storage (nome_arquivo, dados, mimetype) 
-               VALUES (%s, %s, %s)
-               ON CONFLICT (nome_arquivo) DO NOTHING""",
-            (unique_name, psycopg2.Binary(file_bytes), arquivo.mimetype)
-        )
-        
-        caminho_db = f"/arquivos/{unique_name}"
-        cur.execute(
-            """
-            INSERT INTO chamado_anexos (chamado_id, mensagem_id, usuario_id, nome_arquivo, caminho_arquivo)
-            VALUES (%s, %s, %s, %s, %s)
-            """,
-            (chamado_id, mensagem_id, usuario_id, filename, caminho_db)
-        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -321,10 +293,15 @@ def detalhe_chamado(chamado_id: int):
 
     if request.method == "POST":
         mensagem = (request.form.get("mensagem") or "").strip()
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest" or "application/json" in request.headers.get("Accept", "")
+
         if not mensagem:
+            if is_ajax:
+                return jsonify({"ok": False, "error": "A mensagem não pode estar vazia."}), 400
             flash("A mensagem não pode estar vazia.", "warning")
             return redirect(url_for("chamados.detalhe_chamado", chamado_id=chamado_id))
 
+        anexo_info = None
         with acquire_conn() as conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -336,14 +313,35 @@ def detalhe_chamado(chamado_id: int):
                 # Salvar anexo opcional
                 arquivo = request.files.get("anexo")
                 if arquivo:
-                    save_anexo(arquivo, chamado_id, nova_msg_id, usuario_id, cur)
+                    anexo_info = save_anexo(arquivo, chamado_id, nova_msg_id, usuario_id, cur)
 
                 # Viewer respondeu → volta de 'pendente_usuario' para 'em_atendimento'
+                novo_status = chamado["status"]
                 if chamado["status"] == "pendente_usuario":
                     cur.execute(
                         "UPDATE chamados SET status = 'em_atendimento' WHERE id = %s",
                         (chamado_id,),
                     )
+                    novo_status = "em_atendimento"
+
+        if is_ajax:
+            dt_now = datetime.utcnow() - timedelta(hours=3)
+            return jsonify({
+                "ok": True,
+                "mensagem": {
+                    "id": nova_msg_id,
+                    "mensagem": mensagem,
+                    "is_sistema": False,
+                    "autor_nome": session.get("nome", "Você"),
+                    "autor_role": session.get("role", "viewer"),
+                    "autor_id": usuario_id,
+                    "criado_em": dt_now.strftime("%d/%m/%y %H:%M"),
+                    "caminho_arquivo": anexo_info["caminho_arquivo"] if anexo_info else None,
+                    "nome_arquivo": anexo_info["nome_arquivo"] if anexo_info else None,
+                },
+                "status": novo_status,
+                "status_label": novo_status.replace("_", " ").title()
+            })
 
         return redirect(url_for("chamados.detalhe_chamado", chamado_id=chamado_id))
 
@@ -417,10 +415,11 @@ def poll_chamado(chamado_id: int):
 
     usuario_id = get_usuario_id()
     role = session.get("role", "")
+    since_id = request.args.get("since_id", type=int)
 
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            chamado = fetch_one(cur, "SELECT localidade_id, criado_por FROM chamados WHERE id = %s", (chamado_id,))
+            chamado = fetch_one(cur, "SELECT status, localidade_id, criado_por FROM chamados WHERE id = %s", (chamado_id,))
             if not chamado:
                 return jsonify({"error": "not_found"}), 404
             # Viewer só acessa o próprio chamado da sua localidade
@@ -428,9 +427,7 @@ def poll_chamado(chamado_id: int):
                 if chamado["localidade_id"] != session.get("localidade_id") and chamado["criado_por"] != usuario_id:
                     return jsonify({"error": "forbidden"}), 403
 
-            msgs = fetch_all(
-                cur,
-                """
+            query = """
                 SELECT cm.id, cm.mensagem, cm.is_sistema,
                        u.nome AS autor_nome, u.role AS autor_role, u.id AS autor_id,
                        cm.criado_em,
@@ -439,10 +436,15 @@ def poll_chamado(chamado_id: int):
                 JOIN usuarios u ON u.id = cm.usuario_id
                 LEFT JOIN chamado_anexos ca ON ca.mensagem_id = cm.id
                 WHERE cm.chamado_id = %s
-                ORDER BY cm.criado_em ASC
-                """,
-                (chamado_id,),
-            )
+            """
+            params = [chamado_id]
+            if since_id and since_id > 0:
+                query += " AND cm.id > %s"
+                params.append(since_id)
+
+            query += " ORDER BY cm.criado_em ASC"
+
+            msgs = fetch_all(cur, query, tuple(params))
 
     resultado = []
     for m in msgs:
@@ -470,7 +472,12 @@ def poll_chamado(chamado_id: int):
             "nome_arquivo": m["nome_arquivo"],
         })
 
-    response = jsonify(resultado)
-    response.headers["X-Poll-Interval"] = "5"  # P12: informa o intervalo ao client
+    response = jsonify({
+        "mensagens": resultado,
+        "status": chamado["status"],
+        "status_label": chamado["status"].replace("_", " ").title()
+    })
+    response.headers["X-Poll-Interval"] = "3"
     return response
+
 

@@ -39,7 +39,9 @@ def serve_termo(filename: str) -> tuple[str, int] | Response:
             404,
         )
     
-    return Response(row["dados"], mimetype=row["mimetype"])
+    resp = Response(row["dados"], mimetype=row["mimetype"])
+    resp.headers["Cache-Control"] = "public, max-age=86400, immutable"
+    return resp
 
 
 @core_bp.route("/api/health")
