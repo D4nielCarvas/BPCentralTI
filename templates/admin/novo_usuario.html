@@ -8,11 +8,50 @@
 {% endblock %}
 
 {% block content %}
-<div class="form-card" style="max-width:520px">
+<style>
+  /* ── Estilos da Visualização de Fazendas ── */
+  .fazenda-chip-item {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    font-size: 11px;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .fazenda-chip-item:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .fazenda-chip-item.chip-active {
+    background: rgba(16, 185, 129, 0.12) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+    color: var(--text) !important;
+    opacity: 1 !important;
+  }
+  .fazenda-chip-item.chip-admin-master {
+    background: rgba(59, 130, 246, 0.12) !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
+    color: var(--text) !important;
+    opacity: 1 !important;
+  }
+  .fazenda-chip-item.chip-inactive {
+    opacity: 0.38 !important;
+    background: rgba(15, 23, 42, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: var(--text3) !important;
+  }
+</style>
+
+<div class="form-card" style="max-width:580px">
   <div class="form-card-header">
     <h3>➕ Criar Novo Usuário</h3>
     <p style="font-size:12px;color:var(--text3);margin-top:4px">
-      Apenas administradores podem criar contas. Não há cadastro público.
+      Cadastre novos membros e defina o cargo e as fazendas com permissão de visualização.
     </p>
   </div>
   <div class="form-card-body">
@@ -49,10 +88,10 @@
 
       <div class="form-group">
         <label for="perfil_id">Cargo de acesso *</label>
-        <select id="perfil_id" name="perfil_id" required onchange="toggleLocalidade()">
-          <option value="">Selecione…</option>
+        <select id="perfil_id" name="perfil_id" required onchange="aoMudarPerfilOuLocalidadeNovo()">
+          <option value="">Selecione o cargo…</option>
           {% for p in perfis %}
-          <option value="{{ p.id }}" data-master="{{ '1' if p.is_admin_master else '0' }}"
+          <option value="{{ p.id }}" data-master="{{ '1' if p.is_admin_master else '0' }}" data-nome="{{ p.nome }}"
                   {% if form.get('perfil_id') | string == p.id | string %}selected{% endif %}>
             {% if p.is_admin_master %}👑{% else %}🔖{% endif %} {{ p.nome }} {% if p.is_admin_master %}(Admin Master){% endif %}
           </option>
@@ -61,21 +100,57 @@
       </div>
 
       {# ── Localidade ─────────────────────── #}
-      <div class="form-group" id="grupo-localidade">
-        <label for="localidade_id">Localidade <span style="color:var(--text3);font-weight:400" id="lbl-loc-opt">(opcional)</span></label>
-        <select id="localidade_id" name="localidade_id">
-          <option value="">Nenhuma / Acesso Global</option>
+      <div class="form-group" id="grupo-localidade" style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <label for="localidade_id" style="font-size:12px;font-weight:600;margin-bottom:0">
+            Localidade Vinculada <span style="color:var(--text3);font-weight:400" id="lbl-loc-opt">(opcional)</span>
+          </label>
+          <button type="button" onclick="selecionarTodasFazendasNovo()" class="btn btn-ghost btn-xs" style="font-size:11px;color:var(--accent);padding:2px 8px;">
+            🌐 Selecionar Todas
+          </button>
+        </div>
+        <select id="localidade_id" name="localidade_id" onchange="aoMudarPerfilOuLocalidadeNovo()">
+          <option value="">🌐 Sem localidade vinculada (Todas as Fazendas)</option>
           {% for loc in localidades %}
-          <option value="{{ loc.id }}"
+          <option value="{{ loc.id }}" data-nome="{{ loc.nome }}" data-tipo="{{ loc.tipo }}"
             {% if form.get('localidade_id', '') | string == loc.id | string %}selected{% endif %}>
-            {{ loc.nome }}
-            <span style="color:var(--text3)"> — {{ loc.tipo }}</span>
+            {{ loc.nome }} ({{ loc.tipo }})
           </option>
           {% endfor %}
         </select>
         <span style="font-size:11px;color:var(--text3)" id="hint-loc">
-          Se o cargo for restrito a uma localidade, defina-a aqui.
+          Selecione uma fazenda para restringir a visão do usuário ou deixe sem restrição para acesso global.
         </span>
+      </div>
+
+      {# ── PAINEL VISUAL DE TODAS AS FAZENDAS NA ÁREA ── #}
+      <div class="fazendas-visual-area" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--text)">
+            <span>🌾</span>
+            <span>Fazendas com Visualização Ativa</span>
+          </div>
+          <span id="scope-badge" class="badge" style="background:rgba(16,185,129,.15);color:var(--green);font-size:11px;font-weight:600">
+            🌐 Todas as Fazendas
+          </span>
+        </div>
+
+        <p id="scope-desc" style="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.4">
+          O usuário terá permissão para visualizar todas as fazendas e unidades cadastradas.
+        </p>
+
+        {# Grade com todas as fazendas disponíveis #}
+        <div id="fazendas-chips-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:6px;max-height:190px;overflow-y:auto;padding-right:4px;">
+          {% for loc in localidades %}
+          <div class="fazenda-chip-item chip-active" id="chip-novo-loc-{{ loc.id }}" data-id="{{ loc.id }}" data-nome="{{ loc.nome }}" onclick="clicarChipFazendaNovo({{ loc.id }})">
+            <span style="display:flex;align-items:center;gap:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              {% if loc.tipo == 'cd' %}🏢{% elif loc.tipo == 'central' %}🏛️{% else %}🌾{% endif %}
+              <span style="overflow:hidden;text-overflow:ellipsis;">{{ loc.nome }}</span>
+            </span>
+            <span class="chip-status-tag" style="font-size:10px;font-weight:700;color:var(--green);margin-left:4px;">✓</span>
+          </div>
+          {% endfor %}
+        </div>
       </div>
 
       <div class="form-actions">
@@ -88,33 +163,125 @@
   </div>
 </div>
 
-  function toggleLocalidade() {
+<script>
+  const TOTAL_LOCALIDADES = {{ localidades | length }};
+
+  function aoMudarPerfilOuLocalidadeNovo() {
+    atualizarVisualizacaoFazendasNovo();
+  }
+
+  function selecionarTodasFazendasNovo() {
+    const selLoc = document.getElementById('localidade_id');
+    selLoc.value = '';
+    atualizarVisualizacaoFazendasNovo();
+  }
+
+  function clicarChipFazendaNovo(locId) {
     const selPerfil = document.getElementById('perfil_id');
     const selOption = selPerfil.options[selPerfil.selectedIndex];
     const isMaster = selOption ? selOption.getAttribute('data-master') === '1' : false;
     
-    const grupo = document.getElementById('grupo-localidade');
-    const selectLoc = document.getElementById('localidade_id');
+    if (isMaster) return;
+
+    const selLoc = document.getElementById('localidade_id');
+    if (selLoc.value == locId) {
+      selLoc.value = '';
+    } else {
+      selLoc.value = locId;
+    }
+    atualizarVisualizacaoFazendasNovo();
+  }
+
+  function atualizarVisualizacaoFazendasNovo() {
+    const selPerfil = document.getElementById('perfil_id');
+    const selOption = selPerfil.options[selPerfil.selectedIndex];
+    const isMaster = selOption ? selOption.getAttribute('data-master') === '1' : false;
+    const perfilNome = selOption ? (selOption.getAttribute('data-nome') || '') : '';
+
+    const selLoc = document.getElementById('localidade_id');
+    const locId = selLoc.value;
+    const locSelectedOption = selLoc.options[selLoc.selectedIndex];
+    const locNome = locSelectedOption ? (locSelectedOption.getAttribute('data-nome') || '') : '';
+
+    const badge = document.getElementById('scope-badge');
+    const desc = document.getElementById('scope-desc');
     const lblLocOpt = document.getElementById('lbl-loc-opt');
     const hintLoc = document.getElementById('hint-loc');
 
+    const chips = document.querySelectorAll('#fazendas-chips-grid .fazenda-chip-item');
+
     if (isMaster) {
-      grupo.style.opacity = '0.5';
-      selectLoc.disabled = true;
-      selectLoc.value = '';
+      badge.className = 'badge';
+      badge.style.background = 'rgba(59,130,246,0.18)';
+      badge.style.color = '#60a5fa';
+      badge.style.border = '1px solid rgba(59,130,246,0.4)';
+      badge.textContent = `👑 Acesso Total (${TOTAL_LOCALIDADES} Fazendas)`;
+
+      desc.textContent = 'Admin Master possui acesso irrestrito e visualização completa de todas as fazendas e unidades da empresa.';
       lblLocOpt.textContent = '(ignorado para Admin Master)';
       hintLoc.textContent = 'Admins Master ignoram restrição de localidade.';
+      selLoc.disabled = true;
+
+      chips.forEach(chip => {
+        chip.className = 'fazenda-chip-item chip-admin-master';
+        chip.querySelector('.chip-status-tag').textContent = '✓ Total';
+        chip.querySelector('.chip-status-tag').style.color = '#60a5fa';
+      });
+
     } else {
-      grupo.style.opacity = '1';
-      selectLoc.disabled = false;
+      selLoc.disabled = false;
       lblLocOpt.textContent = '(opcional)';
-      hintLoc.textContent = 'Deixe em branco para acesso sem restrição de local ou selecione uma.';
+      hintLoc.textContent = 'Selecione uma fazenda para restringir a visão do usuário ou deixe sem restrição para acesso global.';
+
+      if (!locId) {
+        badge.className = 'badge';
+        badge.style.background = 'rgba(16,185,129,0.18)';
+        badge.style.color = '#34d399';
+        badge.style.border = '1px solid rgba(16,185,129,0.4)';
+        
+        if (perfilNome === 'Apoio Inspeção') {
+          badge.textContent = `🌐 Apoio Global (${TOTAL_LOCALIDADES} Fazendas)`;
+          desc.textContent = 'O usuário tem visualização global de celulares de inspeção e ativos de todas as fazendas.';
+        } else {
+          badge.textContent = `🌐 Todas as Fazendas (${TOTAL_LOCALIDADES})`;
+          desc.textContent = 'Sem restrição de localidade vinculada: o usuário pode visualizar todas as fazendas cadastradas.';
+        }
+
+        chips.forEach(chip => {
+          chip.className = 'fazenda-chip-item chip-active';
+          chip.querySelector('.chip-status-tag').textContent = '✓ Visível';
+          chip.querySelector('.chip-status-tag').style.color = 'var(--green)';
+        });
+
+      } else {
+        badge.className = 'badge';
+        badge.style.background = 'rgba(245,158,11,0.18)';
+        badge.style.color = '#fbbf24';
+        badge.style.border = '1px solid rgba(245,158,11,0.4)';
+        badge.textContent = `🌾 Restrito: ${locNome || '1 Fazenda'}`;
+
+        desc.innerHTML = `Visualização restrita <strong>exclusivamente</strong> à fazenda <strong>${locNome}</strong>. As demais fazendas ficam bloqueadas.`;
+
+        chips.forEach(chip => {
+          const chipId = chip.getAttribute('data-id');
+          if (chipId == locId) {
+            chip.className = 'fazenda-chip-item chip-active';
+            chip.style.borderColor = 'rgba(245,158,11,0.5)';
+            chip.querySelector('.chip-status-tag').textContent = '✓ Ativa';
+            chip.querySelector('.chip-status-tag').style.color = '#fbbf24';
+          } else {
+            chip.className = 'fazenda-chip-item chip-inactive';
+            chip.querySelector('.chip-status-tag').textContent = '🔒 Bloqueada';
+            chip.querySelector('.chip-status-tag').style.color = 'var(--text3)';
+          }
+        });
+      }
     }
   }
 
-  // Aplica no carregamento
+  // Aplica no carregamento inicial
   document.addEventListener('DOMContentLoaded', function () {
-    toggleLocalidade();
+    atualizarVisualizacaoFazendasNovo();
   });
 
   document.getElementById('form-novo-usuario').addEventListener('submit', function () {

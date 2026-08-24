@@ -137,16 +137,24 @@ def novo_usuario():
                 form=request.form,
             )
 
-        # Regra simplificada: Admin Master ignora localidade. Outros perfis podem ter localidade
+        # Regra: Admin Master ignora localidade. Apoio e Viewer podem ter localidade vinculada ou visão global
         is_admin_master = False
+        is_apoio = False
         for p in perfis:
-            if p["id"] == perfil_id and p["is_admin_master"]:
-                is_admin_master = True
+            if p["id"] == perfil_id:
+                if p.get("is_admin_master"):
+                    is_admin_master = True
+                elif p.get("nome") == "Apoio Inspeção":
+                    is_apoio = True
                 
         localidade_id = None if is_admin_master else (int(localidade_id_raw) if localidade_id_raw else None)
         
-        # Mantém role como viewer por padrão para compatibilidade
-        role = "admin" if is_admin_master else "viewer"
+        if is_admin_master:
+            role = "admin"
+        elif is_apoio:
+            role = "apoio"
+        else:
+            role = "viewer"
 
         # ── Hash da senha (werkzeug — pbkdf2:sha256 por padrão) ──────────────
         senha_hash = generate_password_hash(senha)
@@ -420,14 +428,23 @@ def editar_usuario(usuario_id: int):
 
     with acquire_conn() as conn:
         with conn.cursor() as cur:
-            # Pega infos do perfil selecionado para definir se é admin master
-            perfil = fetch_one(cur, "SELECT is_admin_master FROM perfis_acesso WHERE id = %s", (perfil_id,))
+            # Pega infos do perfil selecionado para definir se é admin master ou apoio
+            perfil = fetch_one(cur, "SELECT is_admin_master, nome FROM perfis_acesso WHERE id = %s", (perfil_id,))
             if not perfil:
                 flash("Perfil de acesso inválido.", "danger")
                 return redirect(url_for("admin.listar_usuarios"))
                 
-            localidade_id = None if perfil["is_admin_master"] else (int(localidade_id_raw) if localidade_id_raw else None)
-            role = "admin" if perfil["is_admin_master"] else "viewer"
+            is_admin_master = bool(perfil.get("is_admin_master"))
+            is_apoio = (perfil.get("nome") == "Apoio Inspeção")
+            
+            localidade_id = None if is_admin_master else (int(localidade_id_raw) if localidade_id_raw else None)
+            
+            if is_admin_master:
+                role = "admin"
+            elif is_apoio:
+                role = "apoio"
+            else:
+                role = "viewer"
 
             usuario = fetch_one(cur, "SELECT login FROM usuarios WHERE id = %s", (usuario_id,))
             if not usuario:

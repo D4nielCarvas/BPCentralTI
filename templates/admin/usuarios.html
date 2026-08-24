@@ -10,6 +10,51 @@
 
 {% block content %}
 
+<style>
+  /* ── Estilos da Visualização de Fazendas ── */
+  .fazenda-chip-item {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    font-size: 11px;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .fazenda-chip-item:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .fazenda-chip-item.chip-active {
+    background: rgba(16, 185, 129, 0.12) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+    color: var(--text) !important;
+    opacity: 1 !important;
+  }
+  .fazenda-chip-item.chip-admin-master {
+    background: rgba(59, 130, 246, 0.12) !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
+    color: var(--text) !important;
+    opacity: 1 !important;
+  }
+  .fazenda-chip-item.chip-inactive {
+    opacity: 0.38 !important;
+    background: rgba(15, 23, 42, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: var(--text3) !important;
+  }
+  .chip-badge-status {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 600;
+  }
+</style>
+
 <div class="stat-mini">
   {% set total    = usuarios | length %}
   {% set admins   = usuarios | selectattr('role','equalto','admin')  | list | length %}
@@ -35,7 +80,10 @@
 
 <div class="table-card">
   <div class="table-header">
-    <h3>Usuários cadastrados</h3>
+    <div>
+      <h3>Usuários cadastrados</h3>
+      <p style="font-size:12px;color:var(--text3);margin-top:2px">Visão de permissões de acesso e fazendas liberadas para cada usuário</p>
+    </div>
     <span style="font-size:12px;color:var(--text3)">{{ usuarios | length }} usuário(s)</span>
   </div>
 
@@ -46,8 +94,8 @@
         <th>#</th>
         <th>Nome</th>
         <th>Login</th>
-        <th>Role</th>
-        <th>Localidade</th>
+        <th>Cargo / Role</th>
+        <th>Visualização de Fazendas</th>
         <th>Status</th>
         <th>Criado em</th>
         <th style="text-align:center">Ações</th>
@@ -68,7 +116,21 @@
           <span class="modern-badge role-viewer">👁 {{ u.role }}</span>
           {% endif %}
         </td>
-        <td style="color:var(--text2)">{{ u.localidade_nome or '—' }}</td>
+        <td>
+          {% if u.is_admin_master %}
+          <span class="modern-badge" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)" title="Visualiza todas as {{ localidades | length }} fazendas e unidades">
+            👑 Todas as Fazendas (Total)
+          </span>
+          {% elif u.perfil_nome == 'Apoio Inspeção' or u.role == 'apoio' or (not u.localidade_id and not u.localidade_nome) %}
+          <span class="modern-badge" style="background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.3)" title="Visualiza dados de todas as {{ localidades | length }} fazendas">
+            🌐 Todas as Fazendas
+          </span>
+          {% else %}
+          <span class="modern-badge" style="background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)" title="Acesso restrito a esta unidade">
+            🌾 {{ u.localidade_nome }}
+          </span>
+          {% endif %}
+        </td>
         <td>
           {% if u.ativo %}
           <span class="badge badge-ativo">Ativo</span>
@@ -106,8 +168,8 @@
 
             {# Editar Cargo #}
             {% if u.id != session.usuario_id %}
-            <button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="abrirEditar({{ u.id }}, '{{ u.login }}', '{{ u.perfil_id or '' }}', '{{ u.localidade_id or '' }}')" title="Editar Cargo">
-              ✏️
+            <button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="abrirEditar({{ u.id }}, '{{ u.login }}', '{{ u.perfil_id or '' }}', '{{ u.localidade_id or '' }}')" title="Editar Cargo e Visualização de Fazendas">
+              ✏️ Cargo
             </button>
             {% endif %}
           </div>
@@ -151,7 +213,93 @@
   </div>
 </div>
 
+{# ── Modal de Edição de Usuário e Visualização de Fazendas ────────────────── #}
+<div id="modal-editar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6); backdrop-filter:blur(5px);
+     z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div class="glass-modal" style="max-width:580px;width:100%;max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <h3 style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px;">✏️ Editar Cargo e Visualização</h3>
+      <button type="button" onclick="fecharEditar()" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;">✕</button>
+    </div>
+    <p id="modal-editar-label" style="font-size:12px;color:var(--text3);margin-bottom:16px"></p>
+
+    <form id="form-editar-usuario" method="POST" style="margin:0">
+      <div class="form-group" style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:600;">Cargo de Acesso *</label>
+        <select id="edit-perfil_id" name="perfil_id" required onchange="aoMudarPerfilOuLocalidade()"
+                style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);
+                       border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none">
+          <option value="">Selecione o cargo…</option>
+          {% for p in perfis %}
+          <option value="{{ p.id }}" data-master="{{ '1' if p.is_admin_master else '0' }}" data-nome="{{ p.nome }}">
+            {% if p.is_admin_master %}👑{% else %}🔖{% endif %} {{ p.nome }}{% if p.is_admin_master %} (Admin Master){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" id="edit-grupo-localidade" style="display:flex;flex-direction:column;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <label style="font-size:12px;font-weight:600;margin-bottom:0">
+            Localidade Vinculada <span style="color:var(--text3);font-weight:400" id="edit-lbl-loc-opt">(opcional)</span>
+          </label>
+          <button type="button" onclick="selecionarTodasFazendas()" class="btn btn-ghost btn-xs" style="font-size:11px;color:var(--accent);padding:2px 8px;">
+            🌐 Selecionar Todas
+          </button>
+        </div>
+        <select id="edit-localidade_id" name="localidade_id" onchange="aoMudarPerfilOuLocalidade()"
+                style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);
+                       border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none">
+          <option value="">🌐 Sem localidade vinculada (Todas as Fazendas)</option>
+          {% for loc in localidades %}
+          <option value="{{ loc.id }}" data-nome="{{ loc.nome }}" data-tipo="{{ loc.tipo }}">
+            {{ loc.nome }} ({{ loc.tipo }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# ── PAINEL VISUAL DE TODAS AS FAZENDAS NA ÁREA ── #}
+      <div class="fazendas-visual-area" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--text)">
+            <span>🌾</span>
+            <span>Fazendas com Visualização Ativa</span>
+          </div>
+          <span id="edit-scope-badge" class="badge" style="background:rgba(16,185,129,.15);color:var(--green);font-size:11px;font-weight:600">
+            🌐 Todas as Fazendas
+          </span>
+        </div>
+
+        <p id="edit-scope-desc" style="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.4">
+          O usuário terá permissão para visualizar todas as fazendas e unidades cadastradas.
+        </p>
+
+        {# Grade com todas as fazendas disponíveis #}
+        <div id="edit-fazendas-chips-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:6px;max-height:190px;overflow-y:auto;padding-right:4px;">
+          {% for loc in localidades %}
+          <div class="fazenda-chip-item chip-active" id="chip-loc-{{ loc.id }}" data-id="{{ loc.id }}" data-nome="{{ loc.nome }}" onclick="clicarChipFazenda({{ loc.id }})">
+            <span style="display:flex;align-items:center;gap:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              {% if loc.tipo == 'cd' %}🏢{% elif loc.tipo == 'central' %}🏛️{% else %}🌾{% endif %}
+              <span style="overflow:hidden;text-overflow:ellipsis;">{{ loc.nome }}</span>
+            </span>
+            <span class="chip-status-tag" style="font-size:10px;font-weight:700;color:var(--green);margin-left:4px;">✓</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+        <button type="button" onclick="fecharEditar()" class="btn btn-ghost btn-sm">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm">💾 Salvar Alterações</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
+  const TOTAL_LOCALIDADES = {{ localidades | length }};
+
   function abrirReset(id, login) {
     document.getElementById('modal-user-label').textContent = 'Usuário: ' + login;
     document.getElementById('form-reset-senha').action = '/admin/usuarios/' + id + '/resetar-senha';
@@ -162,7 +310,6 @@
   function fecharReset() {
     document.getElementById('modal-reset').style.display = 'none';
   }
-  // Fecha ao clicar fora
   document.getElementById('modal-reset').addEventListener('click', function(e) {
     if (e.target === this) fecharReset();
   });
@@ -170,55 +317,134 @@
   function abrirEditar(id, login, perfil_id, localidade_id) {
     document.getElementById('modal-editar-label').textContent = 'Usuário: ' + login;
     document.getElementById('form-editar-usuario').action = '/admin/usuarios/' + id + '/editar';
-    document.getElementById('edit-perfil_id').value = perfil_id;
-    document.getElementById('edit-localidade_id').value = localidade_id;
+    document.getElementById('edit-perfil_id').value = perfil_id || '';
+    document.getElementById('edit-localidade_id').value = localidade_id || '';
+    
+    atualizarVisualizacaoFazendas();
     document.getElementById('modal-editar').style.display = 'flex';
   }
+
   function fecharEditar() {
     document.getElementById('modal-editar').style.display = 'none';
   }
+
   document.getElementById('modal-editar').addEventListener('click', function(e) {
     if (e.target === this) fecharEditar();
   });
+
+  function aoMudarPerfilOuLocalidade() {
+    atualizarVisualizacaoFazendas();
+  }
+
+  function selecionarTodasFazendas() {
+    const selLoc = document.getElementById('edit-localidade_id');
+    selLoc.value = '';
+    atualizarVisualizacaoFazendas();
+  }
+
+  function clicarChipFazenda(locId) {
+    const selPerfil = document.getElementById('edit-perfil_id');
+    const selOption = selPerfil.options[selPerfil.selectedIndex];
+    const isMaster = selOption ? selOption.getAttribute('data-master') === '1' : false;
+    
+    if (isMaster) return; // Admin Master tem acesso a todas fixo
+
+    const selLoc = document.getElementById('edit-localidade_id');
+    if (selLoc.value == locId) {
+      // Se já estava selecionado, alterna para todas
+      selLoc.value = '';
+    } else {
+      selLoc.value = locId;
+    }
+    atualizarVisualizacaoFazendas();
+  }
+
+  function atualizarVisualizacaoFazendas() {
+    const selPerfil = document.getElementById('edit-perfil_id');
+    const selOption = selPerfil.options[selPerfil.selectedIndex];
+    const isMaster = selOption ? selOption.getAttribute('data-master') === '1' : false;
+    const perfilNome = selOption ? (selOption.getAttribute('data-nome') || '') : '';
+
+    const selLoc = document.getElementById('edit-localidade_id');
+    const locId = selLoc.value;
+    const locSelectedOption = selLoc.options[selLoc.selectedIndex];
+    const locNome = locSelectedOption ? (locSelectedOption.getAttribute('data-nome') || '') : '';
+
+    const badge = document.getElementById('edit-scope-badge');
+    const desc = document.getElementById('edit-scope-desc');
+    const lblLocOpt = document.getElementById('edit-lbl-loc-opt');
+    const grupoLoc = document.getElementById('edit-grupo-localidade');
+
+    const chips = document.querySelectorAll('#edit-fazendas-chips-grid .fazenda-chip-item');
+
+    if (isMaster) {
+      // 👑 Admin Master
+      badge.className = 'badge';
+      badge.style.background = 'rgba(59,130,246,0.18)';
+      badge.style.color = '#60a5fa';
+      badge.style.border = '1px solid rgba(59,130,246,0.4)';
+      badge.textContent = `👑 Acesso Total (${TOTAL_LOCALIDADES} Fazendas)`;
+
+      desc.textContent = 'Admin Master possui acesso irrestrito e visualização completa de todas as fazendas e unidades da empresa.';
+      lblLocOpt.textContent = '(ignorado para Admin Master)';
+      selLoc.disabled = true;
+
+      chips.forEach(chip => {
+        chip.className = 'fazenda-chip-item chip-admin-master';
+        chip.querySelector('.chip-status-tag').textContent = '✓ Total';
+        chip.querySelector('.chip-status-tag').style.color = '#60a5fa';
+      });
+
+    } else {
+      selLoc.disabled = false;
+      lblLocOpt.textContent = '(opcional)';
+
+      if (!locId) {
+        // 🌐 Sem localidade vinculada = Acesso a todas as fazendas
+        badge.className = 'badge';
+        badge.style.background = 'rgba(16,185,129,0.18)';
+        badge.style.color = '#34d399';
+        badge.style.border = '1px solid rgba(16,185,129,0.4)';
+        
+        if (perfilNome === 'Apoio Inspeção') {
+          badge.textContent = `🌐 Apoio Global (${TOTAL_LOCALIDADES} Fazendas)`;
+          desc.textContent = 'O usuário tem visualização global de celulares de inspeção e ativos de todas as fazendas.';
+        } else {
+          badge.textContent = `🌐 Todas as Fazendas (${TOTAL_LOCALIDADES})`;
+          desc.textContent = 'Sem restrição de localidade vinculada: o usuário pode visualizar todas as fazendas cadastradas.';
+        }
+
+        chips.forEach(chip => {
+          chip.className = 'fazenda-chip-item chip-active';
+          chip.querySelector('.chip-status-tag').textContent = '✓ Visível';
+          chip.querySelector('.chip-status-tag').style.color = 'var(--green)';
+        });
+
+      } else {
+        // 📍 Restrito a uma localidade específica
+        badge.className = 'badge';
+        badge.style.background = 'rgba(245,158,11,0.18)';
+        badge.style.color = '#fbbf24';
+        badge.style.border = '1px solid rgba(245,158,11,0.4)';
+        badge.textContent = `🌾 Restrito: ${locNome || '1 Fazenda'}`;
+
+        desc.innerHTML = `Visualização restrita <strong>exclusivamente</strong> à fazenda <strong>${locNome}</strong>. As demais fazendas ficam bloqueadas.`;
+
+        chips.forEach(chip => {
+          const chipId = chip.getAttribute('data-id');
+          if (chipId == locId) {
+            chip.className = 'fazenda-chip-item chip-active';
+            chip.style.borderColor = 'rgba(245,158,11,0.5)';
+            chip.querySelector('.chip-status-tag').textContent = '✓ Ativa';
+            chip.querySelector('.chip-status-tag').style.color = '#fbbf24';
+          } else {
+            chip.className = 'fazenda-chip-item chip-inactive';
+            chip.querySelector('.chip-status-tag').textContent = '🔒 Bloqueada';
+            chip.querySelector('.chip-status-tag').style.color = 'var(--text3)';
+          }
+        });
+      }
+    }
+  }
 </script>
-
-{# ── Modal de Edição de Usuário ──────────────────────────────────── #}
-<div id="modal-editar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6); backdrop-filter:blur(5px);
-     z-index:1000;align-items:center;justify-content:center">
-  <div class="glass-modal">
-    <h3 style="font-size:14px;margin-bottom:4px">✏️ Editar Cargo do Usuário</h3>
-    <p id="modal-editar-label" style="font-size:12px;color:var(--text3);margin-bottom:18px"></p>
-
-    <form id="form-editar-usuario" method="POST" style="margin:0">
-      <div class="form-group" style="margin-bottom:12px">
-        <label>Cargo de Acesso *</label>
-        <select id="edit-perfil_id" name="perfil_id" required
-                style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);
-                       border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none">
-          <option value="">Selecione o cargo…</option>
-          {% for p in perfis %}
-          <option value="{{ p.id }}">{% if p.is_admin_master %}👑{% else %}🔖{% endif %} {{ p.nome }}{% if p.is_admin_master %} (Admin Master){% endif %}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group" id="edit-grupo-localidade" style="display:flex;flex-direction:column;margin-bottom:12px">
-        <label>Localidade <span style="color:var(--text3);font-weight:400">(opcional para Admin Master)</span></label>
-        <select id="edit-localidade_id" name="localidade_id"
-                style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);
-                       border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none">
-          <option value="">Sem localidade vinculada</option>
-          {% for loc in localidades %}
-          <option value="{{ loc.id }}">{{ loc.nome }} ({{ loc.tipo }})</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-        <button type="button" onclick="fecharEditar()" class="btn btn-ghost btn-sm">Cancelar</button>
-        <button type="submit" class="btn btn-primary btn-sm">Salvar Alterações</button>
-      </div>
-    </form>
-  </div>
-</div>
 {% endblock %}
