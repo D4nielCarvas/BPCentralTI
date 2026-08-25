@@ -152,15 +152,28 @@ def novo_chamado():
                 if arquivo:
                     save_anexo(arquivo, novo_id, None, usuario_id, cur)
 
+                # Obter nome do solicitante e da fazenda para a notificação
+                nome_solicitante = session.get("nome")
+                if not nome_solicitante:
+                    user_row = fetch_one(cur, "SELECT nome FROM usuarios WHERE id = %s", (usuario_id,))
+                    nome_solicitante = user_row["nome"] if user_row else "Usuário"
+
+                loc_row = fetch_one(cur, "SELECT nome FROM localidades WHERE id = %s", (loc_id,))
+                nome_fazenda = loc_row["nome"] if loc_row else "Fazenda"
+
+                msg_urgencia = "🚨 [URGENTE] " if prioridade in ("alta", "urgente") else "📋 "
+                msg_notificacao = f"{msg_urgencia}Novo Chamado #{novo_id} - {nome_solicitante} ({nome_fazenda}): {titulo}"
+
                 # Notificar administradores
                 cur.execute(
                     """
                     INSERT INTO notificacoes (usuario_id, chamado_id, mensagem)
                     SELECT id, %s, %s
                     FROM usuarios 
-                    WHERE role = 'admin' AND ativo = TRUE
+                    WHERE (role = 'admin' OR perfil_id IN (SELECT id FROM perfis_acesso WHERE is_admin_master = TRUE))
+                      AND ativo = TRUE
                     """,
-                    (novo_id, f"Novo chamado: {titulo[:50]}")
+                    (novo_id, msg_notificacao[:255])
                 )
 
         flash("Chamado aberto com sucesso! A equipe de TI entrará em contato.", "success")
@@ -323,6 +336,26 @@ def detalhe_chamado(chamado_id: int):
                         (chamado_id,),
                     )
                     novo_status = "em_atendimento"
+
+                # Notificar o técnico atribuído ou administradores da TI
+                nome_solicitante = session.get("nome", "Usuário")
+                msg_resp = f"💬 Chamado #{chamado_id} ({nome_solicitante}): {mensagem}"
+                if chamado.get("atribuido_a"):
+                    cur.execute(
+                        "INSERT INTO notificacoes (usuario_id, chamado_id, mensagem) VALUES (%s, %s, %s)",
+                        (chamado["atribuido_a"], chamado_id, msg_resp[:255]),
+                    )
+                else:
+                    cur.execute(
+                        """
+                        INSERT INTO notificacoes (usuario_id, chamado_id, mensagem)
+                        SELECT id, %s, %s
+                        FROM usuarios 
+                        WHERE (role = 'admin' OR perfil_id IN (SELECT id FROM perfis_acesso WHERE is_admin_master = TRUE))
+                          AND ativo = TRUE
+                        """,
+                        (chamado_id, msg_resp[:255]),
+                    )
 
         if is_ajax:
             dt_now = datetime.utcnow() - timedelta(hours=3)

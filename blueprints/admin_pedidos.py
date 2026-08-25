@@ -270,7 +270,7 @@ def atualizar_status_pedido(pedido_id: int):
             # 2. Lê status anterior (do banco — nunca do body)
             pedido = fetch_one(
                 cur,
-                "SELECT id, status, item, quantidade, descricao, localidade_id FROM pedidos_viewer WHERE id = %s",
+                "SELECT id, status, item, quantidade, descricao, localidade_id, usuario_id FROM pedidos_viewer WHERE id = %s",
                 (pedido_id,),
             )
             if not pedido:
@@ -327,6 +327,19 @@ def atualizar_status_pedido(pedido_id: int):
                 "UPDATE pedidos_viewer SET status = %s WHERE id = %s",
                 (novo_status, pedido_id),
             )
+
+            # 5. Notificar o solicitante do pedido (se não for o próprio admin)
+            autor_pedido_id = pedido.get("usuario_id")
+            if autor_pedido_id and autor_pedido_id != admin_id:
+                status_fmt = novo_status.replace("_", " ").title()
+                msg_notif = f"📦 Pedido #{pedido_id}: Status atualizado para '{status_fmt}'"
+                try:
+                    cur.execute(
+                        "INSERT INTO notificacoes (usuario_id, pedido_id, mensagem) VALUES (%s, %s, %s)",
+                        (autor_pedido_id, pedido_id, msg_notif[:255]),
+                    )
+                except Exception:
+                    pass
 
     flash(f"Status atualizado para '{novo_status}' com sucesso.", "success")
     return redirect(url_for("admin_pedidos.detalhe_pedido_admin", pedido_id=pedido_id))

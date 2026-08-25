@@ -1,6 +1,6 @@
 from flask import Blueprint, redirect, url_for, session, render_template, Response, jsonify
 from utils.auth_utils import has_permission
-from utils.db_layer import acquire_conn, fetch_one
+from utils.db_layer import acquire_conn, fetch_all, fetch_one
 
 core_bp = Blueprint('core', __name__)
 
@@ -54,3 +54,47 @@ def health_check() -> Response:
         return jsonify({"ok": True, "msg": "Banco OK"})
     except Exception as e:
         return jsonify({"ok": False, "msg": f"Erro de conexão: {str(e)}"}), 500
+
+
+@core_bp.route("/api/notificacoes/poll")
+def poll_notificacoes() -> Response:
+    """
+    Retorna as notificações não lidas mais recentes para o usuário logado.
+    Identifica flags de urgência para disparo sonoro e push no frontend.
+    """
+    usuario_id = session.get("usuario_id")
+    if not usuario_id:
+        return jsonify({"ok": False, "notificacoes": []}), 401
+
+    try:
+        with acquire_conn() as conn:
+            with conn.cursor() as cur:
+                ultimas = []
+                try:
+                    ultimas = fetch_all(
+                        cur,
+                        """SELECT id, chamado_id, pedido_id, mensagem, criado_em
+                           FROM notificacoes
+                           WHERE usuario_id = %s AND lida = FALSE
+                           ORDER BY id DESC LIMIT 10""",
+                        (usuario_id,)
+                    )
+                except Exception:
+                    conn.rollback()
+                    ultimas = fetch_all(
+                        cur,
+                        """SELECT id, chamado_id, mensagem, criado_em
+                           FROM notificacoes
+                           WHERE usuario_id = %s AND lida = FALSE
+                           ORDER BY id DESC LIMIT 10""",
+                        (usuario_id,)
+                    )
+
+                for n in ultimas:
+                    msg = n.get("mensagem") or ""
+                    n["is_urgente"] = "[URGENTE]" in msg or "🚨" in msg
+
+        return jsonify({"ok": True, "notificacoes": ultimas})
+    except Exception as e:
+        return jsonify({"ok": False, "msg": str(e), "notificacoes": []}), 500
+

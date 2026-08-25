@@ -2493,18 +2493,39 @@
       setTimeout(() => el.remove(), 3500);
     }
 
-    // ─── NOTIFICAÇÕES DESKTOP PUSH ───────────────────────────────────────────────
+    // ─── ALERTA SONORO DE EMERGÊNCIA (Web Audio API) ─────────────────────────
+    function playUrgentAlertSound() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
+        const now = ctx.currentTime;
+        [0, 0.18, 0.36].forEach((offset, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(880 + (idx * 220), now + offset);
+          gain.gain.setValueAtTime(0.3, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.14);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.14);
+        });
+      } catch (e) {
+        console.warn("Alerta sonoro não disponível:", e);
+      }
+    }
+
+    // ─── NOTIFICAÇÕES DESKTOP PUSH & POLLING ──────────────────────────────────────
     let lastNotifId = parseInt(localStorage.getItem('lastNotifId')) || 0;
     
     function initDesktopNotifications() {
-      // Verifica se o navegador suporta notificações
-      if (!("Notification" in window)) {
-        console.log("Este navegador não suporta notificações de desktop.");
-        return;
-      }
-
       // Solicita permissão se ainda não foi concedida/negada
-      if (Notification.permission === "default") {
+      if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission().then(permission => {
           if (permission === "granted") {
             toast("Notificações de desktop ativadas!", "success");
@@ -2514,11 +2535,9 @@
 
       // Polling a cada 30 segundos
       setInterval(async () => {
-        if (Notification.permission !== "granted") return;
-
         try {
           const res = await api('/api/notificacoes/poll');
-          if (res.ok && res.notificacoes) {
+          if (res && res.ok && res.notificacoes) {
             // Atualiza a UI em tempo real
             const totalUnread = res.notificacoes.length;
             const bellIcon = document.querySelector('.notif-bell');
@@ -2528,7 +2547,6 @@
                 if (!badge) {
                   badge = document.createElement('div');
                   badge.className = 'notif-badge';
-                  // Insere o badge logo após o emoji do sino
                   bellIcon.appendChild(badge);
                 }
                 badge.innerText = totalUnread;
@@ -2567,7 +2585,7 @@
               }
             }
 
-            // Pegar as notificações mais recentes que ainda não mostramos no desktop
+            // Pegar as notificações mais recentes que ainda não mostramos
             const newNotifs = res.notificacoes.filter(n => n.id > lastNotifId);
             
             if (newNotifs.length > 0) {
@@ -2576,26 +2594,37 @@
               lastNotifId = maxId;
               localStorage.setItem('lastNotifId', maxId);
 
-              // Dispara as notificações desktop
-              newNotifs.forEach(n => {
-                const title = "BP Central TI - Novo Chamado";
-                const options = {
-                  body: n.mensagem,
-                  icon: '/static/img/logo.png', // Fallback caso não exista logo, o SO ignora silenciosamente
-                  requireInteraction: true // Mantém a notificação até o usuário interagir
-                };
-                const notif = new Notification(title, options);
-                
-                notif.onclick = function() {
-                  window.focus();
-                  if (n.chamado_id) {
-                    window.location.href = `/admin/chamados/${n.chamado_id}`;
-                  } else {
-                    showPage('dashboard');
-                  }
-                  notif.close();
-                };
-              });
+              // Toca alerta sonoro caso haja notificação urgente
+              const hasUrgent = newNotifs.some(n => n.is_urgente || (n.mensagem && (n.mensagem.includes('[URGENTE]') || n.mensagem.includes('🚨'))));
+              if (hasUrgent) {
+                playUrgentAlertSound();
+              }
+
+              // Dispara as notificações desktop (se houver suporte e permissão)
+              if ("Notification" in window && Notification.permission === "granted") {
+                newNotifs.forEach(n => {
+                  const isUrg = n.is_urgente || (n.mensagem && n.mensagem.includes('[URGENTE]'));
+                  const title = isUrg ? "🚨 BP Central TI - ALERTA URGENTE" : "BP Central TI - Notificação";
+                  const options = {
+                    body: n.mensagem,
+                    icon: '/static/img/logo.png',
+                    requireInteraction: isUrg
+                  };
+                  const notif = new Notification(title, options);
+                  
+                  notif.onclick = function() {
+                    window.focus();
+                    if (n.chamado_id) {
+                      window.location.href = `/admin/chamados/${n.chamado_id}`;
+                    } else if (n.pedido_id) {
+                      window.location.href = `/admin/pedidos/${n.pedido_id}`;
+                    } else {
+                      showPage('dashboard');
+                    }
+                    notif.close();
+                  };
+                });
+              }
             }
           }
         } catch (e) {

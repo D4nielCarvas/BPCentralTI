@@ -582,8 +582,13 @@ def novo_pedido():
                     except Exception:
                         pass
 
+                    nome_solicitante = session.get("nome")
+                    if not nome_solicitante:
+                        user_row = fetch_one(cur_notif, "SELECT nome FROM usuarios WHERE id = %s", (usuario_id,))
+                        nome_solicitante = user_row["nome"] if user_row else "Usuário"
+
                     msg_urgencia = "🚨 [URGENTE] " if urgencia in ("alta", "urgente", "critica") else "📋 "
-                    msg_notificacao = f"{msg_urgencia}Novo Pedido #{novo_id} ({nome_fazenda_notif}): {item} (Qtd: {quantidade})"
+                    msg_notificacao = f"{msg_urgencia}Novo Pedido #{novo_id} - {nome_solicitante} ({nome_fazenda_notif}): {item} (Qtd: {quantidade})"
 
                     try:
                         cur_notif.execute(

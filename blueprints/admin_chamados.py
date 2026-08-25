@@ -266,6 +266,25 @@ def detalhe_chamado_admin(chamado_id: int):
                     )
                     status_final = novo_status
 
+                # Notificar o solicitante do chamado (se não for o próprio usuário logado)
+                criador_id = chamado.get("criado_por")
+                if criador_id and criador_id != usuario_id:
+                    msg_notif = None
+                    if mensagem and novo_status and novo_status != chamado.get("status"):
+                        status_fmt = novo_status.replace("_", " ").title()
+                        msg_notif = f"🔄💬 Chamado #{chamado_id}: Status '{status_fmt}' e nova mensagem: {mensagem}"
+                    elif novo_status and novo_status != chamado.get("status"):
+                        status_fmt = novo_status.replace("_", " ").title()
+                        msg_notif = f"🔄 Chamado #{chamado_id}: Status atualizado para '{status_fmt}'"
+                    elif mensagem:
+                        msg_notif = f"💬 Chamado #{chamado_id}: Nova resposta da TI: {mensagem}"
+
+                    if msg_notif:
+                        cur.execute(
+                            "INSERT INTO notificacoes (usuario_id, chamado_id, mensagem) VALUES (%s, %s, %s)",
+                            (criador_id, chamado_id, msg_notif[:255]),
+                        )
+
         if is_ajax:
             dt_now = datetime.utcnow() - timedelta(hours=3)
             return jsonify({
@@ -369,6 +388,14 @@ def movimentacao_equipamento(chamado_id: int):
                 "INSERT INTO chamado_mensagens (chamado_id, usuario_id, mensagem, is_sistema) VALUES (%s, %s, %s, TRUE)",
                 (chamado_id, usuario_id, msg)
             )
+
+            # Notifica o solicitante do chamado
+            chamado_dados = fetch_one(cur, "SELECT criado_por FROM chamados WHERE id = %s", (chamado_id,))
+            if chamado_dados and chamado_dados.get("criado_por") and chamado_dados["criado_por"] != usuario_id:
+                cur.execute(
+                    "INSERT INTO notificacoes (usuario_id, chamado_id, mensagem) VALUES (%s, %s, %s)",
+                    (chamado_dados["criado_por"], chamado_id, f"🚚 Chamado #{chamado_id}: Equipamento {chamado['id_ativo']} - {nome_etapa}"[:255]),
+                )
 
     flash(f"Movimentação '{nome_etapa}' registrada com sucesso.", "success")
     return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
@@ -502,6 +529,13 @@ def gerar_manutencao(chamado_id: int):
                 (chamado_id, usuario_id, f"Equipamento {chamado['id_ativo']} encaminhado para manutenção (OS: {os_manutencao}) pela TI."),
             )
 
+            # Notificar solicitante
+            if chamado.get("criado_por") and chamado["criado_por"] != usuario_id:
+                cur.execute(
+                    "INSERT INTO notificacoes (usuario_id, chamado_id, mensagem) VALUES (%s, %s, %s)",
+                    (chamado["criado_por"], chamado_id, f"🛠️ Chamado #{chamado_id}: Manutenção iniciada para o equipamento {chamado['id_ativo']} (OS: {os_manutencao})"[:255]),
+                )
+
     flash(f"Manutenção criada com sucesso ({os_manutencao})!", "success")
     return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
 
@@ -633,10 +667,15 @@ def toggle_modelo(modelo_id: int):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @admin_chamados_bp.route("/notificacao/<int:notif_id>/ler")
-@admin_required
 def ler_notificacao(notif_id: int):
-    """Marca a notificação como lida e redireciona para o chamado ou pedido correspondente."""
-    usuario_id = get_usuario_id()
+    """Marca a notificação como lida e redireciona para o chamado ou pedido correspondente (admin ou viewer)."""
+    usuario_id = session.get("usuario_id")
+    if not usuario_id:
+        return redirect(url_for("auth.login"))
+
+    role = session.get("role", "viewer")
+    is_admin = role == "admin" or session.get("is_admin_master")
+
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             # Consulta com fallback para garantir compatibilidade com schemas anteriores
@@ -659,14 +698,29 @@ def ler_notificacao(notif_id: int):
             if notificacao:
                 with conn.cursor() as cur_update:
                     cur_update.execute(
-                        "UPDATE notificacoes SET lida = TRUE WHERE id = %s",
-                        (notif_id,)
+                        "UPDATE notificacoes SET lida = TRUE WHERE id = %s AND usuario_id = %s",
+                        (notif_id, usuario_id)
                     )
+                # Invalida o cache de notificações da sessão para atualizar o contador
+                session.pop("_notif_cache", None)
+                session.pop("_notif_cache_ts", None)
+                session.modified = True
+
                 if notificacao.get("pedido_id"):
-                    return redirect(url_for('admin_pedidos.detalhe_pedido_admin', pedido_id=notificacao['pedido_id']))
+                    if is_admin:
+                        return redirect(url_for('admin_pedidos.detalhe_pedido_admin', pedido_id=notificacao['pedido_id']))
+                    return redirect(url_for('fazenda.detalhe_pedido', pedido_id=notificacao['pedido_id']))
+
                 if notificacao.get("chamado_id"):
-                    return redirect(url_for('admin_chamados.detalhe_chamado_admin', chamado_id=notificacao['chamado_id']))
-                return redirect(url_for('admin_pedidos.listar_pedidos_admin'))
+                    if is_admin:
+                        return redirect(url_for('admin_chamados.detalhe_chamado_admin', chamado_id=notificacao['chamado_id']))
+                    return redirect(url_for('chamados.detalhe_chamado', chamado_id=notificacao['chamado_id']))
+
+                if is_admin:
+                    return redirect(url_for('admin_chamados.dashboard_chamados'))
+                return redirect(url_for('fazenda.painel'))
     
     flash("Notificação não encontrada.", "warning")
-    return redirect(url_for('admin_chamados.dashboard_chamados'))
+    if is_admin:
+        return redirect(url_for('admin_chamados.dashboard_chamados'))
+    return redirect(url_for('fazenda.painel'))

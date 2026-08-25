@@ -226,7 +226,7 @@ def inject_permissions():
 
 @app.context_processor
 def injetar_notificacoes():
-    """Injeta notificações não lidas no template global (para usuários autorizados).
+    """Injeta notificações não lidas no template global para qualquer usuário logado.
 
     P11 CORRIGIDO: implementa cache de sessão com TTL de 30 segundos.
     Sem cache, esta função executava uma query ao banco em CADA requisição
@@ -235,19 +235,22 @@ def injetar_notificacoes():
 
     Complexidade: O(1) em cache hit; O(1) na query (índice em usuario_id + lida).
     """
-    is_master = session.get("is_admin_master")
-    perms = session.get("permissoes") or {}
-    pode_ver = is_master or perms.get("responder_chamados") or session.get("role") == "admin"
-
-    if session.get("usuario_id") and pode_ver:
+    usuario_id = session.get("usuario_id")
+    if usuario_id:
         # P11: verifica cache de sessão — atualiza apenas se TTL de 30s expirou
-        agora = datetime.utcnow()
+        from datetime import timezone
+        agora = datetime.now(timezone.utc)
         cache_ts_raw = session.get("_notif_cache_ts")
-        cache_valido = (
-            cache_ts_raw is not None
-            and (agora - datetime.fromisoformat(cache_ts_raw)).total_seconds() < 30
-            and "_notif_cache" in session
-        )
+        cache_valido = False
+        if cache_ts_raw is not None and "_notif_cache" in session:
+            try:
+                ts = datetime.fromisoformat(cache_ts_raw)
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                if (agora - ts).total_seconds() < 30:
+                    cache_valido = True
+            except Exception:
+                cache_valido = False
 
         if cache_valido:
             cached = session["_notif_cache"]
@@ -263,19 +266,31 @@ def injetar_notificacoes():
                     # Contagem de não lidas
                     cur.execute(
                         "SELECT COUNT(*) as qtd FROM notificacoes WHERE usuario_id = %s AND lida = FALSE",
-                        (session.get("usuario_id"),)
+                        (usuario_id,)
                     )
                     qtd_notificacoes = cur.fetchone()["qtd"]
 
-                    # Lista das últimas 5 não lidas
-                    ultimas = _fetch_all(
-                        cur,
-                        """SELECT id, chamado_id, mensagem, criado_em
-                           FROM notificacoes
-                           WHERE usuario_id = %s AND lida = FALSE
-                           ORDER BY id DESC LIMIT 5""",
-                        (session.get("usuario_id"),)
-                    )
+                    # Lista das últimas 5 não lidas (com fallback caso pedido_id não exista)
+                    ultimas = []
+                    try:
+                        ultimas = _fetch_all(
+                            cur,
+                            """SELECT id, chamado_id, pedido_id, mensagem, criado_em
+                               FROM notificacoes
+                               WHERE usuario_id = %s AND lida = FALSE
+                               ORDER BY id DESC LIMIT 5""",
+                            (usuario_id,)
+                        )
+                    except Exception:
+                        conn.rollback()
+                        ultimas = _fetch_all(
+                            cur,
+                            """SELECT id, chamado_id, mensagem, criado_em
+                               FROM notificacoes
+                               WHERE usuario_id = %s AND lida = FALSE
+                               ORDER BY id DESC LIMIT 5""",
+                            (usuario_id,)
+                        )
 
             # Armazena resultado no cache de sessão com timestamp
             session["_notif_cache"] = {"qtd": qtd_notificacoes, "lista": ultimas}

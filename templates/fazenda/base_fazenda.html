@@ -116,7 +116,7 @@
       <div style="flex:1"></div>
       {% block topbar_actions %}{% endblock %}
 
-      {% if session.role == 'admin' %}
+      {% if session.usuario_id %}
       <div style="position:relative;">
         <div class="notif-bell" onclick="document.getElementById('notif-dropdown').classList.toggle('show')">
           🔔
@@ -177,24 +177,49 @@
     </div>
   </div>
 
-  {% if session.role == 'admin' or session.is_admin_master %}
+  {% if session.usuario_id %}
   <script>
-    // ─── NOTIFICAÇÕES DESKTOP PUSH ───────────────────────────────────────────────
+    // ─── ALERTA SONORO DE EMERGÊNCIA (Web Audio API) ─────────────────────────
+    function playUrgentAlertSound() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
+        const now = ctx.currentTime;
+        [0, 0.18, 0.36].forEach((offset, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(880 + (idx * 220), now + offset);
+          gain.gain.setValueAtTime(0.3, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.14);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.14);
+        });
+      } catch (e) {
+        console.warn("Alerta sonoro não disponível:", e);
+      }
+    }
+
+    // ─── NOTIFICAÇÕES DESKTOP PUSH & POLLING ──────────────────────────────────────
     (function () {
       let lastNotifId = parseInt(localStorage.getItem('lastNotifId')) || 0;
+      const isAdmin = {{ 'true' if (session.role == 'admin' or session.is_admin_master) else 'false' }};
 
-      if (!("Notification" in window)) return;
-
-      if (Notification.permission === "default") {
+      if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
       }
 
       setInterval(async () => {
-        if (Notification.permission !== "granted") return;
         try {
           const res = await fetch('/api/notificacoes/poll');
           const data = await res.json();
-          if (data.ok && data.notificacoes) {
+          if (data && data.ok && data.notificacoes) {
             // Atualiza a UI em tempo real
             const totalUnread = data.notificacoes.length;
             const bellIcon = document.querySelector('.notif-bell');
@@ -248,22 +273,29 @@
               lastNotifId = maxId;
               localStorage.setItem('lastNotifId', maxId);
 
-              newNotifs.forEach(n => {
-                const notif = new Notification("BP Central TI - Novo Chamado", {
-                  body: n.mensagem,
-                  icon: '/static/img/logo.png',
-                  requireInteraction: true
+              // Dispara alarme sonoro se o usuário for administrador e houver chamado/pedido urgente
+              const hasUrgent = newNotifs.some(n => n.is_urgente || (n.mensagem && (n.mensagem.includes('[URGENTE]') || n.mensagem.includes('🚨'))));
+              if (isAdmin && hasUrgent) {
+                playUrgentAlertSound();
+              }
+
+              // Dispara notificação desktop do sistema operacional se permitido
+              if ("Notification" in window && Notification.permission === "granted") {
+                newNotifs.forEach(n => {
+                  const isUrg = n.is_urgente || (n.mensagem && n.mensagem.includes('[URGENTE]'));
+                  const title = isUrg ? "🚨 BP Central TI - ALERTA URGENTE" : "BP Central TI - Atualização";
+                  const notif = new Notification(title, {
+                    body: n.mensagem,
+                    icon: '/static/img/logo.png',
+                    requireInteraction: isUrg
+                  });
+                  notif.onclick = function () {
+                    window.focus();
+                    window.location.href = `/admin/chamados/notificacao/${n.id}/ler`;
+                    notif.close();
+                  };
                 });
-                notif.onclick = function () {
-                  window.focus();
-                  if (n.chamado_id) {
-                    window.location.href = `/admin/chamados/${n.chamado_id}`;
-                  } else {
-                    window.location.href = '/';
-                  }
-                  notif.close();
-                };
-              });
+              }
             }
           }
         } catch (e) {
