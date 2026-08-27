@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>QR Code — BP Central TI</title>
+  <link rel="icon" href="{{ url_for('static', filename='icon.svg') }}">
+  <!-- qrcode.js via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    /* ═══════════════════════════════════════════════
+       Design System — BP Central TI · Página QR
+       Otimizado para mobile + desktop
+    ═══════════════════════════════════════════════ */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1c2230;
+      --border: rgba(255,255,255,0.08);
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-glow: rgba(37,99,235,0.25);
+      --green: #10b981;
+      --green-bg: rgba(16,185,129,0.12);
+      --red: #ef4444;
+      --red-bg: rgba(239,68,68,0.12);
+      --orange: #f59e0b;
+      --orange-bg: rgba(245,158,11,0.12);
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Header ───────────────────────────────── */
+    .qr-header {
+      width: 100%;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .qr-header .logo-icon { font-size: 24px; }
+    .qr-header .brand {
+      font-size: 15px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .qr-header .tipo-badge {
+      margin-left: auto;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+    }
+    .badge-estoque { background: var(--green-bg); color: var(--green); }
+    .badge-ativo   { background: var(--accent-glow); color: #60a5fa; }
+    .badge-erro    { background: var(--red-bg); color: var(--red); }
+
+    /* ── Main container ───────────────────────── */
+    .qr-container {
+      width: 100%;
+      max-width: 500px;
+      padding: 20px 16px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ── Card ─────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* ── Item info ────────────────────────────── */
+    .item-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.2;
+    }
+    .item-id {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'Courier New', monospace;
+      margin-bottom: 14px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .info-item {
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+    }
+    .info-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 3px;
+    }
+    .info-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      word-break: break-word;
+    }
+
+    /* Status badge */
+    .status-pill {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+    .status-ativo     { background: var(--green-bg);  color: var(--green); }
+    .status-estoque   { background: var(--orange-bg); color: var(--orange); }
+    .status-manutencao{ background: var(--red-bg);    color: var(--red); }
+    .status-com-ti    { background: var(--accent-glow); color: #60a5fa; }
+    .status-default   { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+
+    /* Quantidade em destaque */
+    .qty-display {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin: 4px 0;
+    }
+    .qty-number {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--green);
+      line-height: 1;
+    }
+    .qty-unit {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* ── Formulário de saída (estoque) ────────── */
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      padding: 11px 14px;
+      font-size: 15px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* ── Botões ───────────────────────────────── */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.18s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: 0.2px;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      color: #fff;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px var(--accent-glow);
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(220,38,38,0.3);
+    }
+    .btn-danger:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+    .btn-success {
+      background: linear-gradient(135deg, var(--green), #059669);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+    }
+    .btn-success:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .btn-outline:hover { background: var(--surface2); color: var(--text); }
+
+    /* ── Alerta de feedback ───────────────────── */
+    .alert {
+      padding: 14px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      display: none;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .alert.show { display: flex; }
+    .alert-success { background: var(--green-bg); color: var(--green); border: 1px solid rgba(16,185,129,0.25); }
+    .alert-error   { background: var(--red-bg);   color: var(--red);   border: 1px solid rgba(239,68,68,0.25); }
+    .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Chamados em aberto ───────────────────── */
+    .chamado-item {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--orange);
+      margin-bottom: 8px;
+    }
+    .chamado-item:last-child { margin-bottom: 0; }
+    .chamado-id {
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--orange);
+      font-weight: 700;
+    }
+    .chamado-titulo {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* ── Erro page ────────────────────────────── */
+    .error-container {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .error-icon { font-size: 56px; margin-bottom: 16px; }
+    .error-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--red);
+      margin-bottom: 8px;
+    }
+    .error-msg { color: var(--text-muted); font-size: 14px; }
+
+    /* ── Spinner ──────────────────────────────── */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .loading .spinner { display: block; }
+    .loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Divider ──────────────────────────────── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ─── @media print — Etiqueta SLP-650 ────── */
+    /* Dimensões: 1-1/8" × 3-1/2" = 28.6mm × 88.9mm
+       A impressora SLP-650 aparece como impressora Windows
+       com tamanho de papel configurado para o rolo.
+       Este CSS garante que apenas a etiqueta seja impressa.     */
+    @media print {
+      body > *:not(#label-print-area) { display: none !important; }
+      #label-print-area {
+        display: block !important;
+        position: fixed;
+        top: 0; left: 0;
+        width: 88.9mm;
+        height: 28.6mm;
+        margin: 0;
+        padding: 0;
+        background: #fff;
+        color: #000;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+      }
+      .label-inner {
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+        height: 100%;
+        padding: 2mm;
+        gap: 2mm;
+      }
+      .label-qr-area {
+        flex-shrink: 0;
+        width: 24mm;
+        height: 24mm;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .label-qr-area canvas,
+      .label-qr-area img { width: 100% !important; height: 100% !important; }
+      .label-text-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .label-brand {
+        font-size: 5pt;
+        font-weight: bold;
+        color: #555;
+        letter-spacing: 0.5pt;
+        text-transform: uppercase;
+        margin-bottom: 1mm;
+      }
+      .label-nome {
+        font-size: 7pt;
+        font-weight: bold;
+        color: #000;
+        line-height: 1.2;
+        margin-bottom: 1mm;
+        word-break: break-word;
+        max-height: 12mm;
+        overflow: hidden;
+      }
+      .label-id {
+        font-size: 6.5pt;
+        font-family: 'Courier New', monospace;
+        color: #333;
+        margin-bottom: 1mm;
+      }
+      .label-tipo {
+        font-size: 5pt;
+        color: #666;
+        border: 0.5pt solid #aaa;
+        padding: 0.5mm 1mm;
+        border-radius: 2pt;
+        display: inline-block;
+        width: fit-content;
+      }
+      /* Ocultar tudo que não é etiqueta */
+      .qr-header, .qr-container { display: none !important; }
+    }
+    /* Ocultar área de impressão na tela */
+    #label-print-area { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<header class="qr-header">
+  <span class="logo-icon">🖥️</span>
+  <span class="brand">BP Central TI</span>
+  {% if not erro %}
+    <span class="tipo-badge {% if tipo == 'estoque' %}badge-estoque{% else %}badge-ativo{% endif %}">
+      {{ cfg.label if cfg else tipo }}
+    </span>
+  {% else %}
+    <span class="tipo-badge badge-erro">Erro</span>
+  {% endif %}
+</header>
+
+<!-- ── Área de impressão (invisível na tela, impressa pelo @media print) ──── -->
+<div id="label-print-area">
+  <div class="label-inner">
+    <div class="label-qr-area" id="label-qr-canvas"></div>
+    <div class="label-text-area">
+      <div class="label-brand">BP Agronegócios · TI</div>
+      {% if not erro %}
+        <div class="label-nome">{{ nome_display }}</div>
+        <div class="label-id">{{ item_id }}</div>
+        <div class="label-tipo">{{ cfg.label if cfg else tipo }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Conteúdo principal ──────────────────────────────────────────────────── -->
+<main class="qr-container">
+
+  {% if erro %}
+  <!-- ── Página de erro ────────────────────────────────────────────────────── -->
+  <div class="card error-container">
+    <div class="error-icon">⚠️</div>
+    <div class="error-title">Item não encontrado</div>
+    <p class="error-msg">{{ erro }}</p>
+  </div>
+
+  {% elif tipo == 'estoque' %}
+  <!-- ════════════════════════════════════════════
+       FLUXO: ITEM DE ESTOQUE → Registrar Saída
+  ═══════════════════════════════════════════════ -->
+
+  <!-- Card de informações do item -->
+  <div class="card">
+    <div class="card-title">📦 Item de Estoque</div>
+    <div class="item-name">{{ nome_display }}</div>
+    <div class="item-id">ID #{{ item_id }}{% if item.cod_pedido %} · Pedido: {{ item.cod_pedido }}{% endif %}</div>
+
+    <div class="qty-display">
+      <span class="qty-number" id="qty-display">{{ item.quantidade }}</span>
+      <span class="qty-unit">{{ item.unidade or 'un' }} em estoque</span>
+    </div>
+
+    {% if item.localizacao %}
+    <div style="margin-top:10px; font-size:13px; color:var(--text-muted);">
+      📍 {{ item.localizacao }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Card de ação: Registrar Saída -->
+  <div class="card">
+    <div class="card-title">⬇️ Registrar Saída</div>
+
+    <div id="alert-box" class="alert"></div>
+
+    <form id="form-saida" {% if item.quantidade == 0 %}style="opacity:0.5;pointer-events:none;"{% endif %}>
+      <div class="form-group">
+        <label class="form-label" for="input-qtd">Quantidade a retirar</label>
+        <input
+          id="input-qtd"
+          class="form-input"
+          type="number"
+          min="1"
+          max="{{ item.quantidade }}"
+          placeholder="Ex: 1"
+          value="1"
+          autocomplete="off"
+          inputmode="numeric"
+        >
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="input-motivo">Motivo (opcional)</label>
+        <input
+          id="input-motivo"
+          class="form-input"
+          type="text"
+          placeholder="Ex: Entregue para Fazenda X"
+          maxlength="200"
+          autocomplete="off"
+        >
+      </div>
+      <button
+        type="button"
+        id="btn-saida"
+        class="btn btn-danger"
+        onclick="registrarSaida()"
+        {% if item.quantidade == 0 %}disabled{% endif %}
+      >
+        <span class="btn-text">⬇️ Confirmar Saída</span>
+        <span class="spinner"></span>
+      </button>
+    </form>
+
+    {% if item.quantidade == 0 %}
+    <p style="margin-top:12px;text-align:center;font-size:13px;color:var(--red);">
+      ⚠️ Estoque zerado — sem itens disponíveis para saída.
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- Botão imprimir etiqueta -->
+  <div class="divider">ou</div>
+  <button class="btn btn-outline" onclick="imprimirEtiqueta()">🖨️ Imprimir Etiqueta</button>
+
+  {% else %}
+  <!-- ════════════════════════════════════════════
+       FLUXO: ATIVO (computador, celular, etc.)
+       → Registrar "Chegou na TI"
+  ═══════════════════════════════════════════════ -->
+
+  <!-- Card de informações do ativo -->
+  <div class="card">
+    <div class="card-title">💻 {{ cfg.label }}</div>
+    <div class="item-name">{{ nome_display }}</div>
+    <div class="item-id">{{ item_id }}</div>
+
+    <div class="info-grid" style="margin-top:12px;">
+      {% if item.get('fazenda') %}
+      <div class="info-item">
+        <div class="info-label">Fazenda</div>
+        <div class="info-value">{{ item.fazenda }}</div>
+      </div>
+      {% endif %}
+
+      {% if item.get('responsavel') %}
+      <div class="info-item">
+        <div class="info-label">Responsável</div>
+        <div class="info-value">{{ item.responsavel }}</div>
+      </div>
+      {% endif %}
+
+      {% if item.get('setor') %}
+      <div class="info-item">
+        <div class="info-label">Setor</div>
+        <div class="info-value">{{ item.setor }}</div>
+      </div>
+      {% endif %}
+
+      {% if item.get('marca') %}
+      <div class="info-item">
+        <div class="info-label">Marca</div>
+        <div class="info-value">{{ item.marca }}</div>
+      </div>
+      {% endif %}
+
+      <div class="info-item" style="{% if not item.get('fazenda') and not item.get('setor') %}grid-column:1/-1{% endif %}">
+        <div class="info-label">Status atual</div>
+        <div class="info-value">
+          {% set st = item.get('status','') %}
+          <span class="status-pill
+            {% if st == 'Ativo' %}status-ativo
+            {% elif 'stoque' in st %}status-estoque
+            {% elif 'Manu' in st or 'manu' in st %}status-manutencao
+            {% elif 'TI' in st %}status-com-ti
+            {% else %}status-default{% endif %}
+          ">{{ st or 'Desconhecido' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card: Chamados em aberto -->
+  {% if chamados %}
+  <div class="card">
+    <div class="card-title">🔔 Chamados em Aberto ({{ chamados|length }})</div>
+    {% for c in chamados %}
+    <div class="chamado-item">
+      <div>
+        <div class="chamado-id">#{{ c.id }}</div>
+        <div class="chamado-titulo">{{ c.titulo or '(sem título)' }}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">{{ c.status }} · {{ c.data_abertura }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Card: Ação "Chegou na TI" -->
+  <div class="card">
+    <div class="card-title">📥 Registrar Chegada na TI</div>
+
+    <div id="alert-box-ativo" class="alert"></div>
+
+    {% if item.get('status') == 'Com TI' %}
+    <div class="alert alert-success show" style="margin-bottom:14px;">
+      <span class="alert-icon">ℹ️</span>
+      <span>Este equipamento já está registrado como <strong>Com TI</strong>.</span>
+    </div>
+    {% endif %}
+
+    <div class="form-group">
+      <label class="form-label" for="input-obs">Observação (opcional)</label>
+      <input
+        id="input-obs"
+        class="form-input"
+        type="text"
+        placeholder="Ex: Trazido pelo colaborador João"
+        maxlength="200"
+        autocomplete="off"
+      >
+    </div>
+
+    <button
+      type="button"
+      id="btn-checkin"
+      class="btn btn-success"
+      onclick="registrarCheckin()"
+    >
+      <span class="btn-text">✅ Registrar: Chegou na TI</span>
+      <span class="spinner"></span>
+    </button>
+
+    <div style="margin-top:10px;font-size:12px;color:var(--text-muted);text-align:center;">
+      Operador: <strong>{{ usuario_logado }}</strong>
+    </div>
+  </div>
+
+  <!-- Botão imprimir etiqueta -->
+  <div class="divider">ou</div>
+  <button class="btn btn-outline" onclick="imprimirEtiqueta()">🖨️ Imprimir Etiqueta</button>
+
+  {% endif %}
+</main>
+
+<script>
+  /* ════════════════════════════════════════════════════
+     Configurações globais
+  ═══════════════════════════════════════════════════ */
+  const TIPO    = {{ tipo | tojson }};
+  const ITEM_ID = {{ item_id | tojson }};
+  const QR_URL  = window.location.href; // URL atual = conteúdo do QR
+
+  /* ── Gerar QR code para a etiqueta de impressão ── */
+  window.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('label-qr-canvas');
+    if (el) {
+      new QRCode(el, {
+        text: QR_URL,
+        width: 90,
+        height: 90,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+    }
+  });
+
+  /* ── Utilitário: mostrar alerta ─────────────────── */
+  function showAlert(boxId, type, msg) {
+    const box = document.getElementById(boxId);
+    box.className = `alert alert-${type} show`;
+    box.innerHTML = `<span class="alert-icon">${type === 'success' ? '✅' : '❌'}</span><span>${msg}</span>`;
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /* ── Utilitário: estado de loading do botão ─────── */
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    if (loading) {
+      btn.classList.add('loading');
+      btn.disabled = true;
+    } else {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  /* ════════════════════════════════════════════════════
+     AÇÃO: Registrar Saída de Estoque
+  ═══════════════════════════════════════════════════ */
+  async function registrarSaida() {
+    const qtd    = parseInt(document.getElementById('input-qtd').value || 0);
+    const motivo = document.getElementById('input-motivo').value.trim();
+
+    if (!qtd || qtd <= 0) {
+      showAlert('alert-box', 'error', 'Informe uma quantidade válida.');
+      return;
+    }
+
+    setLoading('btn-saida', true);
+
+    try {
+      const res = await fetch(`/api/qr/estoque/${ITEM_ID}/saida`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantidade: qtd, motivo: motivo || 'Saída via QR Code' }),
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        showAlert('alert-box', 'success', data.msg);
+        // Atualiza o contador exibido na tela
+        const qtyEl = document.getElementById('qty-display');
+        if (qtyEl) qtyEl.textContent = data.nova_quantidade;
+        // Bloqueia o formulário se zerou
+        if (data.nova_quantidade <= 0) {
+          document.getElementById('btn-saida').disabled = true;
+          document.getElementById('input-qtd').disabled = true;
+        }
+      } else {
+        showAlert('alert-box', 'error', data.msg || 'Erro ao registrar saída.');
+      }
+    } catch (e) {
+      showAlert('alert-box', 'error', 'Falha de conexão. Tente novamente.');
+    } finally {
+      setLoading('btn-saida', false);
+    }
+  }
+
+  /* ════════════════════════════════════════════════════
+     AÇÃO: Registrar "Chegou na TI"
+  ═══════════════════════════════════════════════════ */
+  async function registrarCheckin() {
+    const obs = (document.getElementById('input-obs')?.value || '').trim();
+    setLoading('btn-checkin', true);
+
+    try {
+      const res = await fetch(`/api/qr/ativo/checkin/${TIPO}/${ITEM_ID}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ observacao: obs }),
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        showAlert('alert-box-ativo', 'success', data.msg);
+        document.getElementById('btn-checkin').disabled = true;
+      } else {
+        showAlert('alert-box-ativo', 'error', data.msg || 'Erro ao registrar check-in.');
+      }
+    } catch (e) {
+      showAlert('alert-box-ativo', 'error', 'Falha de conexão. Tente novamente.');
+    } finally {
+      setLoading('btn-checkin', false);
+    }
+  }
+
+  /* ════════════════════════════════════════════════════
+     AÇÃO: Imprimir Etiqueta (SLP-650)
+  ═══════════════════════════════════════════════════ */
+  function imprimirEtiqueta() {
+    // Garante que o QR esteja gerado antes de imprimir
+    const qrEl = document.getElementById('label-qr-canvas');
+    if (!qrEl || !qrEl.querySelector('canvas, img')) {
+      alert('Aguarde o QR code carregar e tente novamente.');
+      return;
+    }
+    window.print();
+  }
+</script>
+</body>
+</html>

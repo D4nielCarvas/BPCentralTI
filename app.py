@@ -193,6 +193,9 @@ app.register_blueprint(api_import_export_bp)
 app.register_blueprint(api_busca_bp)
 app.register_blueprint(api_tutoriais_bp)
 
+from blueprints.api_qrcode import bp as api_qrcode_bp
+app.register_blueprint(api_qrcode_bp)
+
 
 
 # ── Filtro Jinja2: formata data em horário de Brasília (UTC-3) ────────────────

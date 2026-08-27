@@ -11,6 +11,8 @@
   <link rel="icon" href="{{ url_for('static', filename='icon.svg') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  <!-- qrcode.js via CDN (geração de QR Code client-side) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -1305,6 +1307,7 @@
         ${uploadBtn('computador', r.id_ativo)}
         <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Computador','${r.modelo || ''}')">🔧</button>
         <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Computador','${r.modelo || ''}')">🗑️</button>
+        <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('computador','${r.id_ativo}','${(r.modelo||'').replace(/'/g,"'\\'")}')">◼ QR</button>
       </div></td></tr>`;
       }).join('');
     }
@@ -1325,6 +1328,7 @@
       <button class="btn btn-ghost btn-xs" onclick="editItem('impressoras','${r.id_ativo}')">✏️</button>
       <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Impressora','${r.modelo || ''}')">🔧</button>
       <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Impressora','${r.modelo || ''}')">🗑️</button>
+      <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('impressora','${r.id_ativo}','${(r.modelo||'').replace(/'/g,"'\\'")}')">◼ QR</button>
     </div></td></tr>`).join('');
     }
 
@@ -1343,6 +1347,7 @@
     <td><div class="tbl-actions">
       <button class="btn btn-ghost btn-xs" onclick="editItem('estabilizadores','${r.id_ativo}')">✏️</button>
       <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Estabilizador','${r.modelo || ''}')">🗑️</button>
+      <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('estabilizador','${r.id_ativo}','${(r.modelo||'').replace(/'/g,"'\\'")}')">◼ QR</button>
     </div></td></tr>`).join('');
     }
 
@@ -1363,6 +1368,7 @@
     <td><div class="tbl-actions">
       <button class="btn btn-ghost btn-xs" onclick="editItem('starlink','${r.id_ativo}')">✏️</button>
       <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Starlink','${r.modelo || ''}')">🔧</button>
+      <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('starlink','${r.id_ativo}','${(r.modelo||'').replace(/'/g,"'\\'")}')">◼ QR</button>
     </div></td></tr>`).join('');
     }
 
@@ -1382,6 +1388,7 @@
         <button class="btn btn-danger btn-xs" onclick="movimentarEstoque(${r.id},'saida','${r.item}')">− Saída</button>
         <button class="btn btn-ghost btn-xs" onclick="editEstoque(${r.id})">✏️</button>
         <button class="btn btn-ghost btn-xs" onclick="verHistoricoEstoque(${r.id},'${r.item}')">📋</button>
+        <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('estoque','${r.id}','${r.item.replace(/'/g,"'\\'")}')">◼ QR</button>
       </div></td></tr>`;
       }).join('');
     }
@@ -2738,6 +2745,264 @@ document.querySelectorAll('button[onclick^="exportar("]').forEach(btn => {
     navigator.serviceWorker.register('/static/sw.js');
   }
 </script>
+
+<!-- ════════════════════════════════════════════════════════════════
+     MODAL DE QR CODE — Geração e Impressão de Etiqueta (SLP-650)
+═════════════════════════════════════════════════════════════════ -->
+<div id="modal-qr" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:var(--card-bg,#1a1f2e);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:28px;width:min(420px,95vw);box-shadow:0 24px 64px rgba(0,0,0,0.5);position:relative;">
+
+    <!-- Cabeçalho -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3,#6b7280);margin-bottom:4px;">◼ QR Code</div>
+        <div id="qr-modal-titulo" style="font-size:18px;font-weight:800;color:var(--text,#e5e7eb);"></div>
+        <div id="qr-modal-id" style="font-size:11px;font-family:monospace;color:var(--text3,#6b7280);margin-top:2px;"></div>
+      </div>
+      <button onclick="fecharModalQR()" style="background:rgba(255,255,255,0.06);border:none;color:var(--text3,#6b7280);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <!-- QR Code renderizado -->
+    <div style="display:flex;justify-content:center;margin-bottom:20px;">
+      <div id="qr-canvas-container"
+           style="background:#fff;border-radius:12px;padding:12px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+        <div id="qr-canvas" style="width:180px;height:180px;"></div>
+      </div>
+    </div>
+
+    <!-- URL do QR -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;margin-bottom:16px;font-size:11px;font-family:monospace;color:#6b7280;word-break:break-all;" id="qr-url-display"></div>
+
+    <!-- Botões de ação -->
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <!-- Abrir página de ação -->
+      <a id="qr-action-link" href="#" target="_blank"
+         style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:700;transition:opacity .2s;"
+         onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+        🔗 Abrir Página de Ação
+      </a>
+
+      <!-- Imprimir etiqueta SLP-650 -->
+      <button onclick="imprimirEtiquetaQR()"
+              style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:var(--text,#e5e7eb);border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;transition:background .2s;"
+              onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">
+        🖨️ Imprimir Etiqueta (SLP-650)
+      </button>
+    </div>
+
+    <!-- Nota SLP-650 -->
+    <p style="font-size:10px;color:#4b5563;text-align:center;margin-top:10px;">
+      Etiqueta formatada para Smart Label Printer 650 · 28,6mm × 88,9mm
+    </p>
+  </div>
+</div>
+
+<!-- Área de impressão da etiqueta SLP-650 (só visível durante @media print) -->
+<div id="etiqueta-print-area" style="display:none;">
+  <div id="etiqueta-inner">
+    <div id="etiqueta-qr-area"></div>
+    <div id="etiqueta-text-area">
+      <div class="et-brand">BP Agronegócios · TI</div>
+      <div class="et-nome" id="et-nome"></div>
+      <div class="et-id"   id="et-id"></div>
+      <div class="et-tipo" id="et-tipo"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ── Estilos do modal QR ───────────────────────────────── */
+#modal-qr.open { display: flex !important; }
+
+/* ── @media print: Etiqueta SLP-650 ──────────────────────
+   Tamanho: 1-1/8" × 3-1/2" = 28,6mm × 88,9mm
+   Configure o tamanho de papel no Windows para:
+   Largura: 88,9mm  Altura: 28,6mm (paisagem)
+   ──────────────────────────────────────────────────────── */
+@media print {
+  /* Ocultar tudo, exceto a etiqueta */
+  body > *:not(#etiqueta-print-area) { display: none !important; }
+
+  #etiqueta-print-area {
+    display: block !important;
+    position: fixed;
+    top: 0; left: 0;
+    width: 88.9mm;
+    height: 28.6mm;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: #000;
+  }
+  #etiqueta-inner {
+    display: flex;
+    align-items: center;
+    width: 88.9mm;
+    height: 28.6mm;
+    padding: 2mm;
+    gap: 2mm;
+    box-sizing: border-box;
+  }
+  #etiqueta-qr-area {
+    flex-shrink: 0;
+    width: 24mm;
+    height: 24mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #etiqueta-qr-area canvas,
+  #etiqueta-qr-area img { width: 24mm !important; height: 24mm !important; }
+  #etiqueta-text-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+  }
+  .et-brand {
+    font-size: 5pt;
+    font-weight: bold;
+    color: #555;
+    letter-spacing: 0.5pt;
+    text-transform: uppercase;
+    margin-bottom: 1mm;
+  }
+  .et-nome {
+    font-size: 7.5pt;
+    font-weight: bold;
+    color: #000;
+    line-height: 1.2;
+    margin-bottom: 1mm;
+    overflow: hidden;
+    max-height: 10mm;
+  }
+  .et-id {
+    font-size: 6pt;
+    font-family: 'Courier New', monospace;
+    color: #333;
+    margin-bottom: 1mm;
+  }
+  .et-tipo {
+    font-size: 5pt;
+    color: #666;
+    border: 0.5pt solid #aaa;
+    padding: 0.5mm 1mm;
+    border-radius: 2pt;
+    display: inline-block;
+    width: fit-content;
+  }
+}
+</style>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   Modal QR Code — Lógica JavaScript
+   Usado em: Estoque Geral, Computadores, Impressoras,
+             Estabilizadores, Starlink
+════════════════════════════════════════════════════════ */
+let _qrModalInstance = null;  // Instância do QRCode.js ativa
+let _qrEtiquetaInstance = null; // Instância do QR para impressão
+
+/**
+ * Abre o modal de QR Code para um item.
+ * @param {string} tipo   - 'estoque', 'computador', 'impressora', etc.
+ * @param {string|number} id - ID ou id_ativo do item
+ * @param {string} nome   - Nome/modelo do item para exibição
+ */
+function abrirModalQR(tipo, id, nome) {
+  const baseUrl = window.location.origin;
+  const qrUrl   = `${baseUrl}/qr/${tipo}/${id}`;
+
+  // Preencher informações do modal
+  document.getElementById('qr-modal-titulo').textContent = nome || id;
+  document.getElementById('qr-modal-id').textContent     = `${tipo.toUpperCase()} · ${id}`;
+  document.getElementById('qr-url-display').textContent  = qrUrl;
+  document.getElementById('qr-action-link').href         = qrUrl;
+
+  // Preencher dados da etiqueta de impressão
+  document.getElementById('et-nome').textContent = nome || id;
+  document.getElementById('et-id').textContent   = String(id);
+  document.getElementById('et-tipo').textContent = _labelTipo(tipo);
+
+  // Limpar QR codes anteriores
+  const canvasContainer = document.getElementById('qr-canvas');
+  canvasContainer.innerHTML = '';
+  const etiquetaQrArea = document.getElementById('etiqueta-qr-area');
+  etiquetaQrArea.innerHTML = '';
+
+  // Gerar QR code no modal (180×180)
+  try {
+    _qrModalInstance = new QRCode(canvasContainer, {
+      text: qrUrl,
+      width: 180,
+      height: 180,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  } catch(e) {
+    canvasContainer.innerHTML = '<p style="color:red;font-size:12px;">Erro ao gerar QR</p>';
+  }
+
+  // Gerar QR code para impressão (91px ≈ 24mm @96dpi)
+  try {
+    _qrEtiquetaInstance = new QRCode(etiquetaQrArea, {
+      text: qrUrl,
+      width: 91,
+      height: 91,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  } catch(e) { /* silêncio */ }
+
+  // Exibir modal
+  const modal = document.getElementById('modal-qr');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+/** Fecha o modal de QR Code. */
+function fecharModalQR() {
+  const modal = document.getElementById('modal-qr');
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/** Dispara impressão da etiqueta SLP-650. */
+function imprimirEtiquetaQR() {
+  // Verifica se o QR de impressão está pronto
+  const area = document.getElementById('etiqueta-qr-area');
+  if (!area || !area.querySelector('canvas, img')) {
+    setTimeout(imprimirEtiquetaQR, 300); // aguarda o QR carregar
+    return;
+  }
+  window.print();
+}
+
+/** Mapeia tipo interno para rótulo legível. */
+function _labelTipo(tipo) {
+  const map = {
+    estoque: 'Estoque', computador: 'Computador/Notebook',
+    celular: 'Celular', impressora: 'Impressora',
+    estabilizador: 'Estabilizador', starlink: 'Starlink',
+  };
+  return map[tipo] || tipo;
+}
+
+// Fechar modal ao clicar no backdrop
+document.getElementById('modal-qr').addEventListener('click', function(e) {
+  if (e.target === this) fecharModalQR();
+});
+
+// Fechar modal com Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') fecharModalQR();
+});
+</script>
 </body>
+
 
 </html>
