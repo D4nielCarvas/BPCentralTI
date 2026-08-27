@@ -163,7 +163,7 @@ def listar_itens():
                 params: list[Any] = ["Ativo"]
                 extra = cfg.get("extra", "")
                 query = (
-                    f"SELECT id_ativo, fazenda, {cfg['setor']}, {cfg['responsavel']}, "
+                    f"SELECT id_ativo, apelido, fazenda, {cfg['setor']}, {cfg['responsavel']}, "
                     f"modelo, status, {cfg['numero']}, {cfg['termo']}{extra} "
                     f"FROM {tabela} WHERE status = %s"
                 )

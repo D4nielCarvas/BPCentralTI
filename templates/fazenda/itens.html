@@ -182,7 +182,7 @@
           {% if can_gerar_termo %}
             <th style="width:30px;"><input type="checkbox" onclick="toggleAll(this, 'tbl-{{ tid }}', '{{ tid }}')"></th>
           {% endif %}
-          <th>ID Ativo</th>
+          <th>Apelido</th>
           <th>Modelo</th>
           {% if tipo != 'Estabilizador' %}<th>Responsável</th>{% endif %}
           {% if tipo == 'Celular Ponto' %}
@@ -212,7 +212,7 @@
           {% if can_gerar_termo %}
           <td><input type="checkbox" class="chk-termo" value="{{ item.id_ativo }}" onchange="updateTermoBtn('{{ tid }}')"></td>
           {% endif %}
-          <td class="td-id">{{ item.id_ativo }}</td>
+          <td class="td-id" title="ID Ativo: {{ item.id_ativo }}">{{ item.apelido or item.id_ativo }}</td>
           <td style="color:var(--text)">{{ item.modelo or '—' }}</td>
 
           {% if tipo != 'Estabilizador' %}
@@ -468,7 +468,7 @@
   function _buildForm(tipoApi, d) {
     // Campos comuns a todos os tipos
     const common = `
-      ${fld('ID Ativo', inp('id_ativo', d.id_ativo, '', 'text', true))}
+      ${fld('Apelido', inp('apelido', d.apelido, 'Ex: Trator 01, Balança 2, Recepção...'))}
       ${fld('Status', sel('status', d.status, STATUS_OPTS))}
       ${fld('Fazenda', sel('fazenda', d.fazenda, FAZENDAS))}
       ${fld('Setor', sel('setor', d.setor, SETORES_OPTS))}
@@ -524,7 +524,7 @@
       if (!r.ok) { alert('❌ Equipamento não encontrado.'); return; }
       const data = await r.json();
       _editCtx = { tipoApi, endpoint, idAtivo };
-      document.getElementById('edit-modal-title').textContent = `✏️ Editar — ${idAtivo}`;
+      document.getElementById('edit-modal-title').textContent = `✏️ Editar — ${data.apelido || idAtivo}`;
       document.getElementById('edit-modal-body').innerHTML = _buildForm(tipoApi, data);
       const ov = document.getElementById('edit-modal-overlay');
       ov.style.display = 'flex';

@@ -4,7 +4,7 @@ from datetime import date
 import psycopg2
 
 from utils.db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetch_one as _fetch_one, row_to_dict
-from utils.auth_utils import login_required, admin_required, get_fazenda_nome_filter, has_permission
+from utils.auth_utils import login_required, admin_required, permission_required, get_fazenda_nome_filter, has_permission
 from utils.crypto_utils import encrypt_field, decrypt_field
 from utils.api_utils import _list_table, log_historico, validate_file_mime
 from utils.pdf_utils import gerar_termo_equipamentos_pdf
@@ -78,7 +78,7 @@ def get_computador(id_ativo: str) -> Response:
 
 
 @bp.route("/api/computadores/<id_ativo>", methods=["PUT"])
-@admin_required  # P7: apenas admin pode editar
+@permission_required("editar_equipamentos")
 def atualizar_computador(id_ativo: str) -> Response:
     """Atualiza dados de um computador existente."""
     d = request.json
@@ -86,14 +86,14 @@ def atualizar_computador(id_ativo: str) -> Response:
         with conn.cursor() as cur:
             cur.execute(
                 """UPDATE computadores SET
-                   fazenda=%s,setor=%s,responsavel=%s,tipo=%s,modelo=%s,marca=%s,
+                   apelido=%s,fazenda=%s,setor=%s,responsavel=%s,tipo=%s,modelo=%s,marca=%s,
                    numero_serie=%s,patrimonio=%s,processador=%s,memoria_ram=%s,
                    armazenamento=%s,sistema_operacional=%s,versao_so=%s,status=%s,
                    data_aquisicao=%s,data_entrega=%s,data_devolucao=%s,usuario_windows=%s,
                    senha_windows=%s,usuario_anterior=%s,observacoes=%s,termo_assinado=%s,
                    cargo=%s,updated_at=NOW() WHERE id_ativo=%s""",
                 (
-                    d.get("fazenda"), d.get("setor"), d.get("responsavel"), d.get("tipo"),
+                    d.get("apelido"), d.get("fazenda"), d.get("setor"), d.get("responsavel"), d.get("tipo"),
                     d.get("modelo"), d.get("marca"), d.get("numero_serie"), d.get("patrimonio"),
                     d.get("processador"), d.get("memoria_ram"), d.get("armazenamento"),
                     d.get("sistema_operacional"), d.get("versao_so"), d.get("status"),
@@ -166,7 +166,7 @@ def get_impressora(id_ativo: str) -> Response:
 
 
 @bp.route("/api/impressoras/<id_ativo>", methods=["PUT"])
-@admin_required  # P7: apenas admin pode editar
+@permission_required("editar_equipamentos")
 def atualizar_impressora(id_ativo: str) -> Response:
     """Atualiza dados de uma impressora."""
     d = request.json
@@ -174,12 +174,12 @@ def atualizar_impressora(id_ativo: str) -> Response:
         with conn.cursor() as cur:
             cur.execute(
                 """UPDATE impressoras SET
-                   fazenda=%s,setor=%s,responsavel=%s,marca=%s,modelo=%s,tipo=%s,
+                   apelido=%s,fazenda=%s,setor=%s,responsavel=%s,marca=%s,modelo=%s,tipo=%s,
                    numero_serie=%s,patrimonio=%s,ip_rede=%s,hostname=%s,status=%s,
                    data_aquisicao=%s,data_instalacao=%s,suprimento_atual=%s,
                    observacoes=%s,updated_at=NOW() WHERE id_ativo=%s""",
                 (
-                    d.get("fazenda"), d.get("setor"), d.get("responsavel"), d.get("marca"),
+                    d.get("apelido"), d.get("fazenda"), d.get("setor"), d.get("responsavel"), d.get("marca"),
                     d.get("modelo"), d.get("tipo"), d.get("numero_serie"), d.get("patrimonio"),
                     d.get("ip_rede"), d.get("hostname"), d.get("status"), d.get("data_aquisicao"),
                     d.get("data_instalacao"), d.get("suprimento_atual"), d.get("observacoes"),
@@ -241,7 +241,7 @@ def get_estabilizador(id_ativo: str) -> Response:
 
 
 @bp.route("/api/estabilizadores/<id_ativo>", methods=["PUT"])
-@admin_required  # P7: apenas admin pode editar
+@permission_required("editar_equipamentos")
 def atualizar_estabilizador(id_ativo: str) -> Response:
     """Atualiza dados de um estabilizador."""
     d = request.json
@@ -249,10 +249,10 @@ def atualizar_estabilizador(id_ativo: str) -> Response:
         with conn.cursor() as cur:
             cur.execute(
                 """UPDATE estabilizadores SET
-                   fazenda=%s,setor=%s,modelo=%s,status=%s,uso=%s,num_serie=%s,
+                   apelido=%s,fazenda=%s,setor=%s,modelo=%s,status=%s,uso=%s,num_serie=%s,
                    updated_at=NOW() WHERE id_ativo=%s""",
                 (
-                    d.get("fazenda"), d.get("setor"), d.get("modelo"), d.get("status"),
+                    d.get("apelido"), d.get("fazenda"), d.get("setor"), d.get("modelo"), d.get("status"),
                     d.get("uso"), d.get("num_serie"), id_ativo,
                 ),
             )
@@ -323,7 +323,7 @@ def get_starlink(id_ativo: str) -> Response:
 
 
 @bp.route("/api/starlink/<id_ativo>", methods=["PUT"])
-@admin_required  # P7: apenas admin pode editar
+@permission_required("editar_equipamentos")
 def atualizar_starlink(id_ativo: str) -> Response:
     """Atualiza dados de uma antena Starlink. Item 7: inclui campos de login."""
     d = request.json
@@ -331,12 +331,12 @@ def atualizar_starlink(id_ativo: str) -> Response:
         with conn.cursor() as cur:
             cur.execute(
                 """UPDATE starlink SET
-                   fazenda=%s,setor=%s,responsavel=%s,modelo=%s,num_serie=%s,mac_address=%s,
+                   apelido=%s,fazenda=%s,setor=%s,responsavel=%s,modelo=%s,num_serie=%s,mac_address=%s,
                    ip_rede=%s,status=%s,data_instalacao=%s,data_aquisicao=%s,plano=%s,
                    observacoes=%s,id_starlink=%s,numero_kit=%s,email_login=%s,senha_login=%s,
                    updated_at=NOW() WHERE id_ativo=%s""",
                 (
-                    d.get("fazenda"), d.get("setor"), d.get("responsavel"), d.get("modelo"),
+                    d.get("apelido"), d.get("fazenda"), d.get("setor"), d.get("responsavel"), d.get("modelo"),
                     d.get("num_serie"), d.get("mac_address"), d.get("ip_rede"), d.get("status"),
                     d.get("data_instalacao"), d.get("data_aquisicao"), d.get("plano"),
                     d.get("observacoes"),

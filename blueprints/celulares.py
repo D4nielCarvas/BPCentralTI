@@ -294,13 +294,13 @@ def atualizar_celular(id_ativo: str) -> tuple[Response, int] | Response:
                 
             cur.execute(
                 """UPDATE celulares SET
-                   fazenda=%s,setor=%s,responsavel=%s,tipo=%s,modelo=%s,numero=%s,status=%s,
+                   apelido=%s,fazenda=%s,setor=%s,responsavel=%s,tipo=%s,modelo=%s,numero=%s,status=%s,
                    uso_celular=%s,carregador=%s,termo_assinado=%s,data_entrega=%s,
                    data_devolucao=%s,gmail=%s,senha=%s,usuario_anterior=%s,imei_1=%s,
                    imei_2=%s,num_serie=%s,armazenamento=%s,cargo=%s,updated_at=NOW()
                    WHERE id_ativo=%s""",
                 (
-                    d.get("fazenda"), d.get("setor"), d.get("responsavel"), d.get("tipo"),
+                    d.get("apelido"), d.get("fazenda"), d.get("setor"), d.get("responsavel"), d.get("tipo"),
                     d.get("modelo"), d.get("numero"), d.get("status"), d.get("uso_celular"),
                     d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
                     d.get("data_devolucao"), d.get("gmail"), d.get("senha"),
@@ -387,13 +387,13 @@ def atualizar_celular_ponto(id_ativo: str) -> tuple[Response, int] | Response:
                 return jsonify({"ok": False, "msg": "Celular Ponto não encontrado"}), 404
             cur.execute(
                 """UPDATE celulares_ponto SET
-                   fazenda=%s,funcao=%s,responsavel=%s,num_turma=%s,tipo=%s,modelo=%s,status=%s,
+                   apelido=%s,fazenda=%s,funcao=%s,responsavel=%s,num_turma=%s,tipo=%s,modelo=%s,status=%s,
                    uso_celular=%s,carregador=%s,termo_assinado=%s,data_entrega=%s,
                    data_devolucao=%s,gmail_clockin=%s,senha=%s,usuario_anterior=%s,
                    imei_1=%s,imei_2=%s,num_serie=%s,armazenamento=%s,updated_at=NOW()
                    WHERE id_ativo=%s""",
                 (
-                    d.get("fazenda"), d.get("funcao"), d.get("responsavel"), d.get("num_turma"),
+                    d.get("apelido"), d.get("fazenda"), d.get("funcao"), d.get("responsavel"), d.get("num_turma"),
                     d.get("tipo"), d.get("modelo"), d.get("status"), d.get("uso_celular"),
                     d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
                     d.get("data_devolucao"), d.get("gmail_clockin"), d.get("senha"),
@@ -482,14 +482,14 @@ def atualizar_celular_inspecao(id_ativo: str) -> tuple[Response, int] | Response
                 return jsonify({"ok": False, "msg": "Celular Inspeção não encontrado"}), 404
             cur.execute(
                 """UPDATE celulares_inspecao SET
-                   id_sistema=%s,fazenda=%s,setor=%s,responsavel=%s,cargo=%s,tipo=%s,modelo=%s,
+                   apelido=%s,id_sistema=%s,fazenda=%s,setor=%s,responsavel=%s,cargo=%s,tipo=%s,modelo=%s,
                    status=%s,uso_celular=%s,carregador=%s,termo_assinado=%s,
                    data_entrega=%s,data_devolucao=%s,gmail=%s,senha=%s,usuario_anterior=%s,
                    imei_1=%s,imei_2=%s,num_serie=%s,armazenamento=%s,observacoes=%s,
                    usuario_mip=%s,senha_mip=%s,updated_at=NOW()
                    WHERE id_ativo=%s""",
                 (
-                    d.get("id_sistema"), d.get("fazenda"), d.get("setor"), d.get("responsavel"),
+                    d.get("apelido"), d.get("id_sistema"), d.get("fazenda"), d.get("setor"), d.get("responsavel"),
                     d.get("cargo"), d.get("tipo"), d.get("modelo"),
                     d.get("status"), d.get("uso_celular"), d.get("carregador"),
                     d.get("termo_assinado"), d.get("data_entrega"), d.get("data_devolucao"),
@@ -579,13 +579,13 @@ def atualizar_celular_turma(id_ativo: str) -> tuple[Response, int] | Response:
                 return jsonify({"ok": False, "msg": "Celular Turma não encontrado"}), 404
             cur.execute(
                 """UPDATE celulares_turma SET
-                   num_turma=%s,responsavel=%s,fazenda=%s,setor=%s,modelo=%s,tipo=%s,
+                   apelido=%s,num_turma=%s,responsavel=%s,fazenda=%s,setor=%s,modelo=%s,tipo=%s,
                    status=%s,uso_celular=%s,carregador=%s,termo_assinado=%s,data_entrega=%s,
                    data_devolucao=%s,gmail_clockin=%s,senha=%s,usuario_anterior=%s,
                    imei_1=%s,imei_2=%s,num_serie=%s,armazenamento=%s,observacoes=%s,
                    updated_at=NOW() WHERE id_ativo=%s""",
                 (
-                    d.get("num_turma"), d.get("responsavel"), d.get("fazenda"), d.get("setor"),
+                    d.get("apelido"), d.get("num_turma"), d.get("responsavel"), d.get("fazenda"), d.get("setor"),
                     d.get("modelo"), d.get("tipo"), d.get("status"), d.get("uso_celular"),
                     d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
                     d.get("data_devolucao"), d.get("gmail_clockin"), d.get("senha"),
