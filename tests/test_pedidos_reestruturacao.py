@@ -67,6 +67,7 @@ class TestPedidosReestruturacao:
         """Valida que pedir um item com saldo zerado é permitido e gera notificação de reposição necessária."""
         with client.session_transaction() as sess:
             sess["usuario_id"] = 5
+            sess["nome"] = "Operador Fazenda"
             sess["usuario_nome"] = "Operador Fazenda"
             sess["role"] = "viewer"
             sess["localidade_id"] = 3
@@ -83,7 +84,7 @@ class TestPedidosReestruturacao:
         item_estoque_zerado = {"id": 10, "item": "Monitor 27 Polegadas", "quantidade": 0, "unidade": "un"}
 
         with patch("blueprints.fazenda.acquire_conn") as mock_conn, \
-             patch("blueprints.fazenda.fetch_one", side_effect=[item_estoque_zerado, {"nome": "Fazenda Esperança"}]):
+             patch("blueprints.fazenda.fetch_one", side_effect=[item_estoque_zerado, {"nome": "Fazenda Esperança"}, {"nome": "Operador Fazenda"}]):
             mock_conn.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value = mock_cur
             
             resp = client.post(

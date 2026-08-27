@@ -580,7 +580,7 @@ def novo_pedido():
                     except Exception:
                         pass
 
-                    nome_solicitante = session.get("nome")
+                    nome_solicitante = session.get("nome") or session.get("usuario_nome")
                     if not nome_solicitante:
                         user_row = fetch_one(cur_notif, "SELECT nome FROM usuarios WHERE id = %s", (usuario_id,))
                         nome_solicitante = user_row["nome"] if user_row else "Usuário"
