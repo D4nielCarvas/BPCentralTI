@@ -777,13 +777,13 @@
      AÇÃO: Imprimir Etiqueta (SLP-650)
   ═══════════════════════════════════════════════════ */
   function imprimirEtiqueta() {
-    // Garante que o QR esteja gerado antes de imprimir
-    const qrEl = document.getElementById('label-qr-canvas');
-    if (!qrEl || !qrEl.querySelector('canvas, img')) {
-      alert('Aguarde o QR code carregar e tente novamente.');
-      return;
+    const printUrl = `/qr/imprimir/${TIPO}/${encodeURIComponent(ITEM_ID)}?autoprint=1`;
+    const w = window.open(printUrl, 'etiqueta_print_popup', 'width=520,height=380,top=100,left=100,resizable=yes,scrollbars=yes');
+    if (w) {
+      w.focus();
+    } else {
+      window.location.href = printUrl;
     }
-    window.print();
   }
 </script>
 </body>

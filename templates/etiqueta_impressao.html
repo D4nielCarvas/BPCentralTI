@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Etiqueta — {{ item_id }}</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    /* ─── Configurações de Impressão Térmica (SLP-650 e Similares) ─── */
+    @page {
+      size: 89mm 28.6mm;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #f0f2f5;
+      color: #000;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ─── Barra de ferramentas (visível apenas na tela) ─── */
+    .no-print-toolbar {
+      width: 100%;
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-size: 13px;
+    }
+
+    .btn-print {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .btn-print:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-close {
+      background: #475569;
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .btn-close:hover {
+      background: #334155;
+    }
+
+    .tip-box {
+      font-size: 12px;
+      color: #94a3b8;
+      background: rgba(255,255,255,0.05);
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .preview-container {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .preview-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    /* ─── Etiqueta Física (Dimensões Smart Label Printer 650: 88.9mm × 28.6mm) ─── */
+    .label-box {
+      width: 88.9mm;
+      height: 28.6mm;
+      background: #ffffff;
+      border: 1px dashed #cbd5e1;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      padding: 1.8mm 2.5mm;
+      gap: 2.5mm;
+      overflow: hidden;
+    }
+
+    .qr-side {
+      width: 24.5mm;
+      height: 24.5mm;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+    }
+
+    .qr-side canvas,
+    .qr-side img {
+      width: 24.5mm !important;
+      height: 24.5mm !important;
+      image-rendering: pixelated;
+    }
+
+    .info-side {
+      flex: 1;
+      height: 24.5mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      line-height: 1.15;
+    }
+
+    .brand-row {
+      font-size: 5.5pt;
+      font-weight: 800;
+      color: #333333;
+      text-transform: uppercase;
+      letter-spacing: 0.4pt;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-bottom: 0.5pt solid #e2e8f0;
+      padding-bottom: 0.5mm;
+    }
+
+    .title-row {
+      font-size: 7.5pt;
+      font-weight: 800;
+      color: #000000;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      word-break: break-word;
+      max-height: 8.5mm;
+      margin-top: 0.5mm;
+    }
+
+    .id-row {
+      font-size: 7pt;
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: bold;
+      color: #1e293b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 0.5mm;
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2mm;
+      font-size: 5.2pt;
+      color: #475569;
+      white-space: nowrap;
+      overflow: hidden;
+      margin-top: auto;
+    }
+
+    .type-pill {
+      background: #f1f5f9;
+      border: 0.5pt solid #cbd5e1;
+      padding: 0.4mm 1.2mm;
+      border-radius: 1.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #0f172a;
+    }
+
+    .local-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+
+    /* ─── ESTILOS ESPECÍFICOS DE IMPRESSÃO ─── */
+    @media print {
+      body {
+        background: transparent !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+      }
+
+      .no-print-toolbar,
+      .preview-title {
+        display: none !important;
+      }
+
+      .preview-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+      }
+
+      .label-box {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 88.9mm !important;
+        height: 28.6mm !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 1.8mm 2.5mm !important;
+        page-break-after: avoid;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Barra de controle na tela -->
+  <div class="no-print-toolbar">
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir Etiqueta</button>
+    <button class="btn-close" onclick="window.close()">✕ Fechar</button>
+    <div class="tip-box">
+      ⚙️ Na janela de impressão: selecione <b>Smart Label Printer 650</b>, margens <b>Nenhuma</b> e desmarque <b>Cabeçalhos e rodapés</b>.
+    </div>
+  </div>
+
+  <div class="preview-container">
+    <div class="preview-title">Pré-visualização da Etiqueta (88.9mm × 28.6mm)</div>
+
+    <!-- Bloco da etiqueta que será impresso -->
+    <div class="label-box">
+      <div class="qr-side" id="qr-container"></div>
+      <div class="info-side">
+        <div class="brand-row">BP Central TI · Gestão de Ativos</div>
+        <div class="title-row">{{ nome_display }}</div>
+        <div class="id-row">{{ item_id }}</div>
+        <div class="meta-row">
+          <span class="type-pill">{{ cfg.label if cfg else tipo }}</span>
+          <span class="local-text">
+            {% if tipo == 'estoque' %}
+              Qtd: {{ item.quantidade }} {{ item.unidade or 'un' }}
+            {% else %}
+              {{ item.fazenda or item.localizacao or 'Central TI' }}
+            {% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const QR_URL = {{ qr_url | tojson }};
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const qrEl = document.getElementById('qr-container');
+      if (qrEl) {
+        new QRCode(qrEl, {
+          text: QR_URL,
+          width: 140,
+          height: 140,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+      }
+
+      // Se passado o parâmetro ?autoprint=1, dispara a impressão após 400ms
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('autoprint') === '1') {
+        setTimeout(() => {
+          window.print();
+        }, 500);
+      }
+    });
+  </script>
+</body>
+</html>

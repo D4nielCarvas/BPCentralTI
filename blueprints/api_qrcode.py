@@ -169,6 +169,39 @@ def qr_action_page(tipo: str, item_id: str) -> Response:
     )
 
 
+# ── ROTA DE IMPRESSÃO: Página isolada para Smart Label Printer 650 ────────────
+
+@bp.route("/qr/imprimir/<tipo>/<item_id>")
+@admin_required
+def qr_imprimir_etiqueta(tipo: str, item_id: str) -> Response:
+    """
+    Renderiza uma página HTML isolada contendo exclusivamente a etiqueta
+    formatada para impressoras térmicas (ex: Smart Label Printer 650).
+    Evita que o navegador imprima elementos da aplicação ou quebre margens.
+    """
+    cfg = _TIPO_CONFIG.get(tipo)
+    if not cfg:
+        return "Tipo de item inválido", 400
+
+    item = _get_item(tipo, item_id)
+    if not item:
+        return "Item não encontrado", 404
+
+    nome_display = item.get(cfg["nome_campo"], item_id) or item_id
+    qr_url = f"{request.host_url.rstrip('/')}/qr/{tipo}/{item_id}"
+
+    return render_template(
+        "etiqueta_impressao.html",
+        tipo=tipo,
+        item_id=item_id,
+        item=item,
+        cfg=cfg,
+        nome_display=nome_display,
+        qr_url=qr_url,
+    )
+
+
+
 # ── API: Dados resumidos de um item (para modal no sistema) ───────────────────
 
 @bp.route("/api/qr/info/<tipo>/<item_id>")

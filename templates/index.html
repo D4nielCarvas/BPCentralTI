@@ -2782,118 +2782,24 @@ document.querySelectorAll('button[onclick^="exportar("]').forEach(btn => {
         🔗 Abrir Página de Ação
       </a>
 
-      <!-- Imprimir etiqueta SLP-650 -->
+      <!-- Imprimir etiqueta SLP-650 via Popup isolado -->
       <button onclick="imprimirEtiquetaQR()"
               style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:var(--text,#e5e7eb);border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;transition:background .2s;"
               onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">
-        🖨️ Imprimir Etiqueta (SLP-650)
+        🖨️ Imprimir Etiqueta (Smart Label)
       </button>
     </div>
 
     <!-- Nota SLP-650 -->
     <p style="font-size:10px;color:#4b5563;text-align:center;margin-top:10px;">
-      Etiqueta formatada para Smart Label Printer 650 · 28,6mm × 88,9mm
+      Etiqueta formatada para Smart Label Printer 650 · 88,9mm × 28,6mm
     </p>
-  </div>
-</div>
-
-<!-- Área de impressão da etiqueta SLP-650 (só visível durante @media print) -->
-<div id="etiqueta-print-area" style="display:none;">
-  <div id="etiqueta-inner">
-    <div id="etiqueta-qr-area"></div>
-    <div id="etiqueta-text-area">
-      <div class="et-brand">BP Agronegócios · TI</div>
-      <div class="et-nome" id="et-nome"></div>
-      <div class="et-id"   id="et-id"></div>
-      <div class="et-tipo" id="et-tipo"></div>
-    </div>
   </div>
 </div>
 
 <style>
 /* ── Estilos do modal QR ───────────────────────────────── */
 #modal-qr.open { display: flex !important; }
-
-/* ── @media print: Etiqueta SLP-650 ──────────────────────
-   Tamanho: 1-1/8" × 3-1/2" = 28,6mm × 88,9mm
-   Configure o tamanho de papel no Windows para:
-   Largura: 88,9mm  Altura: 28,6mm (paisagem)
-   ──────────────────────────────────────────────────────── */
-@media print {
-  /* Ocultar tudo, exceto a etiqueta */
-  body > *:not(#etiqueta-print-area) { display: none !important; }
-
-  #etiqueta-print-area {
-    display: block !important;
-    position: fixed;
-    top: 0; left: 0;
-    width: 88.9mm;
-    height: 28.6mm;
-    margin: 0;
-    padding: 0;
-    background: #ffffff;
-    color: #000;
-  }
-  #etiqueta-inner {
-    display: flex;
-    align-items: center;
-    width: 88.9mm;
-    height: 28.6mm;
-    padding: 2mm;
-    gap: 2mm;
-    box-sizing: border-box;
-  }
-  #etiqueta-qr-area {
-    flex-shrink: 0;
-    width: 24mm;
-    height: 24mm;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  #etiqueta-qr-area canvas,
-  #etiqueta-qr-area img { width: 24mm !important; height: 24mm !important; }
-  #etiqueta-text-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-  }
-  .et-brand {
-    font-size: 5pt;
-    font-weight: bold;
-    color: #555;
-    letter-spacing: 0.5pt;
-    text-transform: uppercase;
-    margin-bottom: 1mm;
-  }
-  .et-nome {
-    font-size: 7.5pt;
-    font-weight: bold;
-    color: #000;
-    line-height: 1.2;
-    margin-bottom: 1mm;
-    overflow: hidden;
-    max-height: 10mm;
-  }
-  .et-id {
-    font-size: 6pt;
-    font-family: 'Courier New', monospace;
-    color: #333;
-    margin-bottom: 1mm;
-  }
-  .et-tipo {
-    font-size: 5pt;
-    color: #666;
-    border: 0.5pt solid #aaa;
-    padding: 0.5mm 1mm;
-    border-radius: 2pt;
-    display: inline-block;
-    width: fit-content;
-  }
-}
 </style>
 
 <script>
@@ -2902,8 +2808,9 @@ document.querySelectorAll('button[onclick^="exportar("]').forEach(btn => {
    Usado em: Estoque Geral, Computadores, Impressoras,
              Estabilizadores, Starlink
 ════════════════════════════════════════════════════════ */
-let _qrModalInstance = null;  // Instância do QRCode.js ativa
-let _qrEtiquetaInstance = null; // Instância do QR para impressão
+let _qrModalInstance = null;
+let _currentQrTipo = '';
+let _currentQrId = '';
 
 /**
  * Abre o modal de QR Code para um item.
@@ -2912,6 +2819,9 @@ let _qrEtiquetaInstance = null; // Instância do QR para impressão
  * @param {string} nome   - Nome/modelo do item para exibição
  */
 function abrirModalQR(tipo, id, nome) {
+  _currentQrTipo = tipo;
+  _currentQrId = String(id);
+
   const baseUrl = window.location.origin;
   const qrUrl   = `${baseUrl}/qr/${tipo}/${id}`;
 
@@ -2921,16 +2831,9 @@ function abrirModalQR(tipo, id, nome) {
   document.getElementById('qr-url-display').textContent  = qrUrl;
   document.getElementById('qr-action-link').href         = qrUrl;
 
-  // Preencher dados da etiqueta de impressão
-  document.getElementById('et-nome').textContent = nome || id;
-  document.getElementById('et-id').textContent   = String(id);
-  document.getElementById('et-tipo').textContent = _labelTipo(tipo);
-
-  // Limpar QR codes anteriores
+  // Limpar QR code anterior
   const canvasContainer = document.getElementById('qr-canvas');
   canvasContainer.innerHTML = '';
-  const etiquetaQrArea = document.getElementById('etiqueta-qr-area');
-  etiquetaQrArea.innerHTML = '';
 
   // Gerar QR code no modal (180×180)
   try {
@@ -2946,18 +2849,6 @@ function abrirModalQR(tipo, id, nome) {
     canvasContainer.innerHTML = '<p style="color:red;font-size:12px;">Erro ao gerar QR</p>';
   }
 
-  // Gerar QR code para impressão (91px ≈ 24mm @96dpi)
-  try {
-    _qrEtiquetaInstance = new QRCode(etiquetaQrArea, {
-      text: qrUrl,
-      width: 91,
-      height: 91,
-      colorDark: '#000000',
-      colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.M,
-    });
-  } catch(e) { /* silêncio */ }
-
   // Exibir modal
   const modal = document.getElementById('modal-qr');
   modal.classList.add('open');
@@ -2971,15 +2862,14 @@ function fecharModalQR() {
   document.body.style.overflow = '';
 }
 
-/** Dispara impressão da etiqueta SLP-650. */
+/** Abre a página isolada e dispara a impressão da etiqueta para a Smart Label Printer. */
 function imprimirEtiquetaQR() {
-  // Verifica se o QR de impressão está pronto
-  const area = document.getElementById('etiqueta-qr-area');
-  if (!area || !area.querySelector('canvas, img')) {
-    setTimeout(imprimirEtiquetaQR, 300); // aguarda o QR carregar
-    return;
+  if (!_currentQrTipo || !_currentQrId) return;
+  const printUrl = `/qr/imprimir/${_currentQrTipo}/${encodeURIComponent(_currentQrId)}?autoprint=1`;
+  const w = window.open(printUrl, 'etiqueta_print_popup', 'width=520,height=380,top=100,left=100,resizable=yes,scrollbars=yes');
+  if (w) {
+    w.focus();
   }
-  window.print();
 }
 
 /** Mapeia tipo interno para rótulo legível. */
