@@ -60,10 +60,14 @@ def _tentar_baixa_estoque(
     quantidade = quantidade if (quantidade and quantidade > 0) else 1
 
     # 2. Busca e Lock da tabela (Boas Práticas de Transação)
-    cur.execute(
-        "SELECT id, item, quantidade FROM estoque WHERE item ILIKE %s AND (localidade_id = %s OR localidade_id IS NULL) FOR UPDATE",
-        (f"%{item_nome}%", localidade_id)
-    )
+    params_est: list[Any] = [f"%{item_nome}%"]
+    query_est = "SELECT id, item, quantidade FROM estoque WHERE item ILIKE %s"
+    if localidade_id is not None:
+        query_est += " AND (localidade_id = %s OR localidade_id IS NULL)"
+        params_est.append(localidade_id)
+    query_est += " FOR UPDATE"
+    
+    cur.execute(query_est, tuple(params_est))
     itens = cur.fetchall()
     
     if not itens:
@@ -71,22 +75,23 @@ def _tentar_baixa_estoque(
     
     # 3. Resolução Estratégica de Ambiguidade
     estoque_item = None
-    exatos = [i for i in itens if i["item"].lower() == item_nome.lower()]
+    exatos = [i for i in itens if (i.get("item") or "").strip().lower() == item_nome.lower()]
     
     if len(exatos) >= 1:
         estoque_item = exatos[0]
     elif len(itens) == 1:
-        if len(item_nome) < 3 and item_nome.lower() not in itens[0]["item"].lower():
+        if len(item_nome) < 3 and item_nome.lower() not in (itens[0].get("item") or "").lower():
              return f"Baixa não realizada: O termo '{item_nome}' é genérico demais. Especifique melhor."
         estoque_item = itens[0]
     else:
-        nomes_sugestoes = ", ".join([i["item"] for i in itens[:3]])
+        nomes_sugestoes = ", ".join([(i.get("item") or "") for i in itens[:3]])
         return f"Baixa não realizada: Ambiguidade para '{item_nome}'. Qual deles? (Encontrados: {nomes_sugestoes}...)"
         
     # 4. Checagem de Saldo (Princípio de Early Return)
-    nova_qtd = estoque_item["quantidade"] - quantidade
+    qtd_atual = estoque_item.get("quantidade") or 0
+    nova_qtd = qtd_atual - quantidade
     if nova_qtd < 0:
-        return f"Baixa não realizada: Saldo insuficiente do produto '{estoque_item['item']}' (Requerido: {quantidade}, Disponível: {estoque_item['quantidade']})."
+        return f"Baixa não realizada: Saldo insuficiente do produto '{estoque_item.get('item', item_nome)}' (Requerido: {quantidade}, Disponível: {qtd_atual})."
         
     # 5. Persistência Atômica
     cur.execute(
@@ -100,7 +105,7 @@ def _tentar_baixa_estoque(
         (estoque_item["id"], quantidade, f"Baixa via Pedido #{pedido_id} (Aprovado)", f"Admin ID {admin_id}")
     )
     
-    return f"Baixa automática com sucesso: {quantidade}x '{estoque_item['item']}' (Saldo restante: {nova_qtd})."
+    return f"Baixa automática com sucesso: {quantidade}x '{estoque_item.get('item', item_nome)}' (Saldo restante: {nova_qtd})."
 
 
 
@@ -257,12 +262,28 @@ def atualizar_status_pedido(pedido_id: int):
         3. Insere em pedido_viewer_historico.
         4. Atualiza pedidos_viewer (trigger cuida do atualizado_em).
     """
-    novo_status = (request.form.get("novo_status") or "").strip()
+    raw_status = (request.form.get("novo_status") or "").strip().lower().replace(" ", "_")
+    # Mapeamento de normalização de status
+    status_map = {
+        "aberto": "pendente",
+        "pendente": "pendente",
+        "em_analise": "em_analise",
+        "em_análise": "em_analise",
+        "analise": "em_analise",
+        "aprovado": "aprovado",
+        "recusado": "recusado",
+        "rejeitado": "recusado",
+        "cancelado": "recusado",
+        "concluido": "concluido",
+        "concluído": "concluido",
+        "finalizado": "concluido",
+    }
+    novo_status = status_map.get(raw_status, raw_status)
     observacao = (request.form.get("observacao") or "").strip() or None
     admin_id = get_usuario_id()
 
     if novo_status not in _STATUS_VALIDOS:
-        flash(f"Status inválido: '{novo_status}'.", "danger")
+        flash(f"Status inválido: '{raw_status or novo_status}'.", "danger")
         return redirect(url_for("admin_pedidos.detalhe_pedido_admin", pedido_id=pedido_id))
 
     with acquire_conn() as conn:
@@ -298,17 +319,22 @@ def atualizar_status_pedido(pedido_id: int):
                     (pedido_id, "%[Estoque] Baixa automática com sucesso%"),
                 )
                 if not ja_baixou:
-                    msg_baixa = _tentar_baixa_estoque(
-                        cur,
-                        pedido_id,
-                        pedido.get("descricao") or "",
-                        pedido.get("localidade_id"),
-                        admin_id,
-                        item_direto=pedido.get("item"),
-                        quantidade_direta=pedido.get("quantidade"),
-                    )
-                    observacao_final += f"\n[Estoque] {msg_baixa}"
-                    observacao_final = observacao_final.strip()
+                    try:
+                        msg_baixa = _tentar_baixa_estoque(
+                            cur,
+                            pedido_id,
+                            pedido.get("descricao") or "",
+                            pedido.get("localidade_id"),
+                            admin_id,
+                            item_direto=pedido.get("item"),
+                            quantidade_direta=pedido.get("quantidade"),
+                        )
+                        observacao_final += f"\n[Estoque] {msg_baixa}"
+                        observacao_final = observacao_final.strip()
+                    except Exception as err:
+                        msg_baixa = f"Aviso na baixa automática: {err}"
+                        observacao_final += f"\n[Estoque] {msg_baixa}"
+                        observacao_final = observacao_final.strip()
             else:
                 observacao_final = observacao_final.strip() or observacao
 
@@ -341,6 +367,8 @@ def atualizar_status_pedido(pedido_id: int):
                 except Exception:
                     pass
 
-    flash(f"Status atualizado para '{novo_status}' com sucesso.", "success")
+    status_exibicao = novo_status.replace("_", " ").title()
+    flash(f"Status do Pedido #{pedido_id} atualizado para '{status_exibicao}' com sucesso.", "success")
     return redirect(url_for("admin_pedidos.detalhe_pedido_admin", pedido_id=pedido_id))
+
 

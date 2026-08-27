@@ -338,7 +338,17 @@ def listar_pedidos():
 
     params: list[Any] = []
 
-    if role == "viewer":
+    if role == "apoio":
+        # Apoio: vê apenas os pedidos abertos por si mesmo
+        query = """
+            SELECT pv.*, 
+                   COALESCE(l.nome, 'Fazenda') AS localidade_nome
+            FROM pedidos_viewer pv
+            LEFT JOIN localidades l ON l.id = pv.localidade_id
+            WHERE pv.usuario_id = %s
+        """
+        params.append(usuario_id)
+    elif role == "viewer":
         # Viewer: vê seus próprios pedidos OU pedidos da sua fazenda
         loc_id_viewer = session.get("localidade_id") or -1
         query = """

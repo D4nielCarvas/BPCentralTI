@@ -71,6 +71,7 @@
   {% set em_analise  = pedidos | selectattr('status','equalto','em_analise') | list | length %}
   {% set aprovados   = pedidos | selectattr('status','equalto','aprovado')   | list | length %}
   {% set recusados   = pedidos | selectattr('status','equalto','recusado')   | list | length %}
+  {% set concluidos  = pedidos | selectattr('status','equalto','concluido')  | list | length %}
   <div class="stat-mini-card">
     <div class="label">Total listado</div>
     <div class="val">{{ total }}</div>
@@ -90,6 +91,10 @@
   <div class="stat-mini-card">
     <div class="label" style="color:var(--red)">Recusados</div>
     <div class="val" style="color:var(--red)">{{ recusados }}</div>
+  </div>
+  <div class="stat-mini-card">
+    <div class="label" style="color:var(--cyan)">Concluídos</div>
+    <div class="val" style="color:var(--cyan)">{{ concluidos }}</div>
   </div>
 </div>
 
