@@ -488,7 +488,9 @@ def novo_pedido():
             flash("Nenhuma localidade encontrada no sistema.", "danger")
             return redirect(url_for("fazenda.novo_pedido"))
 
-        # Validação de disponibilidade de estoque
+        # Validação de disponibilidade de estoque (Informativa — não bloqueia o pedido)
+        qtd_disp = 0
+        sem_estoque_suficiente = False
         with acquire_conn() as conn_check:
             with conn_check.cursor() as cur_check:
                 params_check = [item, f"%{item}%"]
@@ -504,23 +506,9 @@ def novo_pedido():
                 params_check.append(item)
 
                 estoque_item = fetch_one(cur_check, query_check, tuple(params_check))
-
-        if not estoque_item or (estoque_item.get("quantidade") or 0) <= 0:
-            qtd_disp = estoque_item.get("quantidade", 0) if estoque_item else 0
-            flash(
-                f"O item '{item}' não possui saldo disponível em estoque no momento (Saldo: {qtd_disp}). "
-                "Por favor, aguarde a solicitação/reposição do item pelo setor de TI.",
-                "warning",
-            )
-            return redirect(url_for("fazenda.novo_pedido"))
-
-        if (estoque_item.get("quantidade") or 0) < quantidade:
-            flash(
-                f"Quantidade solicitada ({quantidade}) excede o saldo disponível em estoque ({estoque_item.get('quantidade', 0)}). "
-                "Por favor, ajuste a quantidade ou aguarde a reposição do item.",
-                "warning",
-            )
-            return redirect(url_for("fazenda.novo_pedido"))
+                if estoque_item:
+                    qtd_disp = estoque_item.get("quantidade") or 0
+                sem_estoque_suficiente = (not estoque_item) or (qtd_disp < quantidade)
 
         # Monta a descrição agregada para manter 100% de retrocompatibilidade
         descricao_retro = f"Item: {item} | Quantidade: {quantidade}\nUrgência: {urgencia.title()}\nMotivo: {motivo}"
@@ -597,8 +585,18 @@ def novo_pedido():
                         user_row = fetch_one(cur_notif, "SELECT nome FROM usuarios WHERE id = %s", (usuario_id,))
                         nome_solicitante = user_row["nome"] if user_row else "Usuário"
 
-                    msg_urgencia = "🚨 [URGENTE] " if urgencia in ("alta", "urgente", "critica") else "📋 "
-                    msg_notificacao = f"{msg_urgencia}Novo Pedido #{novo_id} - {nome_solicitante} ({nome_fazenda_notif}): {item} (Qtd: {quantidade})"
+                    if sem_estoque_suficiente:
+                        if urgencia in ("alta", "urgente", "critica"):
+                            prefix_notif = "🚨 [URGENTE / REPOSIÇÃO NECESSÁRIA] "
+                        else:
+                            prefix_notif = "⚠️ [REPOSIÇÃO NECESSÁRIA] "
+                        msg_notificacao = (
+                            f"{prefix_notif}Novo Pedido #{novo_id} - {nome_solicitante} ({nome_fazenda_notif}): "
+                            f"{item} (Qtd: {quantidade}) | Sem saldo suficiente em estoque (Disponível: {qtd_disp}) — Necessário solicitar compra/reposição"
+                        )
+                    else:
+                        msg_urgencia = "🚨 [URGENTE] " if urgencia in ("alta", "urgente", "critica") else "📋 "
+                        msg_notificacao = f"{msg_urgencia}Novo Pedido #{novo_id} - {nome_solicitante} ({nome_fazenda_notif}): {item} (Qtd: {quantidade})"
 
                     try:
                         cur_notif.execute(
@@ -626,7 +624,14 @@ def novo_pedido():
         except Exception:
             pass  # Notificações são secundárias e não bloqueiam o usuário
 
-        flash("Pedido enviado com sucesso!", "success")
+        if sem_estoque_suficiente:
+            flash(
+                f"Pedido #{novo_id} enviado com sucesso! O item '{item}' não possui saldo suficiente em estoque no momento (Saldo atual: {qtd_disp}), "
+                "e a equipe de TI foi notificada da necessidade de solicitar a compra/reposição.",
+                "info",
+            )
+        else:
+            flash("Pedido enviado com sucesso!", "success")
         return redirect(url_for("fazenda.detalhe_pedido", pedido_id=novo_id))
 
     localidades: list[dict] = []

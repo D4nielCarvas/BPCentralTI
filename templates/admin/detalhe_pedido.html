@@ -39,7 +39,7 @@
       <div class="form-card-body">
 
         {# Bloco de Destaque: Item & Quantidade #}
-        <div style="display:grid;grid-template-columns:1fr 120px;gap:14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
+        <div style="display:grid;grid-template-columns:1fr 120px;gap:14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
           <div>
             <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Item Solicitado</div>
             <div style="font-size:16px;font-weight:700;color:var(--text)">{{ pedido.item or pedido.descricao }}</div>
@@ -49,6 +49,39 @@
             <div style="font-size:18px;font-weight:800;color:var(--accent)">{{ pedido.quantidade or 1 }}x</div>
           </div>
         </div>
+
+        {# Aviso de Disponibilidade / Reposição de Estoque #}
+        {% if info_estoque %}
+        <div style="margin-bottom:18px;padding:12px 14px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:10px;
+          {% if info_estoque.suficiente %}
+            background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:var(--text);
+          {% else %}
+            background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:var(--text);
+          {% endif %}">
+          {% if info_estoque.suficiente %}
+            <span style="font-size:18px">✅</span>
+            <div>
+              <strong style="color:#10b981">Item Disponível em Estoque:</strong>
+              <span>Saldo atual de <strong>{{ info_estoque.disponivel }} {{ info_estoque.unidade or 'un' }}</strong> (Suficiente para atendimento imediato).</span>
+            </div>
+          {% else %}
+            <span style="font-size:18px">⚠️</span>
+            <div>
+              <strong style="color:#f59e0b">Necessário Solicitar Compra / Reposição:</strong>
+              <span>
+                {% if not info_estoque.encontrado %}
+                  O item não consta no cadastro local do estoque.
+                {% elif info_estoque.disponivel <= 0 %}
+                  O item está com saldo zerado (0 {{ info_estoque.unidade or 'un' }}).
+                {% else %}
+                  Saldo insuficiente no momento (Disponível: {{ info_estoque.disponivel }} {{ info_estoque.unidade or 'un' }} | Solicitado: {{ pedido.quantidade or 1 }}x).
+                {% endif %}
+                É necessário abrir a solicitação de compra/reposição do item para atender este pedido.
+              </span>
+            </div>
+          {% endif %}
+        </div>
+        {% endif %}
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
           <div>

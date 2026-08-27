@@ -218,30 +218,41 @@ def detalhe_pedido_admin(pedido_id: int):
                 """,
                 (pedido_id,),
             )
-            if not pedido:
-                flash(f"Pedido #{pedido_id} não encontrado.", "warning")
-                return redirect(url_for("admin_pedidos.listar_pedidos_admin"))
-
-            historico = []
-            try:
-                historico = fetch_all(
-                    cur,
-                    """
-                    SELECT pvh.*, u.nome AS alterado_por_nome
-                    FROM pedido_viewer_historico pvh
-                    LEFT JOIN usuarios u ON u.id = pvh.alterado_por
-                    WHERE pvh.pedido_id = %s
-                    ORDER BY pvh.alterado_em ASC
-                    """,
-                    (pedido_id,),
-                )
-            except Exception:
-                pass
+            info_estoque = {
+                "disponivel": 0,
+                "unidade": "un",
+                "suficiente": False,
+                "item_nome": None,
+                "encontrado": False,
+            }
+            item_solicitado = (pedido.get("item") or "").strip()
+            if item_solicitado:
+                try:
+                    params_est = [item_solicitado, f"%{item_solicitado}%"]
+                    q_est = "SELECT id, item, quantidade, unidade FROM estoque WHERE (LOWER(item) = LOWER(%s) OR item ILIKE %s)"
+                    if pedido.get("localidade_id"):
+                        q_est += " AND (localidade_id IS NULL OR localidade_id = %s)"
+                        params_est.append(pedido["localidade_id"])
+                    q_est += " ORDER BY CASE WHEN LOWER(item) = LOWER(%s) THEN 0 ELSE 1 END, quantidade DESC LIMIT 1"
+                    params_est.append(item_solicitado)
+                    item_est = fetch_one(cur, q_est, tuple(params_est))
+                    if item_est:
+                        qtd_e = item_est.get("quantidade") or 0
+                        info_estoque = {
+                            "disponivel": qtd_e,
+                            "unidade": item_est.get("unidade") or "un",
+                            "suficiente": qtd_e >= (pedido.get("quantidade") or 1),
+                            "item_nome": item_est.get("item"),
+                            "encontrado": True,
+                        }
+                except Exception:
+                    pass
 
     return render_template(
         "admin/detalhe_pedido.html",
         pedido=pedido,
         historico=historico,
+        info_estoque=info_estoque,
         status_validos=sorted(_STATUS_VALIDOS),
     )
 

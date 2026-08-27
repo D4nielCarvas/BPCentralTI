@@ -97,13 +97,13 @@
           </div>
         </div>
 
-        <div id="aviso-estoque-indisponivel" style="display:none;padding:12px 14px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);border-radius:8px;font-size:12.5px;color:var(--text);line-height:1.4">
+        <div id="aviso-estoque-indisponivel" style="display:none;padding:12px 14px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:8px;font-size:12.5px;color:var(--text);line-height:1.4">
           <div style="display:flex;align-items:flex-start;gap:10px">
             <span style="font-size:20px;line-height:1">⚠️</span>
             <div>
-              <strong style="color:#ef4444;display:block;margin-bottom:2px">Item Sem Estoque Disponível!</strong>
+              <strong style="color:#f59e0b;display:block;margin-bottom:2px">Item Sem Saldo Imediato em Estoque (Reposição Necessária)</strong>
               <span id="texto-alerta-sem-estoque">
-                Este item não possui saldo em estoque no momento. Por favor, <strong>aguarde a solicitação / reposição do item</strong> pela equipe de TI antes de registrar a retirada.
+                Este item não possui saldo suficiente em estoque. Seu pedido será enviado normalmente e a <strong>equipe de TI será alertada</strong> para providenciar a solicitação/compra do item.
               </span>
             </div>
           </div>
@@ -231,25 +231,25 @@
       // Item não encontrado no estoque cadastrado
       avisoDisponivel.style.display = 'none';
       avisoIndisponivel.style.display = 'block';
-      textoAlertaSemEstoque.innerHTML = `O item <strong>"${inputItem.value}"</strong> não foi encontrado no estoque da unidade. Por favor, <strong>aguarde a solicitação / reposição do item</strong> pela equipe de TI.`;
-      btnEnviar.disabled = true;
+      textoAlertaSemEstoque.innerHTML = `O item <strong>"${inputItem.value}"</strong> não possui saldo no estoque imediato. Seu pedido será enviado e a equipe de TI será notificada da necessidade de <strong>solicitação / compra</strong>.`;
+      btnEnviar.disabled = false;
     } else if (match.quantidade <= 0) {
       // Item cadastrado mas com saldo zerado
       avisoDisponivel.style.display = 'none';
       avisoIndisponivel.style.display = 'block';
-      textoAlertaSemEstoque.innerHTML = `O item <strong>"${match.item}"</strong> está com <strong>saldo zerado (0 ${match.unidade})</strong> em estoque. É necessário <strong>aguardar a solicitação / reposição do item</strong> antes de abrir o pedido.`;
-      btnEnviar.disabled = true;
+      textoAlertaSemEstoque.innerHTML = `O item <strong>"${match.item}"</strong> está com <strong>saldo zerado (0 ${match.unidade})</strong> em estoque. Seu pedido será enviado e a equipe de TI receberá um alerta para <strong>solicitação / reposição</strong>.`;
+      btnEnviar.disabled = false;
     } else if (qtdSolicitada > match.quantidade) {
       // Quantidade solicitada excede o saldo disponível
       avisoDisponivel.style.display = 'none';
       avisoIndisponivel.style.display = 'block';
-      textoAlertaSemEstoque.innerHTML = `A quantidade informada (${qtdSolicitada}) excede o saldo disponível de <strong>"${match.item}"</strong> (${match.quantidade} ${match.unidade}). Ajuste a quantidade para no máximo ${match.quantidade}.`;
-      btnEnviar.disabled = true;
+      textoAlertaSemEstoque.innerHTML = `A quantidade solicitada (${qtdSolicitada}) é maior que o saldo em estoque de <strong>"${match.item}"</strong> (${match.quantidade} ${match.unidade}). O pedido será registrado e a TI providenciará a reposição complementar.`;
+      btnEnviar.disabled = false;
     } else {
       // Disponível!
       avisoIndisponivel.style.display = 'none';
       avisoDisponivel.style.display = 'flex';
-      textoQtdDisponivel.textContent = `${match.quantidade} ${match.unidade} (Saldo suficiente)`;
+      textoQtdDisponivel.textContent = `${match.quantidade} ${match.unidade} (Saldo suficiente para atendimento)`;
       btnEnviar.disabled = false;
     }
   }

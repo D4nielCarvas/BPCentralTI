@@ -63,8 +63,8 @@ class TestPedidosReestruturacao:
             assert resp.status_code == 200
             assert "não está vinculada a uma fazenda" in resp.data.decode("utf-8")
 
-    def test_novo_pedido_item_sem_estoque_exibe_aviso(self, client):
-        """Valida que tentar pedir um item com saldo zerado ou inexistente emite mensagem de aviso."""
+    def test_novo_pedido_item_sem_estoque_permite_criacao_com_aviso_reposicao(self, client):
+        """Valida que pedir um item com saldo zerado é permitido e gera notificação de reposição necessária."""
         with client.session_transaction() as sess:
             sess["usuario_id"] = 5
             sess["usuario_nome"] = "Operador Fazenda"
@@ -74,11 +74,17 @@ class TestPedidosReestruturacao:
             sess["_notif_cache"] = {"qtd": 0, "lista": []}
             sess["_notif_cache_ts"] = "2099-01-01T00:00:00"
 
+        mock_cur = MagicMock()
+        mock_cur.fetchone.side_effect = [
+            {"id": 202},  # INSERT RETURNING id
+        ]
+
         # Item com quantidade 0 no estoque
         item_estoque_zerado = {"id": 10, "item": "Monitor 27 Polegadas", "quantidade": 0, "unidade": "un"}
 
         with patch("blueprints.fazenda.acquire_conn") as mock_conn, \
-             patch("blueprints.fazenda.fetch_one", return_value=item_estoque_zerado):
+             patch("blueprints.fazenda.fetch_one", side_effect=[item_estoque_zerado, {"nome": "Fazenda Esperança"}]):
+            mock_conn.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value = mock_cur
             
             resp = client.post(
                 "/fazenda/pedidos/novo",
@@ -88,13 +94,23 @@ class TestPedidosReestruturacao:
                     "urgencia": "alta",
                     "motivo": "Substituição de tela quebrada",
                 },
-                follow_redirects=True,
+                follow_redirects=False,
             )
 
-            assert resp.status_code == 200
-            html = resp.data.decode("utf-8")
-            assert "não possui saldo disponível em estoque no momento" in html
-            assert "aguarde a solicitação/reposição" in html
+            assert resp.status_code == 302
+            assert "/fazenda/pedidos/202" in resp.headers["Location"]
+
+            # Verifica se foi gerada notificação avisando sobre reposição necessária
+            notif_call_found = False
+            for call in mock_cur.execute.call_args_list:
+                args = call[0]
+                if "INSERT INTO notificacoes" in args[0]:
+                    notif_call_found = True
+                    msg = args[1][1]
+                    assert "REPOSIÇÃO NECESSÁRIA" in msg
+                    assert "Monitor 27 Polegadas" in msg
+            assert notif_call_found
+
 
     def test_novo_pedido_sucesso_com_item_disponivel_e_notificacao(self, client):
         """Valida inserção de pedido quando há estoque disponível e disparo de notificação."""
