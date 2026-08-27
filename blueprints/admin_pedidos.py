@@ -354,18 +354,27 @@ def atualizar_status_pedido(pedido_id: int):
                 (novo_status, pedido_id),
             )
 
-            # 5. Notificar o solicitante do pedido (se não for o próprio admin)
-            autor_pedido_id = pedido.get("usuario_id")
-            if autor_pedido_id and autor_pedido_id != admin_id:
-                status_fmt = novo_status.replace("_", " ").title()
-                msg_notif = f"📦 Pedido #{pedido_id}: Status atualizado para '{status_fmt}'"
-                try:
-                    cur.execute(
-                        "INSERT INTO notificacoes (usuario_id, pedido_id, mensagem) VALUES (%s, %s, %s)",
-                        (autor_pedido_id, pedido_id, msg_notif[:255]),
-                    )
-                except Exception:
-                    pass
+    # 5. Notificar o solicitante do pedido de forma desacoplada (se não for o próprio admin)
+    autor_pedido_id = pedido.get("usuario_id")
+    if autor_pedido_id and autor_pedido_id != admin_id:
+        status_fmt = novo_status.replace("_", " ").title()
+        msg_notif = f"📦 Pedido #{pedido_id}: Status atualizado para '{status_fmt}'"
+        try:
+            with acquire_conn() as conn_notif:
+                with conn_notif.cursor() as cur_notif:
+                    try:
+                        cur_notif.execute(
+                            "INSERT INTO notificacoes (usuario_id, pedido_id, mensagem) VALUES (%s, %s, %s)",
+                            (autor_pedido_id, pedido_id, msg_notif[:255]),
+                        )
+                    except Exception:
+                        conn_notif.rollback()
+                        cur_notif.execute(
+                            "INSERT INTO notificacoes (usuario_id, mensagem) VALUES (%s, %s)",
+                            (autor_pedido_id, msg_notif[:255]),
+                        )
+        except Exception:
+            pass
 
     status_exibicao = novo_status.replace("_", " ").title()
     flash(f"Status do Pedido #{pedido_id} atualizado para '{status_exibicao}' com sucesso.", "success")
