@@ -218,6 +218,26 @@ def detalhe_pedido_admin(pedido_id: int):
                 """,
                 (pedido_id,),
             )
+            if not pedido:
+                flash(f"Pedido #{pedido_id} não encontrado.", "warning")
+                return redirect(url_for("admin_pedidos.listar_pedidos_admin"))
+
+            historico = []
+            try:
+                historico = fetch_all(
+                    cur,
+                    """
+                    SELECT pvh.*, u.nome AS alterado_por_nome
+                    FROM pedido_viewer_historico pvh
+                    LEFT JOIN usuarios u ON u.id = pvh.alterado_por
+                    WHERE pvh.pedido_id = %s
+                    ORDER BY pvh.alterado_em ASC
+                    """,
+                    (pedido_id,),
+                )
+            except Exception:
+                pass
+
             info_estoque = {
                 "disponivel": 0,
                 "unidade": "un",
@@ -225,7 +245,7 @@ def detalhe_pedido_admin(pedido_id: int):
                 "item_nome": None,
                 "encontrado": False,
             }
-            item_solicitado = (pedido.get("item") or "").strip()
+            item_solicitado = (pedido.get("item") or pedido.get("descricao") or "").strip()
             if item_solicitado:
                 try:
                     params_est = [item_solicitado, f"%{item_solicitado}%"]
