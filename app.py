@@ -115,15 +115,8 @@ atexit.register(close_pool)
 # Protege rotas de polling e APIs públicas contra abuso/DoS.
 # storage_uri="memory://" é adequado para single-process (gunicorn -w 1).
 # Em multi-worker, substitua por Redis: storage_uri="redis://localhost:6379"
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-
-limiter = Limiter(
-    app=app,
-    key_func=get_remote_address,
-    default_limits=[],   # P12: sem limite global — aplicado rota a rota
-    storage_uri="memory://",
-)
+from utils.extensions import limiter
+limiter.init_app(app)
 
 # Blueprints existentes
 from flask.json.provider import DefaultJSONProvider

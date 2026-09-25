@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 from utils.auth_utils import get_localidade_filter, get_usuario_id, viewer_required
 from utils.db_layer import acquire_conn, fetch_all, fetch_one
 from utils.anexos_utils import ALLOWED_EXTENSIONS, allowed_file, save_anexo
-from app import limiter  # [FIX-5] necessário para reativar rate limit no poll
+from utils.extensions import limiter  # [FIX-5] necessário para reativar rate limit no poll
 import psycopg2
 
 chamados_bp = Blueprint("chamados", __name__, url_prefix="/fazenda/chamados")

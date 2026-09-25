@@ -33,7 +33,7 @@ from flask import (Blueprint, flash, redirect, render_template,
                    request, session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_limiter.util import get_remote_address
-from app import limiter
+from utils.extensions import limiter
 
 from utils.db_layer import acquire_conn, fetch_all, fetch_one
 
