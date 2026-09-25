@@ -5,13 +5,15 @@
    ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
-:root {
+:root,
+html[data-theme="dark"] {
   --bg: #0d0f14;
   --bg2: #13161e;
   --bg3: #1a1e29;
   --border: #252b3b;
   --border2: #2e364d;
   --accent: #3b82f6;
+  --accent-hover: #2563eb;
   --accent2: #6366f1;
   --green: #10b981;
   --yellow: #f59e0b;
@@ -22,7 +24,94 @@
   --text: #e2e8f0;
   --text2: #94a3b8;
   --text3: #475569;
-  --sidebar-w: 248px
+  --sidebar-w: 248px;
+  --table-hover: rgba(255, 255, 255, 0.02);
+  --nav-active-bg: rgba(59, 130, 246, 0.1);
+  --filter-active-bg: rgba(59, 130, 246, 0.2);
+  --shadow-dropdown: 0 20px 40px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.7);
+  --modal-backdrop-bg: rgba(0, 0, 0, 0.75);
+}
+
+html[data-theme="light"] {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --border: #e2e8f0;
+  --border2: #cbd5e1;
+  --accent: #005221;
+  --accent-hover: #07401c;
+  --accent2: #15803d;
+  --green: #15803d;
+  --yellow: #d97706;
+  --red: #dc2626;
+  --orange: #ea580c;
+  --purple: #7c3aed;
+  --cyan: #0891b2;
+  --text: #111827;
+  --text2: #475569;
+  --text3: #94a3b8;
+  --sidebar-w: 248px;
+  --table-hover: rgba(0, 82, 33, 0.04);
+  --nav-active-bg: rgba(0, 82, 33, 0.08);
+  --filter-active-bg: rgba(0, 82, 33, 0.12);
+  --shadow-dropdown: 0 10px 25px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.15);
+  --modal-backdrop-bg: rgba(15, 23, 42, 0.45);
+}
+
+/* Transições suaves ao alternar temas */
+body, #sidebar, #topbar, .table-card, .stat-card, .modal, .form-group input, .form-group select, .form-group textarea {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Botão Toggle de Tema */
+.theme-toggle-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  transition: all 0.15s ease;
+  user-select: none;
+  outline: none;
+  padding: 0;
+}
+.theme-toggle-btn:hover {
+  background: var(--border);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+.theme-toggle-btn:active {
+  transform: translateY(0);
+}
+.theme-toggle-icon {
+  display: inline-block;
+  line-height: 1;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.theme-toggle-btn:hover .theme-toggle-icon {
+  transform: rotate(15deg) scale(1.1);
+}
+
+/* Ajustes visuais específicos do Modo Claro */
+html[data-theme="light"] .logo-icon {
+  background: linear-gradient(135deg, #005221 0%, #15803d 100%);
+  color: #ffffff;
+}
+html[data-theme="light"] .nav-item.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+html[data-theme="light"] .badge-aberto {
+  background: rgba(0, 82, 33, 0.12);
+  color: var(--accent);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box }
@@ -85,7 +174,7 @@ nav { flex: 1; padding: 8px 0 }
   transition: all .15s; text-decoration: none
 }
 .nav-item:hover { background: var(--bg3); color: var(--text) }
-.nav-item.active { background: rgba(59,130,246,.1); border-left-color: var(--accent); color: var(--accent) }
+.nav-item.active { background: var(--nav-active-bg); border-left-color: var(--accent); color: var(--accent) }
 .nav-item .icon { font-size: 14px; width: 16px; text-align: center }
 
 .nav-badge {
@@ -121,7 +210,7 @@ nav { flex: 1; padding: 8px 0 }
 #search-results {
   position: absolute; top: calc(100% + 6px); right: 0; width: 320px;
   background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px;
-  z-index: 999; overflow: hidden; display: none; box-shadow: 0 20px 40px rgba(0,0,0,.5)
+  z-index: 999; overflow: hidden; display: none; box-shadow: var(--shadow-dropdown)
 }
 .sr-item {
   padding: 9px 13px; cursor: pointer; display: flex; align-items: center;
@@ -138,7 +227,7 @@ nav { flex: 1; padding: 8px 0 }
   font-family: inherit; transition: all .15s; white-space: nowrap
 }
 .btn-primary { background: var(--accent); color: #fff }
-.btn-primary:hover { background: #2563eb }
+.btn-primary:hover { background: var(--accent-hover) }
 .btn-success { background: var(--green); color: #fff }
 .btn-success:hover { background: #059669 }
 .btn-danger { background: var(--red); color: #fff }
@@ -194,7 +283,7 @@ nav { flex: 1; padding: 8px 0 }
   padding: 3px 10px; border-radius: 20px; cursor: pointer;
   font-size: 11px; font-family: inherit; transition: all .15s
 }
-.filter-btn.active { background: rgba(59,130,246,.2); border-color: var(--accent); color: var(--accent) }
+.filter-btn.active { background: var(--filter-active-bg); border-color: var(--accent); color: var(--accent) }
 
 table { width: 100%; border-collapse: collapse }
 thead th {
@@ -204,7 +293,7 @@ thead th {
 }
 tbody td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text2) }
 tbody tr:last-child td { border-bottom: none }
-tbody tr:hover td { background: rgba(255,255,255,.02); color: var(--text) }
+tbody tr:hover td { background: var(--table-hover); color: var(--text) }
 
 .td-id { font-family: 'IBM Plex Mono',monospace; font-size: 11.5px; color: var(--accent); font-weight: 600 }
 .td-bold { color: var(--text); font-weight: 500 }
@@ -235,7 +324,7 @@ tbody tr:hover td { background: rgba(255,255,255,.02); color: var(--text) }
 
 /* ── Modal ───────────────────────────────────────────── */
 .modal-backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 1000;
+  position: fixed; inset: 0; background: var(--modal-backdrop-bg); z-index: 1000;
   display: flex; align-items: center; justify-content: center;
   padding: 20px; backdrop-filter: blur(4px);
   opacity: 0; pointer-events: none; transition: opacity .2s
@@ -244,7 +333,7 @@ tbody tr:hover td { background: rgba(255,255,255,.02); color: var(--text) }
 .modal {
   background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px;
   width: 100%; max-width: 760px; max-height: 90vh;
-  display: flex; flex-direction: column;
+  display: flex; flex-direction: column; box-shadow: var(--shadow-modal);
   transform: translateY(20px); transition: transform .2s
 }
 .modal-backdrop.open .modal { transform: translateY(0) }
@@ -282,7 +371,7 @@ tbody tr:hover td { background: rgba(255,255,255,.02); color: var(--text) }
 .toast {
   background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px;
   padding: 11px 16px; font-size: 13px; display: flex; align-items: center;
-  gap: 9px; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  gap: 9px; box-shadow: var(--shadow-dropdown);
   animation: slideIn .25s ease; min-width: 240px; max-width: 360px
 }
 .toast.success { border-left: 3px solid var(--green) }
@@ -356,7 +445,7 @@ tbody tr:hover td { background: rgba(255,255,255,.02); color: var(--text) }
 .notif-dropdown {
   position: absolute; top: 46px; right: 0px; width: 280px;
   background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.5); z-index: 999; display: none; flex-direction: column; overflow: hidden
+  box-shadow: var(--shadow-dropdown); z-index: 999; display: none; flex-direction: column; overflow: hidden
 }
 .notif-dropdown.show { display: flex }
 .notif-header {

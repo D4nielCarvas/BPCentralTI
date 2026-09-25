@@ -7,8 +7,24 @@
   <title>{% block title %}BP Central TI{% endblock %}</title>
   <link rel="icon" href="{{ url_for('static', filename='icon.svg') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <!-- Anti-FOUC: Detecção imediata de tema antes do render do DOM -->
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem('bp_central_ti_theme');
+        if (theme === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
   {% block head %}{% endblock %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </head>
 
 <body>
@@ -115,6 +131,19 @@
       <h2>{% block page_title %}{% endblock %}</h2>
       <div style="flex:1"></div>
       {% block topbar_actions %}{% endblock %}
+
+      <!-- Botão de Alternância de Tema (Dark / Light) -->
+      <button 
+        type="button" 
+        id="theme-toggle-btn" 
+        class="theme-toggle-btn" 
+        aria-label="Alternar Tema Claro/Escuro" 
+        title="Alternar Tema Claro/Escuro (Alt+T)"
+        onclick="window.ThemeManager && window.ThemeManager.toggleTheme()"
+        style="margin-left: 10px; margin-right: 6px;"
+      >
+        <span id="theme-icon" class="theme-toggle-icon">🌙</span>
+      </button>
 
       {% if session.usuario_id %}
       <div style="position:relative;">
