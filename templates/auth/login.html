@@ -42,15 +42,27 @@
       >
         <span id="theme-icon" class="theme-toggle-icon">🌙</span>
       </button>
-      <div class="auth-logo">🖥️</div>
+      <div class="auth-logo" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+      </div>
       <h1>BP Central TI</h1>
       <p>v3.0 · Gestão de Ativos e Operações</p>
     </div>
     <div class="auth-card-body">
       {% for category, message in get_flashed_messages(with_categories=true) %}
-      <div class="flash flash-{{ category }}">
-        {% if category=='danger' %}❌{% elif category=='warning' %}⚠️{% elif category=='info' %}ℹ️{% else %}✅{% endif %}
-        {{ message }}
+      <div class="flash flash-{{ category }}" style="display:flex; align-items:center; gap:8px;">
+        <span class="flash-icon" aria-hidden="true" style="display:inline-flex; align-items:center; flex-shrink:0;">
+          {% if category == 'danger' %}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          {% elif category == 'warning' %}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          {% elif category == 'info' %}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          {% else %}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          {% endif %}
+        </span>
+        <span>{{ message }}</span>
       </div>
       {% endfor %}
       <form method="POST" action="{{ url_for('auth.login') }}" id="form-login">
@@ -82,7 +94,7 @@
 <script>
   document.getElementById('form-login').addEventListener('submit',function(){
     const btn=document.getElementById('btn-entrar');
-    btn.disabled=true;btn.innerHTML='⏳ Verificando…';
+    btn.disabled=true;btn.innerHTML='Verificando credenciais…';
   });
 </script>
 <script>

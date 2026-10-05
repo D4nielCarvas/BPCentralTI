@@ -37,49 +37,118 @@
 <body>
 
   <div id="sidebar">
-    <div class="sidebar-logo" style="position: relative;">
-      <div class="logo-icon">🖥️</div>
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
       <h1>BP Central TI</h1>
       <p class="version">v3.0 · Supabase</p>
-      <a href="{{ url_for('auth.logout') }}" class="sidebar-logout-link" title="Encerrar sessão">⏻ Sair</a>
     </div>
     <nav>
       <div class="nav-label">Geral</div>
-      <div class="nav-item active" data-page="dashboard"><span class="icon">📊</span> Dashboard</div>
+      <div class="nav-item active" data-page="dashboard">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span>
+        Dashboard
+      </div>
+
       <div class="nav-label">Celulares</div>
-      <div class="nav-item" data-page="celulares"><span class="icon">📱</span> Celulares</div>
-      <div class="nav-item" data-page="celulares_ponto"><span class="icon">🕐</span> Cel. Ponto</div>
-      <div class="nav-item" data-page="celulares_turma"><span class="icon">🎓</span> Cel. Turma</div>
-      <div class="nav-item" data-page="celulares_inspecao"><span class="icon">🔍</span> Cel. Inspeção</div>
-      <div class="nav-item" data-page="chips"><span class="icon">📶</span> Gestão de Chips</div>
+      <div class="nav-item" data-page="celulares">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></svg></span>
+        Celulares
+      </div>
+      <div class="nav-item" data-page="celulares_ponto">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+        Cel. Ponto
+      </div>
+      <div class="nav-item" data-page="celulares_turma">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        Cel. Turma
+      </div>
+      <div class="nav-item" data-page="celulares_inspecao">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span>
+        Cel. Inspeção
+      </div>
+      <div class="nav-item" data-page="chips">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h8"/><path d="M8 14h8"/><path d="M8 18h8"/></svg></span>
+        Gestão de Chips
+      </div>
+
       <div class="nav-label">Equipamentos</div>
-      <div class="nav-item" data-page="computadores"><span class="icon">💻</span> Notebooks / PCs</div>
-      <div class="nav-item" data-page="impressoras"><span class="icon">🖨️</span> Impressoras</div>
-      <div class="nav-item" data-page="estabilizadores"><span class="icon">🔌</span> Estabilizadores</div>
-      <div class="nav-item" data-page="starlink"><span class="icon">🛰️</span> Antenas Starlink</div>
+      <div class="nav-item" data-page="computadores">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="18" height="12" x="3" y="4" rx="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg></span>
+        Notebooks / PCs
+      </div>
+      <div class="nav-item" data-page="impressoras">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg></span>
+        Impressoras
+      </div>
+      <div class="nav-item" data-page="estabilizadores">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+        Estabilizadores
+      </div>
+      <div class="nav-item" data-page="starlink">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 10a7.31 7.31 0 0 0 10 10Z"/><path d="m9 15 3-3"/><path d="M17 13a6 6 0 0 0-6-6"/><path d="M21 13A10 10 0 0 0 11 3"/></svg></span>
+        Antenas Starlink
+      </div>
+
       <div class="nav-label">Estoque</div>
-      <div class="nav-item" data-page="estoque"><span class="icon">📦</span> Estoque Geral</div>
-      <div class="nav-item" data-page="estoque_equipamentos"><span class="icon">🏢</span> Estoque Equipamentos</div>
-      <div class="nav-item" data-page="toners"><span class="icon">🖨️</span> Toner / Impressoras</div>
+      <div class="nav-item" data-page="estoque">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
+        Estoque Geral
+      </div>
+      <div class="nav-item" data-page="estoque_equipamentos">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg></span>
+        Estoque Equipamentos
+      </div>
+      <div class="nav-item" data-page="toners">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg></span>
+        Toner / Impressoras
+      </div>
+
       <div class="nav-label">Operações</div>
-      <div class="nav-item" data-page="manutencoes"><span class="icon">🔧</span> Manutenções <span class="nav-badge"
-          id="badge-man" style="display:none">0</span></div>
-      <div class="nav-item" data-page="descartes"><span class="icon">🗑️</span> Descartes</div>
-      <div class="nav-item" data-page="transferencias"><span class="icon">🔄</span> Transferências</div>
-      <div class="nav-item" data-page="historico"><span class="icon">📜</span> Histórico</div>
+      <div class="nav-item" data-page="manutencoes">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        Manutenções <span class="nav-badge" id="badge-man" style="display:none">0</span>
+      </div>
+      <div class="nav-item" data-page="descartes">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></span>
+        Descartes
+      </div>
+      <div class="nav-item" data-page="transferencias">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m8 3 4 4-4 4"/><path d="M4 7h16"/><path d="m16 21-4-4 4-4"/><path d="M20 17H4"/></svg></span>
+        Transferências
+      </div>
+      <div class="nav-item" data-page="historico">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></span>
+        Histórico
+      </div>
 
       {% if session.role == 'admin' %}
       <div class="nav-label" style="margin-top:8px">Administração</div>
       <a href="{{ url_for('admin.listar_usuarios') }}" class="nav-item" style="text-decoration:none">
-        <span class="icon">👥</span> Usuários
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        Usuários
       </a>
       <a href="{{ url_for('fazenda.listar_itens') }}" class="nav-item" style="text-decoration:none">
-        <span class="icon">🚜</span> Portal Fazenda
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span>
+        Portal Fazenda
       </a>
       {% endif %}
     </nav>
-    <div class="sidebar-footer" style="display:flex; justify-content:space-between; align-items:center;">
-      <div class="version">localhost:5000</div>
+    <div class="sidebar-footer">
+      <div class="sidebar-user-block">
+        <div class="sidebar-user-avatar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="sidebar-user-meta">
+          <span class="sidebar-user-name">{{ session.username or 'Operador' }}</span>
+          <span class="sidebar-user-role">{{ session.role or 'TI' }}</span>
+        </div>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="sidebar-logout-link" title="Encerrar sessão" aria-label="Sair">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Sair</span>
+      </a>
     </div>
   </div>
 
@@ -155,13 +224,13 @@
         <div class="grid-2">
           <div class="table-card">
             <div class="table-header">
-              <h3>⚡ Atividade Recente</h3>
+              <h3>Atividade Recente</h3>
             </div>
             <div style="padding:6px 18px 14px" id="dash-activity"></div>
           </div>
           <div class="table-card">
             <div class="table-header">
-              <h3>🔧 Manutenções Abertas</h3>
+              <h3>Manutenções Abertas</h3>
             </div>
             <div style="padding:6px 18px 14px" id="dash-manut"></div>
           </div>
@@ -172,10 +241,10 @@
       <div class="page" id="page-celulares">
         <div class="table-card">
           <div class="table-header">
-            <h3>📱 Celulares</h3>
+            <h3>Celulares</h3>
             <div class="filter-row">
               <div class="search-wrap" style="width: 200px; margin-left: 0;">
-                <span class="s-icon">🔍</span>
+                <span class="s-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
                 <input type="text" id="search-celulares" placeholder="Buscar..." oninput="handleLocalSearch('celulares')" autocomplete="off">
               </div>
               <button class="filter-btn active" onclick="filterTable('celulares','',this)">Todos</button>
@@ -183,7 +252,7 @@
               <button class="filter-btn" onclick="filterTable('celulares','Manutenção',this)">Manutenção</button>
               <button class="filter-btn" onclick="filterTable('celulares','Inativo',this)">Inativos</button>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('celulares')">⬇ CSV</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('celulares')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -210,17 +279,17 @@
       <div class="page" id="page-celulares_ponto">
         <div class="table-card">
           <div class="table-header">
-            <h3>🕐 Celulares Ponto / Turma</h3>
+            <h3>Celulares Ponto / Turma</h3>
             <div class="filter-row">
               <div class="search-wrap" style="width: 200px; margin-left: 0;">
-                <span class="s-icon">🔍</span>
+                <span class="s-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
                 <input type="text" id="search-celulares_ponto" placeholder="Buscar..." oninput="handleLocalSearch('celulares_ponto')" autocomplete="off">
               </div>
               <button class="filter-btn active" onclick="filterTable('celulares_ponto','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('celulares_ponto','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('celulares_ponto','Manutenção',this)">Manutenção</button>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('celulares_ponto')">⬇ CSV</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('celulares_ponto')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -247,17 +316,17 @@
       <div class="page" id="page-celulares_turma">
         <div class="table-card">
           <div class="table-header">
-            <h3>🎓 Celulares Turma</h3>
+            <h3>Celulares Turma</h3>
             <div class="filter-row">
               <div class="search-wrap" style="width: 200px; margin-left: 0;">
-                <span class="s-icon">🔍</span>
+                <span class="s-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
                 <input type="text" id="search-celulares_turma" placeholder="Buscar..." oninput="handleLocalSearch('celulares_turma')" autocomplete="off">
               </div>
               <button class="filter-btn active" onclick="filterTable('celulares_turma','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('celulares_turma','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('celulares_turma','Manutenção',this)">Manutenção</button>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('celulares_turma')">⬇ CSV</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('celulares_turma')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -284,17 +353,17 @@
       <div class="page" id="page-celulares_inspecao">
         <div class="table-card">
           <div class="table-header">
-            <h3>🔍 Celulares Inspeção</h3>
+            <h3>Celulares Inspeção</h3>
             <div class="filter-row">
               <div class="search-wrap" style="width: 200px; margin-left: 0;">
-                <span class="s-icon">🔍</span>
+                <span class="s-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
                 <input type="text" id="search-celulares_inspecao" placeholder="Buscar..." oninput="handleLocalSearch('celulares_inspecao')" autocomplete="off">
               </div>
               <button class="filter-btn active" onclick="filterTable('celulares_inspecao','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('celulares_inspecao','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('celulares_inspecao','Inativo',this)">Inativos</button>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('celulares_inspecao')">⬇ CSV</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('celulares_inspecao')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -322,10 +391,10 @@
       <div class="page" id="page-chips">
         <div class="table-card">
           <div class="table-header">
-            <h3>📶 Gestão de Chips</h3>
+            <h3>Gestão de Chips</h3>
             <div class="filter-row">
               <div class="search-wrap" style="width: 200px; margin-left: 0;">
-                <span class="s-icon">🔍</span>
+                <span class="s-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
                 <input type="text" id="search-chips" placeholder="Buscar..." oninput="handleLocalSearch('chips')" autocomplete="off">
               </div>
               <button class="filter-btn active" onclick="filterTable('chips','',this)">Todos</button>
@@ -356,19 +425,18 @@
       <div class="page" id="page-computadores">
         <div class="table-card">
           <div class="table-header">
-            <h3>💻 Notebooks / Computadores</h3>
+            <h3>Notebooks / Computadores</h3>
             <div class="filter-row">
               <div class="search-wrap" style="width: 200px; margin-left: 0;">
-                <span class="s-icon">🔍</span>
+                <span class="s-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
                 <input type="text" id="search-computadores" placeholder="Buscar..." oninput="handleLocalSearch('computadores')" autocomplete="off">
               </div>
               <button class="filter-btn active" onclick="filterTable('computadores','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('computadores','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('computadores','Manutenção',this)">Manutenção</button>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('computadores')">⬇ CSV</button>
-            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('input-import-coleta').click()">📥
-              Importar Coleta</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('computadores')">Exportar CSV</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('input-import-coleta').click()">Importar Coleta</button>
             <input type="file" id="input-import-coleta" style="display:none" accept=".txt"
               onchange="handleColetaImport(this)">
           </div>
@@ -399,17 +467,17 @@
       <div class="page" id="page-impressoras">
         <div class="table-card">
           <div class="table-header">
-            <h3>🖨️ Impressoras</h3>
+            <h3>Impressoras</h3>
             <div class="filter-row">
               <div class="search-wrap" style="width: 200px; margin-left: 0;">
-                <span class="s-icon">🔍</span>
+                <span class="s-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
                 <input type="text" id="search-impressoras" placeholder="Buscar..." oninput="handleLocalSearch('impressoras')" autocomplete="off">
               </div>
               <button class="filter-btn active" onclick="filterTable('impressoras','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('impressoras','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('impressoras','Manutenção',this)">Manutenção</button>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('impressoras')">⬇ CSV</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('impressoras')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -435,17 +503,17 @@
       <div class="page" id="page-estabilizadores">
         <div class="table-card">
           <div class="table-header">
-            <h3>🔌 Estabilizadores / Nobreakes</h3>
+            <h3>Estabilizadores / Nobreakes</h3>
             <div class="filter-row">
               <div class="search-wrap" style="width: 200px; margin-left: 0;">
-                <span class="s-icon">🔍</span>
+                <span class="s-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
                 <input type="text" id="search-estabilizadores" placeholder="Buscar..." oninput="handleLocalSearch('estabilizadores')" autocomplete="off">
               </div>
               <button class="filter-btn active" onclick="filterTable('estabilizadores','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('estabilizadores','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('estabilizadores','Inativo',this)">Inativos</button>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('estabilizadores')">⬇ CSV</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('estabilizadores')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -471,17 +539,17 @@
       <div class="page" id="page-starlink">
         <div class="table-card">
           <div class="table-header">
-            <h3>🛰️ Antenas Starlink</h3>
+            <h3>Antenas Starlink</h3>
             <div class="filter-row">
               <div class="search-wrap" style="width: 200px; margin-left: 0;">
-                <span class="s-icon">🔍</span>
+                <span class="s-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
                 <input type="text" id="search-starlink" placeholder="Buscar..." oninput="handleLocalSearch('starlink')" autocomplete="off">
               </div>
               <button class="filter-btn active" onclick="filterTable('starlink','',this)">Todos</button>
               <button class="filter-btn" onclick="filterTable('starlink','Ativo',this)">Ativos</button>
               <button class="filter-btn" onclick="filterTable('starlink','Inativo',this)">Inativos</button>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('starlink')">⬇ CSV</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('starlink')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -511,8 +579,8 @@
       <div class="page" id="page-estoque">
         <div class="table-card">
           <div class="table-header">
-            <h3>📦 Estoque Geral</h3>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('estoque')">⬇ CSV</button>
+            <h3>Estoque Geral</h3>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('estoque')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -536,8 +604,8 @@
       <div class="page" id="page-estoque_equipamentos">
         <div class="table-card">
           <div class="table-header">
-            <h3>🏢 Equipamentos em Estoque</h3>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('estoque_equipamentos')">⬇ CSV</button>
+            <h3>Equipamentos em Estoque</h3>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('estoque_equipamentos')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -561,8 +629,8 @@
       <div class="page" id="page-toners">
         <div class="table-card">
           <div class="table-header">
-            <h3>🖨️ Controle de Toner / Cilindro</h3>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('toners')">⬇ CSV</button>
+            <h3>Controle de Toner / Cilindro</h3>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('toners')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -587,7 +655,7 @@
       <div class="page" id="page-manutencoes">
         <div class="table-card">
           <div class="table-header">
-            <h3>🔧 Manutenções</h3>
+            <h3>Manutenções</h3>
             <div class="filter-row">
               <button class="filter-btn active" onclick="filterManut('',this)">Todas</button>
               <button class="filter-btn" onclick="filterManut('Aberta',this)">Abertas</button>
@@ -595,7 +663,7 @@
               <button class="filter-btn" onclick="filterManut('Aguardando Peça',this)">Aguardando</button>
               <button class="filter-btn" onclick="filterManut('Concluída',this)">Concluídas</button>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('manutencoes')">⬇ CSV</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('manutencoes')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -624,8 +692,8 @@
       <div class="page" id="page-descartes">
         <div class="table-card">
           <div class="table-header">
-            <h3>🗑️ Descartes</h3>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('descartes')">⬇ CSV</button>
+            <h3>Descartes</h3>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('descartes')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -650,8 +718,8 @@
       <div class="page" id="page-transferencias">
         <div class="table-card">
           <div class="table-header">
-            <h3>🔄 Histórico de Transferências</h3>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('transferencias')">⬇ CSV</button>
+            <h3>Histórico de Transferências</h3>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('transferencias')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -677,8 +745,8 @@
       <div class="page" id="page-historico">
         <div class="table-card">
           <div class="table-header">
-            <h3>📜 Histórico Geral</h3>
-            <button class="btn btn-ghost btn-sm" onclick="exportar('historico')">⬇ CSV</button>
+            <h3>Histórico Geral</h3>
+            <button class="btn btn-ghost btn-sm" onclick="exportar('historico')">Exportar CSV</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -704,7 +772,7 @@
       <div class="page" id="page-tutoriais">
         <div class="table-card">
           <div class="table-header">
-            <h3>🎓 Tutoriais</h3>
+            <h3>Tutoriais</h3>
           </div>
           <div style="padding: 16px;">
             <div id="tutoriais-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
@@ -1098,25 +1166,35 @@
       };
       return `<span class="badge ${map[s] || 'badge-inativo'}">${s || '—'}</span>`;
     }
+
+    const SVG_ICONS = {
+      edit: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
+      upload: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
+      manut: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+      descarte: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',
+      pdf: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      qr: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="8" height="8" x="3" y="3" rx="1"/><rect width="8" height="8" x="13" y="3" rx="1"/><rect width="8" height="8" x="3" y="13" rx="1"/><rect width="4" height="4" x="15" y="15" rx="1"/></svg>'
+    };
+
     function pdfLink(filename) {
-      if (!canVerTermos) return '<span style="color:var(--text3);font-size:11px">🔒 Oculto</span>';
+      if (!canVerTermos) return '<span style="color:var(--text3);font-size:11px">Oculto</span>';
       if (!filename) return '<span style="color:var(--text3);font-size:11px">—</span>';
-      return `<a class="pdf-link" href="/termos/${filename}" target="_blank">📄 Ver PDF</a>`;
+      return `<a class="pdf-link" href="/termos/${filename}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;">${SVG_ICONS.pdf} PDF</a>`;
     }
     function uploadBtn(tipo, id_ativo) {
       if (!canAnexarTermos) return '';
-      return `<button class="btn btn-ghost btn-xs" onclick="uploadPDF('${tipo}','${encodeURIComponent(id_ativo)}')">📎</button>`;
+      return `<button class="btn btn-ghost btn-xs" title="Anexar PDF" onclick="uploadPDF('${tipo}','${encodeURIComponent(id_ativo)}')">${SVG_ICONS.upload}</button>`;
     }
     function editBtn(tipo, id_ativo) {
       if (!canEditarEquip) return '';
-      return `<button class="btn btn-ghost btn-xs" onclick="editItem('${tipo}','${id_ativo}')">✏️</button>`;
+      return `<button class="btn btn-ghost btn-xs" title="Editar" onclick="editItem('${tipo}','${id_ativo}')">${SVG_ICONS.edit}</button>`;
     }
     function actBtn(icon, onclickStr) {
       if (!canEditarEquip) return '';
       return `<button class="btn btn-ghost btn-xs" onclick="${onclickStr}">${icon}</button>`;
     }
     function emptyRow(cols, msg, icon) {
-      return `<tr><td colspan="${cols}"><div class="empty"><div class="empty-icon">${icon}</div><p>${msg}</p></div></td></tr>`;
+      return `<tr><td colspan="${cols}"><div class="empty"><div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div><p>${msg}</p></div></td></tr>`;
     }
 
     // Item 8 — Formata data para DD/MM/AAAA
@@ -1178,10 +1256,10 @@
     <td>${r.modelo || '—'}</td><td>${r.numero || '—'}</td>
     <td>${statusBadge(r.status)}</td><td>${pdfLink(r.termo_pdf)}</td>
     <td><div class="tbl-actions">
-      <button class="btn btn-ghost btn-xs" onclick="editItem('celulares','${r.id_ativo}')">✏️</button>
+      <button class="btn btn-ghost btn-xs" title="Editar" onclick="editItem('celulares','${r.id_ativo}')">${SVG_ICONS.edit}</button>
       ${uploadBtn('celular', r.id_ativo)}
-      <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Celular','${r.modelo || ''}')">🔧</button>
-      <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Celular','${r.modelo || ''}')">🗑️</button>
+      <button class="btn btn-ghost btn-xs" title="Manutenção" onclick="newManutFromAtivo('${r.id_ativo}','Celular','${r.modelo || ''}')">${SVG_ICONS.manut}</button>
+      <button class="btn btn-ghost btn-xs" title="Descartar" onclick="newDescarteFromAtivo('${r.id_ativo}','Celular','${r.modelo || ''}')">${SVG_ICONS.descarte}</button>
     </div></td></tr>`).join('');
     }
 
@@ -1199,10 +1277,10 @@
     <td>${r.modelo || '—'}</td><td>${statusBadge(r.status)}</td><td>${r.gmail_clockin || '—'}</td>
     <td>${pdfLink(r.termo_pdf)}</td>
     <td><div class="tbl-actions">
-      <button class="btn btn-ghost btn-xs" onclick="editItem('celulares_ponto','${r.id_ativo}')">✏️</button>
+      <button class="btn btn-ghost btn-xs" title="Editar" onclick="editItem('celulares_ponto','${r.id_ativo}')">${SVG_ICONS.edit}</button>
       ${uploadBtn('celular_ponto', r.id_ativo)}
-      <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Celular Ponto','${r.modelo || ''}')">🔧</button>
-      <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Celular Ponto','${r.modelo || ''}')">🗑️</button>
+      <button class="btn btn-ghost btn-xs" title="Manutenção" onclick="newManutFromAtivo('${r.id_ativo}','Celular Ponto','${r.modelo || ''}')">${SVG_ICONS.manut}</button>
+      <button class="btn btn-ghost btn-xs" title="Descartar" onclick="newDescarteFromAtivo('${r.id_ativo}','Celular Ponto','${r.modelo || ''}')">${SVG_ICONS.descarte}</button>
     </div></td></tr>`).join('');
     }
 
@@ -1224,9 +1302,9 @@
     <td class="td-mono-dim">${r.senha_mip || '—'}</td>
     <td>${statusBadge(r.status)}</td><td>${pdfLink(r.termo_pdf)}</td>
     <td><div class="tbl-actions">
-      <button class="btn btn-ghost btn-xs" onclick="editItem('celulares_inspecao','${r.id_ativo}')">✏️</button>
+      <button class="btn btn-ghost btn-xs" title="Editar" onclick="editItem('celulares_inspecao','${r.id_ativo}')">${SVG_ICONS.edit}</button>
       ${uploadBtn('celular_inspecao', r.id_ativo)}
-      <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Celular Inspeção','${r.modelo || ''}')">🔧</button>
+      <button class="btn btn-ghost btn-xs" title="Manutenção" onclick="newManutFromAtivo('${r.id_ativo}','Celular Inspeção','${r.modelo || ''}')">${SVG_ICONS.manut}</button>
     </div></td></tr>`).join('');
     }
 
@@ -1335,11 +1413,11 @@
       <td>${r.processador || '—'}</td><td>${r.memoria_ram || '—'}</td><td>${r.armazenamento || '—'}</td>
       <td>${r.sistema_operacional || '—'}</td><td>${statusBadge(r.status)}</td>
       <td><div class="tbl-actions">
-        <button class="btn btn-ghost btn-xs" onclick="editItem('computadores','${r.id_ativo}')">✏️</button>
+        <button class="btn btn-ghost btn-xs" title="Editar" onclick="editItem('computadores','${r.id_ativo}')">${SVG_ICONS.edit}</button>
         ${uploadBtn('computador', r.id_ativo)}
-        <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Computador','${r.modelo || ''}')">🔧</button>
-        <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Computador','${r.modelo || ''}')">🗑️</button>
-        <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('computador','${r.id_ativo}','${(r.modelo||'').replace(/'/g,"'\\'")}')">◼ QR</button>
+        <button class="btn btn-ghost btn-xs" title="Manutenção" onclick="newManutFromAtivo('${r.id_ativo}','Computador','${r.modelo || ''}')">${SVG_ICONS.manut}</button>
+        <button class="btn btn-ghost btn-xs" title="Descartar" onclick="newDescarteFromAtivo('${r.id_ativo}','Computador','${r.modelo || ''}')">${SVG_ICONS.descarte}</button>
+        <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('computador','${r.id_ativo}','${(r.modelo||'').replace(/'/g,"'\\'")}')">${SVG_ICONS.qr} QR</button>
       </div></td></tr>`;
       }).join('');
     }
@@ -1357,10 +1435,10 @@
     <td>${r.marca || '—'}</td><td>${r.modelo || '—'}</td><td>${r.ip_rede || '—'}</td>
     <td>${statusBadge(r.status)}</td>
     <td><div class="tbl-actions">
-      <button class="btn btn-ghost btn-xs" onclick="editItem('impressoras','${r.id_ativo}')">✏️</button>
-      <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Impressora','${r.modelo || ''}')">🔧</button>
-      <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Impressora','${r.modelo || ''}')">🗑️</button>
-      <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('impressora','${r.id_ativo}','${(r.modelo||'').replace(/'/g,"'\\'")}')">◼ QR</button>
+      <button class="btn btn-ghost btn-xs" title="Editar" onclick="editItem('impressoras','${r.id_ativo}')">${SVG_ICONS.edit}</button>
+      <button class="btn btn-ghost btn-xs" title="Manutenção" onclick="newManutFromAtivo('${r.id_ativo}','Impressora','${r.modelo || ''}')">${SVG_ICONS.manut}</button>
+      <button class="btn btn-ghost btn-xs" title="Descartar" onclick="newDescarteFromAtivo('${r.id_ativo}','Impressora','${r.modelo || ''}')">${SVG_ICONS.descarte}</button>
+      <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('impressora','${r.id_ativo}','${(r.modelo||'').replace(/'/g,"'\\'")}')">${SVG_ICONS.qr} QR</button>
     </div></td></tr>`).join('');
     }
 
@@ -1377,9 +1455,9 @@
     <td>${r.modelo || '—'}</td><td>${r.uso || '—'}</td><td>${r.num_serie || '—'}</td>
     <td>${statusBadge(r.status)}</td>
     <td><div class="tbl-actions">
-      <button class="btn btn-ghost btn-xs" onclick="editItem('estabilizadores','${r.id_ativo}')">✏️</button>
-      <button class="btn btn-ghost btn-xs" onclick="newDescarteFromAtivo('${r.id_ativo}','Estabilizador','${r.modelo || ''}')">🗑️</button>
-      <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('estabilizador','${r.id_ativo}','${(r.modelo||'').replace(/'/g,"'\\'")}')">◼ QR</button>
+      <button class="btn btn-ghost btn-xs" title="Editar" onclick="editItem('estabilizadores','${r.id_ativo}')">${SVG_ICONS.edit}</button>
+      <button class="btn btn-ghost btn-xs" title="Descartar" onclick="newDescarteFromAtivo('${r.id_ativo}','Estabilizador','${r.modelo || ''}')">${SVG_ICONS.descarte}</button>
+      <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('estabilizador','${r.id_ativo}','${(r.modelo||'').replace(/'/g,"'\\'")}')">${SVG_ICONS.qr} QR</button>
     </div></td></tr>`).join('');
     }
 
@@ -1398,9 +1476,9 @@
     <td style="font-size:11px">${r.id_starlink || '—'}</td><td style="font-size:11px">${r.email_login || '—'}</td>
     <td>${statusBadge(r.status)}</td>
     <td><div class="tbl-actions">
-      <button class="btn btn-ghost btn-xs" onclick="editItem('starlink','${r.id_ativo}')">✏️</button>
-      <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Starlink','${r.modelo || ''}')">🔧</button>
-      <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('starlink','${r.id_ativo}','${(r.modelo||'').replace(/'/g,"'\\'")}')">◼ QR</button>
+      <button class="btn btn-ghost btn-xs" title="Editar" onclick="editItem('starlink','${r.id_ativo}')">${SVG_ICONS.edit}</button>
+      <button class="btn btn-ghost btn-xs" title="Manutenção" onclick="newManutFromAtivo('${r.id_ativo}','Starlink','${r.modelo || ''}')">${SVG_ICONS.manut}</button>
+      <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('starlink','${r.id_ativo}','${(r.modelo||'').replace(/'/g,"'\\'")}')">${SVG_ICONS.qr} QR</button>
     </div></td></tr>`).join('');
     }
 
@@ -1418,9 +1496,9 @@
       <td><div class="tbl-actions">
         <button class="btn btn-success btn-xs" onclick="movimentarEstoque(${r.id},'entrada','${r.item}')">+ Entrada</button>
         <button class="btn btn-danger btn-xs" onclick="movimentarEstoque(${r.id},'saida','${r.item}')">− Saída</button>
-        <button class="btn btn-ghost btn-xs" onclick="editEstoque(${r.id})">✏️</button>
-        <button class="btn btn-ghost btn-xs" onclick="verHistoricoEstoque(${r.id},'${r.item}')">📋</button>
-        <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('estoque','${r.id}','${r.item.replace(/'/g,"'\\'")}')">◼ QR</button>
+        <button class="btn btn-ghost btn-xs" title="Editar" onclick="editEstoque(${r.id})">${SVG_ICONS.edit}</button>
+        <button class="btn btn-ghost btn-xs" title="Histórico" onclick="verHistoricoEstoque(${r.id},'${r.item}')">Histórico</button>
+        <button class="btn btn-ghost btn-xs" title="QR Code / Etiqueta" onclick="abrirModalQR('estoque','${r.id}','${r.item.replace(/'/g,"'\\'")}')">${SVG_ICONS.qr} QR</button>
       </div></td></tr>`;
       }).join('');
     }
@@ -1461,9 +1539,9 @@
       <td>${r.quantidade_minima}</td>
       <td>${formatarData(r.data_ultima_troca)}</td>
       <td><div class="tbl-actions">
-        <button class="btn btn-warn btn-xs" onclick="registrarTroca(${r.id},'${r.modelo_impressora}','${r.modelo_toner}',${r.quantidade_estoque})">🔄 Troca</button>
-        <button class="btn btn-ghost btn-xs" onclick="editToner(${r.id})">✏️</button>
-        <button class="btn btn-ghost btn-xs" onclick="verHistoricoToner(${r.id},'${r.modelo_toner}')">📋</button>
+        <button class="btn btn-warn btn-xs" onclick="registrarTroca(${r.id},'${r.modelo_impressora}','${r.modelo_toner}',${r.quantidade_estoque})">Troca</button>
+        <button class="btn btn-ghost btn-xs" title="Editar" onclick="editToner(${r.id})">${SVG_ICONS.edit}</button>
+        <button class="btn btn-ghost btn-xs" title="Histórico" onclick="verHistoricoToner(${r.id},'${r.modelo_toner}')">Histórico</button>
       </div></td></tr>`;
       }).join('');
     }
@@ -1483,7 +1561,7 @@
     <td>${formatarData(r.data_recebimento)}</td><td>${r.os_manutencao || '—'}</td>
     <td>${r.orcamento ? 'R$ ' + Number(r.orcamento).toFixed(2) : '—'}</td>
     <td>${statusBadge(r.status)}</td>
-    <td><button class="btn btn-ghost btn-xs" onclick="editManut(${r.id})">✏️</button></td></tr>`).join('');
+    <td><button class="btn btn-ghost btn-xs" title="Editar" onclick="editManut(${r.id})">${SVG_ICONS.edit}</button></td></tr>`).join('');
     }
 
     async function loadDescartes() {
@@ -1547,9 +1625,9 @@
     <td>${statusBadge(r.status)}</td>
     <td>${pdfLink(r.termo_pdf)}</td>
     <td><div class="tbl-actions">
-      <button class="btn btn-ghost btn-xs" onclick="editItem('celulares_turma','${r.id_ativo}')">✏️</button>
+      <button class="btn btn-ghost btn-xs" title="Editar" onclick="editItem('celulares_turma','${r.id_ativo}')">${SVG_ICONS.edit}</button>
       ${uploadBtn('celular_turma', r.id_ativo)}
-      <button class="btn btn-ghost btn-xs" onclick="newManutFromAtivo('${r.id_ativo}','Celular Turma','${r.modelo || ''}')">🔧</button>
+      <button class="btn btn-ghost btn-xs" title="Manutenção" onclick="newManutFromAtivo('${r.id_ativo}','Celular Turma','${r.modelo || ''}')">${SVG_ICONS.manut}</button>
     </div></td></tr>`).join('');
     }
 

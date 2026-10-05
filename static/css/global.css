@@ -288,23 +288,29 @@ input[type="number"],
 }
 
 .sidebar-logout-link {
-  position: absolute;
-  top: 18px;
-  right: 18px;
   color: var(--text3);
   font-size: 12px;
   font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
   transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   text-decoration: none;
+  line-height: 1;
 }
+
 .sidebar-logout-link:hover {
   color: var(--red);
+  border-color: rgba(224, 82, 82, 0.25);
   background: var(--red-subtle);
+}
+
+.sidebar-logout-link svg {
+  flex-shrink: 0;
 }
 
 .logo-icon {
@@ -426,10 +432,23 @@ nav {
 }
 
 .nav-item .icon {
-  font-size: 14px;
   width: 18px;
-  text-align: center;
-  opacity: 0.85;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text3);
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.nav-item:hover .icon,
+.nav-item.active .icon {
+  color: var(--accent);
+}
+
+.nav-item .icon svg {
+  display: block;
 }
 
 .nav-badge {
@@ -444,22 +463,14 @@ nav {
 }
 
 .sidebar-footer {
-  padding: 14px 22px;
+  margin-top: auto;
+  padding: 14px 18px;
   border-top: 1px solid var(--border);
-}
-
-.sidebar-footer a {
-  font-size: 12px;
-  color: var(--text3);
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  transition: color 0.15s ease;
-}
-
-.sidebar-footer a:hover {
-  color: var(--red);
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg2);
 }
 
 /* ── Button System (Precision, High-Tactility) ────────────────────────── */
@@ -699,9 +710,15 @@ tbody tr:hover td {
 .td-id {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
-  color: var(--accent);
+  color: var(--text);
   font-weight: 500;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums lining-nums;
+  transition: color 0.15s ease;
+}
+
+.td-id:hover {
+  color: var(--accent);
 }
 
 .td-bold {
@@ -1166,7 +1183,11 @@ thead th:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  color: var(--accent);
+}
+
+.auth-logo svg {
+  display: block;
 }
 
 html[data-theme="light"] .auth-logo {

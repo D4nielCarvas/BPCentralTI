@@ -201,27 +201,6 @@ body {
 .sidebar-logo {
   padding: 18px 20px 16px;
   border-bottom: 1px solid var(--border);
-  position: relative;
-}
-
-.sidebar-logout-link {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  color: var(--text3);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 3px 8px;
-  border-radius: 4px;
-  transition: all 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  text-decoration: none;
-}
-.sidebar-logout-link:hover {
-  color: var(--red);
-  background: rgba(239, 68, 68, 0.12);
 }
 
 .logo-icon {
@@ -235,6 +214,13 @@ body {
   justify-content: center;
   font-size: 15px;
   margin-bottom: 8px;
+  color: var(--accent);
+}
+
+.logo-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.8;
 }
 
 .sidebar-logo h1 {
@@ -263,6 +249,8 @@ nav {
   font-weight: 600;
   color: var(--text3);
   padding: 12px 18px 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .nav-item {
@@ -292,10 +280,29 @@ nav {
 }
 
 .nav-item .icon {
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 16px;
-  text-align: center;
-  opacity: 0.85;
+  height: 16px;
+  color: var(--text3);
+  transition: color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.nav-item:hover .icon {
+  color: var(--text);
+}
+
+.nav-item.active .icon {
+  color: var(--accent);
+}
+
+.nav-item .icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8;
+  display: block;
 }
 
 .nav-badge {
@@ -310,14 +317,83 @@ nav {
 }
 
 .sidebar-footer {
-  padding: 12px 18px;
+  padding: 12px 16px;
   border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bg2);
 }
 
-.version {
-  font-size: 11px;
+.sidebar-user-block {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sidebar-user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+
+.sidebar-user-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar-user-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-role {
+  font-size: 10px;
   color: var(--text3);
   font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+}
+
+.sidebar-logout-link {
+  color: var(--text3);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 5px;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.sidebar-logout-link:hover {
+  color: var(--red);
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.sidebar-logout-link svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.8;
 }
 
 /* ── Main Layout & Topbar ────────────────────────────────────────────── */
@@ -926,9 +1002,15 @@ tbody tr:hover td {
 .td-id {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
-  color: var(--accent);
+  color: var(--text);
   font-weight: 500;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums lining-nums;
+  transition: color 0.15s ease;
+}
+
+.td-id:hover {
+  color: var(--accent);
 }
 
 .td-bold {
@@ -936,22 +1018,24 @@ tbody tr:hover td {
   font-weight: 500;
 }
 
-/* ── Badges ──────────────────────────────────────────────────────────── */
+/* ── Badges (Calm, Desaturated Telemetry Indicators) ─────────────────── */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: 4px;
   font-size: 11px;
   font-weight: 500;
-  line-height: 1;
+  line-height: 1.2;
   border: 1px solid transparent;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 .badge::before {
   content: '●';
-  font-size: 7px;
+  font-size: 6px;
+  opacity: 0.85;
 }
 
 .badge-ativo, .badge-concluida, .badge-entrada, .badge-finalizado {

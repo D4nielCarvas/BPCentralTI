@@ -31,20 +31,32 @@
 <div class="auth-wrap">
   <div class="auth-card">
     <div class="auth-header">
-      <div class="auth-logo">👤</div>
+      <div class="auth-logo" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
       <h1>Criar Conta</h1>
       <p>BP Central TI · Auto-cadastro</p>
     </div>
     <div class="auth-card-body">
 
       {% for category, message in get_flashed_messages(with_categories=true) %}
-      <div class="flash flash-{{ category }}">
-        {% if category=='danger' %}❌{% elif category=='warning' %}⚠️{% elif category=='info' %}ℹ️{% else %}✅{% endif %}
-        {{ message }}
+      <div class="flash flash-{{ category }}" style="display:flex; align-items:center; gap:8px;">
+        <span class="flash-icon" aria-hidden="true" style="display:inline-flex; align-items:center; flex-shrink:0;">
+          {% if category == 'danger' %}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          {% elif category == 'warning' %}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          {% elif category == 'info' %}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          {% else %}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          {% endif %}
+        </span>
+        <span>{{ message }}</span>
       </div>
       {% endfor %}
 
-      <div class="badge badge-ativo" style="margin-bottom:14px">👁 Perfil: Viewer — acesso à sua fazenda/localidade</div>
+      <div class="badge badge-ativo" style="margin-bottom:14px">Perfil: Viewer — acesso à sua fazenda/localidade</div>
 
       <form method="POST" action="{{ url_for('auth.cadastro') }}" id="form-cadastro">
         <div class="form-group">
@@ -87,7 +99,7 @@
           <span class="hint">Você visualizará apenas dados desta localidade.</span>
         </div>
         <button type="submit" class="btn btn-primary" style="width: 100%;" id="btn-cadastrar">
-          ✅ Criar Conta
+          Criar Conta
         </button>
       </form>
     </div>
@@ -101,7 +113,7 @@
 <script>
   document.getElementById('form-cadastro').addEventListener('submit',function(){
     const btn=document.getElementById('btn-cadastrar');
-    btn.disabled=true;btn.innerHTML='⏳ Criando conta…';
+    btn.disabled=true;btn.innerHTML='Criando conta…';
   });
 </script>
 <script>

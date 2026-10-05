@@ -34,11 +34,12 @@
 
   <!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
   <div id="sidebar">
-    <div class="sidebar-logo" style="position: relative;">
-      <div class="logo-icon">🖥️</div>
+    <div class="sidebar-logo">
+      <div class="logo-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+      </div>
       <h1>BP Central TI</h1>
       <p>v3.0 · Portal Fazenda</p>
-      <a href="{{ url_for('auth.logout') }}" class="sidebar-logout-link" title="Encerrar sessão">⏻ Sair</a>
     </div>
 
     {% if session.usuario_nome %}
@@ -56,30 +57,48 @@
       {% if session.role != 'apoio' %}
       <a href="{{ url_for('fazenda.listar_itens') }}"
         class="nav-item {% if request.endpoint == 'fazenda.listar_itens' %}active{% endif %}">
-        <span class="icon">💻</span> Equipamentos
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+        </span>
+        <span>Equipamentos</span>
       </a>
       <a href="{{ url_for('fazenda.listar_estoque') }}"
         class="nav-item {% if request.endpoint == 'fazenda.listar_estoque' %}active{% endif %}">
-        <span class="icon">📦</span> Estoque
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+        </span>
+        <span>Estoque</span>
       </a>
       {% endif %}
       <a href="{{ url_for('fazenda.listar_manutencoes') }}"
         class="nav-item {% if request.endpoint == 'fazenda.listar_manutencoes' %}active{% endif %}">
-        <span class="icon">🔧</span> Manutenções
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        </span>
+        <span>Manutenções</span>
       </a>
       <a href="{{ url_for('fazenda.listar_pedidos') }}"
         class="nav-item {% if request.endpoint in ['fazenda.listar_pedidos','fazenda.detalhe_pedido'] %}active{% endif %}">
-        <span class="icon">📋</span> Meus Pedidos
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>
+        </span>
+        <span>Meus Pedidos</span>
       </a>
       <a href="{{ url_for('chamados.listar_chamados') }}"
         class="nav-item {% if request.endpoint and 'chamados' in request.endpoint and not request.endpoint.startswith('admin') %}active{% endif %}">
-        <span class="icon">🎫</span> Suporte TI
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+        </span>
+        <span>Suporte TI</span>
       </a>
 
       <div class="nav-label">Ajuda</div>
       <a href="{{ url_for('fazenda.tutoriais') }}"
         class="nav-item {% if request.endpoint == 'fazenda.tutoriais' %}active{% endif %}">
-        <span class="icon">🎓</span> Tutoriais
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+        </span>
+        <span>Tutoriais</span>
       </a>
 
       {% if session.role == 'apoio' %}
@@ -87,7 +106,10 @@
       <a href="{{ url_for('apoio.celulares_inspecao') }}"
         class="nav-item {% if request.endpoint == 'apoio.celulares_inspecao' %}active{% endif %}"
         style="color:var(--cyan)">
-        <span class="icon">📱</span> Celulares de Inspeção
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+        </span>
+        <span>Celulares de Inspeção</span>
       </a>
       {% endif %}
 
@@ -95,30 +117,60 @@
       <div class="nav-label" style="margin-top:8px">Administração</div>
       <a href="{{ url_for('admin_pedidos.listar_pedidos_admin') }}"
         class="nav-item {% if request.endpoint and 'admin_pedidos' in request.endpoint %}active{% endif %}">
-        <span class="icon">📊</span> Todos os Pedidos
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
+        </span>
+        <span>Todos os Pedidos</span>
       </a>
       <a href="{{ url_for('admin_chamados.dashboard_chamados') }}"
         class="nav-item {% if request.endpoint and 'admin_chamados.dashboard' in request.endpoint %}active{% endif %}">
-        <span class="icon">🛠️</span> Painel de Chamados
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        </span>
+        <span>Painel de Chamados</span>
       </a>
       <a href="{{ url_for('admin_chamados.gerenciar_modelos') }}"
         class="nav-item {% if request.endpoint and 'admin_chamados.gerenciar_modelos' in request.endpoint %}active{% endif %}">
-        <span class="icon">📝</span> Modelos de Chamados
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>
+        </span>
+        <span>Modelos de Chamados</span>
       </a>
       <a href="{{ url_for('admin.listar_usuarios') }}"
         class="nav-item {% if request.endpoint and request.endpoint == 'admin.listar_usuarios' %}active{% endif %}">
-        <span class="icon">👥</span> Usuários
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <span>Usuários</span>
       </a>
       <a href="{{ url_for('admin.listar_perfis') }}"
         class="nav-item {% if request.endpoint and 'perfil' in (request.endpoint or '') %}active{% endif %}">
-        <span class="icon">🔐</span> Cargos e Permissões
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </span>
+        <span>Cargos e Permissões</span>
       </a>
       <a href="/" class="nav-item">
-        <span class="icon">🏠</span> Painel Principal
+        <span class="icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </span>
+        <span>Painel Principal</span>
       </a>
       {% endif %}
     </nav>
 
+    <div class="sidebar-footer">
+      <div class="user-info" style="display:flex; flex-direction:column; gap:2px; min-width:0;">
+        <span style="font-size:11px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+          {{ session.usuario_nome or 'Operador' }}
+        </span>
+        <span style="font-size:10px; color:var(--text3); font-family:'IBM Plex Mono',monospace;">{{ session.role or 'fazenda' }}</span>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="sidebar-logout-link" title="Encerrar sessão" aria-label="Sair">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        <span>Sair</span>
+      </a>
+    </div>
 
   </div>
 
@@ -148,8 +200,8 @@
 
       {% if session.usuario_id %}
       <div style="position:relative;">
-        <div class="notif-bell" onclick="document.getElementById('notif-dropdown').classList.toggle('show')">
-          🔔
+        <div class="notif-bell" onclick="document.getElementById('notif-dropdown').classList.toggle('show')" title="Notificações" aria-label="Notificações">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
           {% if qtd_notificacoes > 0 %}
           <div class="notif-badge">{{ qtd_notificacoes }}</div>
           {% endif %}
@@ -194,10 +246,19 @@
       {% if get_flashed_messages() %}
       <div class="flash-container">
         {% for category, message in get_flashed_messages(with_categories=true) %}
-        <div class="flash flash-{{ category }}">
-          {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'warning' %}⚠️{% else
-          %}ℹ️{% endif %}
-          {{ message }}
+        <div class="flash flash-{{ category }}" style="display:flex; align-items:center; gap:8px;">
+          <span class="flash-icon" aria-hidden="true" style="display:inline-flex; align-items:center; flex-shrink:0;">
+            {% if category == 'success' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            {% elif category == 'danger' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            {% elif category == 'warning' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            {% else %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            {% endif %}
+          </span>
+          <span>{{ message }}</span>
         </div>
         {% endfor %}
       </div>
