@@ -6,7 +6,26 @@
   <title>Cadastro — BP Central TI</title>
   <link rel="icon" href="{{ url_for('static', filename='icon.svg') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <!-- Anti-FOUC -->
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem('bp_central_ti_theme');
+        if (theme === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </head>
 <body class="auth-body">
 <div class="auth-wrap">

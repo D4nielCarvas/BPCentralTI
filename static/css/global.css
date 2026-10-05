@@ -39,13 +39,16 @@ html[data-theme="dark"] {
   --text2: #94a3b8;
   --text3: #64748b;
 
-  /* Layout & Elevations */
+  /* Layout & Elevations — Industrial Midnight Slate */
   --sidebar-w: 248px;
   --table-hover: rgba(255, 255, 255, 0.03);
   --nav-active-bg: rgba(59, 130, 246, 0.12);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-dropdown: 0 12px 32px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px var(--border);
-  --shadow-modal: 0 24px 48px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border2);
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.45);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 10px -2px rgba(0, 0, 0, 0.6), 0 2px 4px -2px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.7), 0 4px 8px -2px rgba(0, 0, 0, 0.5);
+  --shadow-dropdown: 0 14px 34px -4px rgba(0, 0, 0, 0.75), 0 4px 12px -2px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--border);
+  --shadow-modal: 0 28px 60px -12px rgba(0, 0, 0, 0.88), 0 12px 24px -6px rgba(0, 0, 0, 0.65), 0 0 0 1px var(--border2);
   --modal-backdrop-bg: rgba(6, 9, 14, 0.82);
 }
 
@@ -80,13 +83,16 @@ html[data-theme="light"] {
   --text2: #334155;
   --text3: #64748b;
 
-  /* Layout & Elevations */
+  /* Layout & Elevations — Branco Peres Neutral & Forest */
   --sidebar-w: 248px;
   --table-hover: rgba(0, 82, 33, 0.04);
   --nav-active-bg: rgba(0, 82, 33, 0.09);
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-dropdown: 0 12px 28px -4px rgba(15, 23, 42, 0.12), 0 0 0 1px var(--border);
-  --shadow-modal: 0 24px 48px -12px rgba(15, 23, 42, 0.22), 0 0 0 1px var(--border2);
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 10px -2px rgba(15, 23, 42, 0.09), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -2px rgba(15, 23, 42, 0.06);
+  --shadow-dropdown: 0 14px 32px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.06), 0 0 0 1px var(--border);
+  --shadow-modal: 0 30px 60px -12px rgba(15, 23, 42, 0.25), 0 12px 24px -6px rgba(15, 23, 42, 0.1), 0 0 0 1px var(--border2);
   --modal-backdrop-bg: rgba(15, 23, 42, 0.55);
 }
 
@@ -156,9 +162,37 @@ p, li, span, label {
   max-width: 82ch; /* Guidance: line lengths under 80-85 characters */
 }
 
+/* ── Universal Tabular Numerals (Precision alignment in dense IT tables) ── */
+table,
+thead th,
+tbody td,
+.stat-val,
+.stat-desc,
+.stat-card,
+.badge,
+.btn,
+time,
+.timeline-time,
+.notif-item-time,
+.hist-td-time,
+.td-id,
+.td-qty,
+.td-mono,
+.td-mono-cyan,
+.td-mono-purple,
+.td-mono-dim,
+input[type="number"],
+.pagination,
+.counter,
+.filter-btn,
+.metric,
+.version {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
 .mono-value, .td-id, code, pre, .stat-val {
   font-family: 'IBM Plex Mono', monospace;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums lining-nums;
   letter-spacing: -0.01em;
 }
 

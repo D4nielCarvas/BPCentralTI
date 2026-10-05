@@ -32,19 +32,23 @@ html[data-theme="dark"] {
   --text2: #94a3b8;
   --text3: #64748b;
 
-  /* Layout & Elevations */
+  /* Layout & Elevations — Industrial Midnight Slate */
   --sidebar-w: 248px;
   --table-hover: rgba(255, 255, 255, 0.03);
   --nav-active-bg: rgba(59, 130, 246, 0.12);
   --filter-active-bg: rgba(59, 130, 246, 0.16);
-  --shadow-dropdown: 0 12px 32px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px var(--border);
-  --shadow-modal: 0 24px 48px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border2);
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.45);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 10px -2px rgba(0, 0, 0, 0.6), 0 2px 4px -2px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.7), 0 4px 8px -2px rgba(0, 0, 0, 0.5);
+  --shadow-dropdown: 0 14px 34px -4px rgba(0, 0, 0, 0.75), 0 4px 12px -2px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--border);
+  --shadow-modal: 0 28px 60px -12px rgba(0, 0, 0, 0.88), 0 12px 24px -6px rgba(0, 0, 0, 0.65), 0 0 0 1px var(--border2);
   --modal-backdrop-bg: rgba(6, 9, 14, 0.82);
 }
 
 html[data-theme="light"] {
   /* 4-6 Core Tokens (Branco Peres Forest Identity & Neutral Studio) */
-  --bg: #f6f8fa;
+  --bg: #f8fafc;
   --bg2: #ffffff;
   --bg3: #f1f5f9;
   --border: #d0d7de;
@@ -67,13 +71,17 @@ html[data-theme="light"] {
   --text2: #334155;
   --text3: #64748b;
 
-  /* Layout & Elevations */
+  /* Layout & Elevations — Branco Peres Neutral & Forest */
   --sidebar-w: 248px;
   --table-hover: rgba(0, 82, 33, 0.04);
   --nav-active-bg: rgba(0, 82, 33, 0.09);
   --filter-active-bg: rgba(0, 82, 33, 0.12);
-  --shadow-dropdown: 0 12px 28px -4px rgba(15, 23, 42, 0.12), 0 0 0 1px var(--border);
-  --shadow-modal: 0 24px 48px -12px rgba(15, 23, 42, 0.22), 0 0 0 1px var(--border2);
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 10px -2px rgba(15, 23, 42, 0.09), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -2px rgba(15, 23, 42, 0.06);
+  --shadow-dropdown: 0 14px 32px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.06), 0 0 0 1px var(--border);
+  --shadow-modal: 0 30px 60px -12px rgba(15, 23, 42, 0.25), 0 12px 24px -6px rgba(15, 23, 42, 0.1), 0 0 0 1px var(--border2);
   --modal-backdrop-bg: rgba(15, 23, 42, 0.55);
 }
 
@@ -505,6 +513,222 @@ nav {
   padding: 22px 24px;
 }
 
+/* ── JS-generated Table Utilities (tabular-nums + IBM Plex Mono) ─────── */
+/* These classes are used in template literals inside index.html JS       */
+.td-mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text2);
+}
+
+.td-mono-cyan {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--cyan);
+}
+
+.td-mono-purple {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--purple);
+}
+
+.td-mono-dim {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text3);
+}
+
+/* Quantity column in movement history (+N / −N) */
+.td-qty {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* Inline history table cells (modal tables generated via JS) */
+.hist-th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+
+.hist-td {
+  padding: 9px 12px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+  vertical-align: middle;
+}
+
+.hist-td-time {
+  padding: 9px 12px;
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+}
+
+.hist-tr:last-child .hist-td,
+.hist-tr:last-child .hist-td-time {
+  border-bottom: none;
+}
+
+/* ── QR Modal (self-contained themed component) ──────────────────────── */
+.modal-qr-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--modal-backdrop-bg);
+  backdrop-filter: blur(3px);
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-qr-box {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 24px;
+  width: min(400px, 95vw);
+  box-shadow: var(--shadow-modal);
+  position: relative;
+}
+
+.modal-qr-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  margin-bottom: 4px;
+}
+
+.modal-qr-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.modal-qr-id {
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.modal-qr-close {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.modal-qr-close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.modal-qr-canvas-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.modal-qr-canvas-inner {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+}
+
+.modal-qr-url {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--text3);
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.modal-qr-action-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.15s ease, opacity 0.15s ease;
+  margin-bottom: 6px;
+}
+
+.modal-qr-action-link:hover {
+  background: var(--accent-hover);
+}
+
+.modal-qr-print-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  width: 100%;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.modal-qr-print-btn:hover {
+  background: var(--border);
+  border-color: var(--border2);
+}
+
+.modal-qr-note {
+  font-size: 10px;
+  color: var(--text3);
+  text-align: center;
+  margin-top: 10px;
+}
+
+
 /* ── Stat Cards (Anti-AI-Slop: Precision Telemetry Indicators) ────────── */
 .stat-grid {
   display: grid;
@@ -520,7 +744,7 @@ nav {
   padding: 16px 18px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Telemetry indicator bar (hairline, disciplined, no neon slop) */
@@ -570,7 +794,7 @@ nav {
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .table-header {
@@ -635,6 +859,34 @@ nav {
   border-color: var(--accent);
   color: var(--text);
   font-weight: 500;
+}
+
+/* ── Universal Tabular Numerals (Precision alignment in dense IT tables) ── */
+table,
+thead th,
+tbody td,
+.stat-val,
+.stat-desc,
+.stat-card,
+.badge,
+.btn,
+time,
+.timeline-time,
+.notif-item-time,
+.hist-td-time,
+.td-id,
+.td-qty,
+.td-mono,
+.td-mono-cyan,
+.td-mono-purple,
+.td-mono-dim,
+input[type="number"],
+.pagination,
+.counter,
+.filter-btn,
+.metric,
+.version {
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 table {

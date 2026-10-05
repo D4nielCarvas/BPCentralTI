@@ -25,6 +25,9 @@
       }
     })();
   </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
   <!-- qrcode.js via CDN (geração de QR Code client-side) -->
@@ -1213,12 +1216,12 @@
       if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular de inspeção cadastrado', '🔍'); return; }
       tb.innerHTML = rows.map(r => `<tr>
     <td class="td-id">${r.id_ativo}</td>
-    <td><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--purple)">${r.id_sistema || '—'}</span></td>
+    <td><span class="td-mono-purple">${r.id_sistema || '—'}</span></td>
     <td>${r.fazenda || '—'}</td>
     <td class="td-bold">${r.responsavel || '—'}</td>
     <td>${r.modelo || '—'}</td>
-    <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--cyan)">${r.usuario_mip || '—'}</td>
-    <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">${r.senha_mip || '—'}</td>
+    <td class="td-mono-cyan">${r.usuario_mip || '—'}</td>
+    <td class="td-mono-dim">${r.senha_mip || '—'}</td>
     <td>${statusBadge(r.status)}</td><td>${pdfLink(r.termo_pdf)}</td>
     <td><div class="tbl-actions">
       <button class="btn btn-ghost btn-xs" onclick="editItem('celulares_inspecao','${r.id_ativo}')">✏️</button>
@@ -2322,17 +2325,17 @@
     async function verHistoricoEstoque(eid, item) {
       const rows = await api(`/api/estoque/${eid}/movimentacoes`);
       const html = rows.length ? `<table style="width:100%"><thead><tr>
-    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Tipo</th>
-    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Qtd</th>
-    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Responsável</th>
-    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Motivo</th>
-    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Data</th>
-    </tr></thead><tbody>${rows.map(r => `<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:8px"><span class="badge badge-${r.tipo === 'entrada' ? 'entrada' : 'saida'}">${r.tipo}</span></td>
-      <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-weight:700">${r.tipo === 'entrada' ? '+' : '−'}${r.quantidade}</td>
-      <td style="padding:8px">${r.responsavel || '—'}</td>
-      <td style="padding:8px">${r.motivo || '—'}</td>
-      <td style="padding:8px;font-size:11px;color:var(--text3)">${formatarDataHora(r.data_hora)}</td>
+    <th class="hist-th">Tipo</th>
+    <th class="hist-th">Qtd</th>
+    <th class="hist-th">Responsável</th>
+    <th class="hist-th">Motivo</th>
+    <th class="hist-th">Data</th>
+    </tr></thead><tbody>${rows.map(r => `<tr class="hist-tr">
+      <td class="hist-td"><span class="badge badge-${r.tipo === 'entrada' ? 'entrada' : 'saida'}">${r.tipo}</span></td>
+      <td class="td-qty">${r.tipo === 'entrada' ? '+' : '−'}${r.quantidade}</td>
+      <td class="hist-td">${r.responsavel || '—'}</td>
+      <td class="hist-td">${r.motivo || '—'}</td>
+      <td class="hist-td-time">${formatarDataHora(r.data_hora)}</td>
     </tr>`).join('')}</tbody></table>`
         : '<div class="empty"><div class="empty-icon">📋</div><p>Sem movimentações</p></div>';
       openModal(`📋 Histórico — ${item}`, html, {}, false);
@@ -2341,19 +2344,19 @@
     async function verHistoricoToner(tid, modelo) {
       const rows = await api(`/api/toners/${tid}/trocas`);
       const html = rows.length ? `<table style="width:100%"><thead><tr>
-    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Tipo</th>
-    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Qtd</th>
-    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Responsável</th>
-    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Impressora</th>
-    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Data</th>
-    <th style="text-align:left;padding:8px;font-size:11px;color:var(--text3)">Obs.</th>
-    </tr></thead><tbody>${rows.map(r => `<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:8px"><span class="badge badge-analise">${r.tipo_suprimento || 'Toner'}</span></td>
-      <td style="padding:8px;font-family:'IBM Plex Mono',monospace;font-weight:700">${r.quantidade}</td>
-      <td style="padding:8px">${r.responsavel || '—'}</td>
-      <td style="padding:8px">${r.impressora_id_ativo || '—'}</td>
-      <td style="padding:8px">${r.data_troca || '—'}</td>
-      <td style="padding:8px">${r.observacoes || '—'}</td>
+    <th class="hist-th">Tipo</th>
+    <th class="hist-th">Qtd</th>
+    <th class="hist-th">Responsável</th>
+    <th class="hist-th">Impressora</th>
+    <th class="hist-th">Data</th>
+    <th class="hist-th">Obs.</th>
+    </tr></thead><tbody>${rows.map(r => `<tr class="hist-tr">
+      <td class="hist-td"><span class="badge badge-analise">${r.tipo_suprimento || 'Toner'}</span></td>
+      <td class="td-qty">${r.quantidade}</td>
+      <td class="hist-td">${r.responsavel || '—'}</td>
+      <td class="hist-td">${r.impressora_id_ativo || '—'}</td>
+      <td class="hist-td-time">${r.data_troca || '—'}</td>
+      <td class="hist-td">${r.observacoes || '—'}</td>
     </tr>`).join('')}</tbody></table>`
         : '<div class="empty"><div class="empty-icon">📋</div><p>Sem trocas registradas</p></div>';
       openModal(`📋 Histórico Trocas — ${modelo}`, html, {}, false);
@@ -2778,49 +2781,44 @@ document.querySelectorAll('button[onclick^="exportar("]').forEach(btn => {
 <!-- ════════════════════════════════════════════════════════════════
      MODAL DE QR CODE — Geração e Impressão de Etiqueta (SLP-650)
 ═════════════════════════════════════════════════════════════════ -->
-<div id="modal-qr" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
-  <div style="background:var(--card-bg,#1a1f2e);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:28px;width:min(420px,95vw);box-shadow:0 24px 64px rgba(0,0,0,0.5);position:relative;">
+<div id="modal-qr" class="modal-qr-backdrop">
+  <div class="modal-qr-box">
 
     <!-- Cabeçalho -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
       <div>
-        <div style="font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3,#6b7280);margin-bottom:4px;">◼ QR Code</div>
-        <div id="qr-modal-titulo" style="font-size:18px;font-weight:800;color:var(--text,#e5e7eb);"></div>
-        <div id="qr-modal-id" style="font-size:11px;font-family:monospace;color:var(--text3,#6b7280);margin-top:2px;"></div>
+        <div class="modal-qr-label">◼ QR Code</div>
+        <div id="qr-modal-titulo" class="modal-qr-title"></div>
+        <div id="qr-modal-id" class="modal-qr-id"></div>
       </div>
-      <button onclick="fecharModalQR()" style="background:rgba(255,255,255,0.06);border:none;color:var(--text3,#6b7280);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">✕</button>
+      <button onclick="fecharModalQR()" class="modal-qr-close">✕</button>
     </div>
 
     <!-- QR Code renderizado -->
-    <div style="display:flex;justify-content:center;margin-bottom:20px;">
-      <div id="qr-canvas-container"
-           style="background:#fff;border-radius:12px;padding:12px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+    <div class="modal-qr-canvas-wrap">
+      <div id="qr-canvas-container" class="modal-qr-canvas-inner">
         <div id="qr-canvas" style="width:180px;height:180px;"></div>
       </div>
     </div>
 
     <!-- URL do QR -->
-    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;margin-bottom:16px;font-size:11px;font-family:monospace;color:#6b7280;word-break:break-all;" id="qr-url-display"></div>
+    <div class="modal-qr-url" id="qr-url-display"></div>
 
     <!-- Botões de ação -->
     <div style="display:flex;flex-direction:column;gap:8px;">
       <!-- Abrir página de ação -->
-      <a id="qr-action-link" href="#" target="_blank"
-         style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:700;transition:opacity .2s;"
-         onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+      <a id="qr-action-link" href="#" target="_blank" class="modal-qr-action-link">
         🔗 Abrir Página de Ação
       </a>
 
       <!-- Imprimir etiqueta SLP-650 via Popup isolado -->
-      <button onclick="imprimirEtiquetaQR()"
-              style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:var(--text,#e5e7eb);border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;transition:background .2s;"
-              onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">
+      <button onclick="imprimirEtiquetaQR()" class="modal-qr-print-btn">
         🖨️ Imprimir Etiqueta (Smart Label)
       </button>
     </div>
 
     <!-- Nota SLP-650 -->
-    <p style="font-size:10px;color:#4b5563;text-align:center;margin-top:10px;">
+    <p class="modal-qr-note">
       Etiqueta formatada para Smart Label Printer 650 · 88,9mm × 28,6mm
     </p>
   </div>
