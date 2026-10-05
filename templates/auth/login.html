@@ -27,10 +27,21 @@
 <body class="auth-body">
 <div class="auth-wrap">
   <div class="auth-card">
-    <div class="auth-header">
+    <div class="auth-header" style="position: relative;">
+      <button 
+        type="button" 
+        id="theme-toggle-btn" 
+        class="theme-toggle-btn" 
+        aria-label="Alternar Tema Claro/Escuro" 
+        title="Alternar Tema Claro/Escuro (Alt+T)"
+        onclick="window.ThemeManager && window.ThemeManager.toggleTheme()"
+        style="position: absolute; top: 16px; right: 16px;"
+      >
+        <span id="theme-icon" class="theme-toggle-icon">🌙</span>
+      </button>
       <div class="auth-logo">🖥️</div>
       <h1>BP Central TI</h1>
-      <p>v3.0 · Acesso ao Sistema</p>
+      <p>v3.0 · Gestão de Ativos e Operações</p>
     </div>
     <div class="auth-card-body">
       {% for category, message in get_flashed_messages(with_categories=true) %}
@@ -41,26 +52,26 @@
       {% endfor %}
       <form method="POST" action="{{ url_for('auth.login') }}" id="form-login">
         <div class="form-group">
-          <label for="email">E-mail ou Usuário</label>
+          <label for="email">E-mail corporativo ou usuário</label>
           <input type="text" id="email" name="email"
-                 placeholder="seuemail@empresa.com ou usuario"
+                 placeholder="nome.sobrenome@brancoperes.com.br"
                  value="{{ request.form.get('email','') }}"
                  autocomplete="username" required autofocus>
         </div>
         <div class="form-group">
-          <label for="senha">Senha</label>
+          <label for="senha">Senha de acesso</label>
           <input type="password" id="senha" name="senha"
-                 placeholder="••••••••" autocomplete="current-password" required>
+                 placeholder="Digite sua senha" autocomplete="current-password" required>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%;" id="btn-entrar">🔑 Entrar</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 6px;" id="btn-entrar">Acessar Central de TI</button>
       </form>
     </div>
     <div class="auth-footer">
       <a href="{{ url_for('auth.cadastro') }}" class="link-footer">
-        Não tem conta? <span>Cadastre-se</span>
+        Primeiro acesso? <span>Criar solicitação</span>
       </a>
       <a href="{{ url_for('auth.recuperar_senha') }}" class="link-footer">
-        Esqueci minha senha
+        Redefinir credencial de acesso
       </a>
     </div>
   </div>
