@@ -121,7 +121,7 @@
             {% for notif in notificacoes_lista %}
             <a href="{{ url_for('admin_chamados.ler_notificacao', notif_id=notif.id) }}" class="notif-item">
               <div class="notif-item-title">{{ notif.mensagem }}</div>
-              <div style="font-size:10px; color:var(--text3);">{{ notif.criado_em | fdt }}</div>
+              <div class="notif-item-time">{{ notif.criado_em | fdt }}</div>
             </a>
             {% endfor %}
             {% else %}

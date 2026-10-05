@@ -164,7 +164,7 @@
             {% for notif in notificacoes_lista %}
             <a href="{{ url_for('admin_chamados.ler_notificacao', notif_id=notif.id) }}" class="notif-item">
               <div class="notif-item-title">{{ notif.mensagem }}</div>
-              <div style="font-size:10px; color:var(--text3);">{{ notif.criado_em | fdt }}</div>
+              <div class="notif-item-time">{{ notif.criado_em | fdt }}</div>
             </a>
             {% endfor %}
             {% else %}
@@ -334,17 +334,7 @@
   {% endif %}
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    th {
-      cursor: pointer;
-      user-select: none;
-      transition: background 0.2s;
-    }
 
-    th:hover {
-      background: rgba(255, 255, 255, 0.05);
-    }
-  </style>
   <script>
     // Ordenação de tabelas genérica
     document.addEventListener('click', function (e) {

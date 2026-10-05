@@ -1128,3 +1128,71 @@ tbody tr:hover td {
 .notif-dropdown.show {
   display: flex;
 }
+
+.notif-header {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notif-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.notif-item {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text2);
+  display: block;
+  text-decoration: none;
+  transition: background 0.15s;
+  line-height: 1.4;
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+.notif-item:hover {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+.notif-item-title {
+  color: var(--text);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.notif-item-time {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  margin-top: 1px;
+}
+
+.notif-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text3);
+  font-size: 12px;
+}
+
+/* ── Sortable Table Headers ───────────────────────────────────────────── */
+thead th {
+  cursor: pointer;
+  user-select: none;
+}
+
+thead th:hover {
+  background: var(--bg3);
+  color: var(--text2);
+}

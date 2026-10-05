@@ -1016,6 +1016,25 @@ tbody tr:hover td {
   font-size: 12px;
 }
 
+.notif-item-time {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+/* ── Sortable Tables ─────────────────────────────────────────────────── */
+thead th {
+  cursor: pointer;
+  user-select: none;
+}
+
+thead th:hover {
+  background: var(--bg3);
+  color: var(--text2);
+}
+
 /* ── Timeline (Rastreabilidade Operacional) ────────────────────────────── */
 .timeline {
   position: relative;
