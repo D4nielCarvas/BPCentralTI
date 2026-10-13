@@ -1,75 +1,55 @@
 # BP Central TI — v3.0
 
-Sistema web interno da Branco Peres Agronegócios para centralizar inventário de ativos, pedidos, chamados e operações de TI entre unidades e fazendas. Desenvolvido com Flask e PostgreSQL no Supabase.
+Sistema web interno da Branco Peres Agronegocios para centralizar inventario de ativos, pedidos, chamados e operacoes de TI entre unidades e fazendas. Backend Flask, interface Jinja2 e PostgreSQL no Supabase.
 
-## Sumário
+## Funcionalidades
 
-- [Visão geral](#visão-geral)
-- [Arquitetura e estrutura](#arquitetura-e-estrutura)
-- [Execução local](#execução-local)
-- [Variáveis de ambiente](#variáveis-de-ambiente)
-- [Banco de dados](#banco-de-dados)
-- [Deploy no Render](#deploy-no-render)
-- [Nomenclatura e coleta de hardware](#nomenclatura-e-coleta-de-hardware)
-- [APIs](#apis)
-- [Testes](#testes)
-- [Empacotamento para Windows](#empacotamento-para-windows)
-- [Segurança e manutenção](#segurança-e-manutenção)
-- [Contribuição](#contribuição)
+Inventario de computadores, celulares, impressoras, dispositivos de protecao eletrica e Starlink; estoque e toners; pedidos, chamados, manutencoes, remessas, transferencias, descartes, historico, dashboard, chips, tutoriais e QR codes. Os contratos e permissoes de cada funcionalidade devem ser consultados nos blueprints e testes.
 
-## Visão geral
+Endereco informado pelo projeto: https://inventario-ti-v3.onrender.com. Disponibilidade e configuracao dependem do ambiente de deploy.
 
-O projeto reúne inventário de computadores, celulares, impressoras, dispositivos de proteção elétrica e Starlink; estoque e toners; pedidos; manutenções; transferências; descartes; histórico e dashboard. O backend também registra módulos de autenticação, operação por fazenda, chamados, remessas, chips, tutoriais e QR codes.
-
-Endereço informado pelo projeto: https://inventario-ti-v3.onrender.com. A disponibilidade do serviço e a configuração do ambiente devem ser verificadas pelo responsável pelo deploy.
-
-## Arquitetura e estrutura
-
-O navegador acessa páginas Jinja2 e APIs Flask. `app.py` configura a aplicação, inicializa o pool PostgreSQL e registra os blueprints. Os utilitários de banco, autenticação, criptografia e geração de IDs ficam em `utils/`, não na raiz.
+## Estrutura
 
 ```text
 BPCentralTI/
-├── app.py                  # Inicialização Flask e registro dos blueprints
-├── blueprints/             # Rotas web e APIs por funcionalidade
-├── handlers/
+├── app.py                     # Inicializacao Flask e registro de blueprints
+├── blueprints/                # Rotas web e APIs
 ├── services/
-├── utils/                  # Banco, autenticação, criptografia e IDs
-│   ├── db_layer.py
-│   ├── auth_utils.py
-│   ├── crypto_utils.py
-│   └── id_generator.py
-├── templates/              # Interface Jinja2
-├── static/                 # Recursos estáticos
-├── migrations/             # Evolução do schema PostgreSQL
-├── scripts/                # Coleta, build, seeds e manutenção
+├── handlers/
+├── utils/                     # Banco, autenticacao, criptografia e IDs
+├── templates/                 # Interface Jinja2
+├── static/                    # Recursos estaticos
+├── migrations/                # SQL historico e catalogo completo
+├── scripts/
 │   ├── COLETAR_PC.bat
-│   ├── build_exe.py
-│   └── maintenance/
-├── tests/
-│   ├── conftest.py
-│   ├── test_inventario.py
-│   └── scratch/            # Diagnósticos excluídos da descoberta padrão
-├── .env.example
-├── .gitignore
-├── .gitattributes
-├── requirements.txt
-├── pytest.ini
+│   ├── build_exe.py            # Usa InventarioTI.spec
+│   └── maintenance/           # Utilitarios e instrucoes
+├── tests/                     # Suite da aplicacao
+├── checks/                    # Testes isolados de manutencao
+├── examples/                  # Inventario ficticio
+├── docs/                      # Estado das correcoes
+├── .github/workflows/         # Validacao sintatica, utilitarios e build
+├── requirements.txt           # Execucao
+├── requirements-dev.txt       # Desenvolvimento e testes
+├── requirements-build.txt     # Empacotamento
+├── InventarioTI.spec           # Fonte unica do build
 ├── render.yaml
 ├── build.sh
 ├── Procfile
-├── InventarioTI.spec
-├── patch_idor.py
-├── strip_css.py
+├── pytest.ini
+├── .env.example
+├── .gitignore
+├── .gitattributes
+├── patch_idor.py               # Wrapper legado: diagnostico somente leitura
+├── strip_css.py                # Wrapper legado: simulacao por padrao
 └── README.md
 ```
 
-Na execução, `app.py` cria `database/termos/` para arquivos locais de termos; esse diretório não precisa existir no clone. A estrutura acima é resumida, não uma listagem de todos os arquivos.
+A arvore e resumida. app.py cria database/termos/ em execucao; o diretorio nao precisa existir no clone.
 
-Stack: Python, Flask, Jinja2, psycopg2, python-dotenv, cryptography, Flask-Limiter, python-magic e fpdf2. O deploy usa Gunicorn; o empacotamento opcional usa PyInstaller. As dependências estão em `requirements.txt`.
+## Instalacao local
 
-## Execução local
-
-Pré-requisitos: Python 3.10+ (o Blueprint do Render declara 3.11.0), acesso a um banco PostgreSQL preparado e bibliotecas nativas necessárias ao `python-magic` no sistema operacional. A instalação das dependências e a execução não foram validadas em todos os sistemas.
+Use Python 3.10+; o deploy versionado declara Python 3.11.0. Acesso ao banco preparado e dependencias nativas podem ser necessarios.
 
 ```bash
 git clone https://github.com/D4nielCarvas/BPCentralTI.git
@@ -77,27 +57,28 @@ cd BPCentralTI
 python -m venv .venv
 ```
 
-Ative o ambiente conforme o terminal:
+Windows PowerShell:
 
 ```powershell
-# Windows PowerShell
 .\.venv\Scripts\Activate.ps1
 Copy-Item .env.example .env
 ```
 
+Windows CMD:
+
 ```bat
-:: Windows CMD
 .venv\Scripts\activate.bat
 copy .env.example .env
 ```
 
+Linux/macOS:
+
 ```bash
-# Linux/macOS
 source .venv/bin/activate
 cp .env.example .env
 ```
 
-Instale as dependências, preencha o `.env` e prepare o banco antes de iniciar:
+Preencha o .env e prepare o schema antes de iniciar:
 
 ```bash
 python -m pip install --upgrade pip
@@ -105,128 +86,94 @@ python -m pip install -r requirements.txt
 python app.py
 ```
 
-A aplicação abre o navegador em `http://localhost:5000`. O servidor local está configurado com `debug=False` e bind `0.0.0.0`, podendo aceitar conexões de outras máquinas conforme a rede e o firewall. Não exponha essa execução local diretamente à internet.
+A aplicacao abre http://localhost:5000 e usa bind 0.0.0.0, podendo aceitar conexoes da rede conforme o firewall. Nao exponha o servidor local diretamente a internet. Windows usa python-magic-bin; demais plataformas usam python-magic e precisam de libmagic instalada no sistema.
 
-## Variáveis de ambiente
+## Variaveis de ambiente
 
-Copie `.env.example`; não renomeie ou remova o modelo versionado.
-
-| Variável | Uso |
+| Variavel | Uso |
 |---|---|
-| `SUPABASE_DATABASE_URL` | Conexão PostgreSQL; exigida na inicialização |
-| `SECRET_KEY` | Assinatura das sessões Flask; exigida na inicialização |
-| `FERNET_KEY` | Chave para criptografia de campos sensíveis, conforme o modelo de ambiente |
-| `SUPABASE_URL` | URL do projeto para funcionalidades de Storage |
-| `SUPABASE_KEY` | Credencial de acesso ao Supabase Storage; permissões devem corresponder às políticas configuradas |
-| `FLASK_ENV` | Use `production` no ambiente de produção; o tratamento de erros consulta esta variável |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | Configuração de e-mail para recuperação de senha |
-
-Gere as chaves e coloque os valores no `.env` ou no painel do provedor:
+| SUPABASE_DATABASE_URL | Conexao PostgreSQL; obrigatoria na inicializacao |
+| SECRET_KEY | Assinatura das sessoes; obrigatoria na inicializacao |
+| FERNET_KEY | Criptografia de campos sensiveis; preserve a chave para recuperar os dados |
+| SUPABASE_URL, SUPABASE_KEY | Funcionalidades de Storage; configure permissoes adequadas |
+| FLASK_ENV | production fora do desenvolvimento; o tratamento de erros consulta este valor |
+| SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD | Recuperacao de senha por e-mail |
 
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
-Não publique credenciais. Guarde a `FERNET_KEY` com segurança: perder a chave compromete a recuperação dos campos criptografados. Uma chave privilegiada de serviço do Supabase não deve ser enviada ao navegador nem distribuída aos usuários finais.
+Copie o modelo .env.example sem remove-lo do repositorio. Nunca publique credenciais ou entregue chaves privilegiadas do Supabase ao navegador ou a usuarios finais.
 
 ## Banco de dados
 
-Os scripts SQL estão em `migrations/`. Não há `supabase_migration.sql` na raiz na estrutura revisada.
+O catalogo completo e a sequencia documental estao em migrations/README.md. Nao existe supabase_migration.sql na raiz. Os nomes historicos, incluindo prefixos 010 e 014 duplicados, foram preservados; identifique cada migration pelo nome completo. Para scripts novos, use timestamp UTC unico conforme o catalogo.
 
-A sequência inicial é `v1_initial.sql`, `v2_add_campos.sql`, `v3_starlink.sql` e `v4_pedidos.sql`. Depois existem migrations numeradas de `005` a `024`, incluindo alterações de usuários, chamados, notificações, permissões, arquivos, tutoriais, chips e equipamentos.
+Nao reaplique toda a pasta em uma base existente. Faca backup, registre as migrations ja aplicadas e valide as pendentes em PostgreSQL isolado. A cadeia completa ainda nao foi executada nesta revisao. Nenhuma alteracao foi aplicada ao banco de producao.
 
-Atenção: existem dois arquivos com prefixo `010` e dois com prefixo `014`; `migrations/README.md` documenta apenas as quatro versões iniciais. Antes de preparar uma base nova, revise as dependências e defina a ordem dos arquivos com prefixos iguais. Não trate uma ordenação alfabética como garantia de execução correta.
+## Deploy
 
-Use o SQL Editor do Supabase para aplicar scripts revisados em uma base de desenvolvimento. Para um banco existente, identifique quais mudanças já foram aplicadas e não execute novamente toda a pasta indiscriminadamente. Faça backup antes de alterações em produção. Esta revisão documental não valida a execução integral das migrations.
+render.yaml declara build ./build.sh e inicializacao:
 
-## Deploy no Render
+```bash
+gunicorn app:app --workers 1 --threads 2 --bind 0.0.0.0:$PORT --timeout 120
+```
 
-A configuração versionada em `render.yaml` declara:
+Configure as variaveis no painel do provedor, incluindo Storage e SMTP quando utilizados. Deploy automatico depende do painel do Render. O rate limiter usa memoria; revise o armazenamento antes de aumentar processos. Confirme a persistencia dos arquivos locais de termos e a estrategia de Storage antes de depender de uploads em producao.
 
-- Build: `./build.sh`.
-- Inicialização: `gunicorn app:app --workers 1 --threads 2 --bind 0.0.0.0:$PORT --timeout 120`.
-- Python: `3.11.0`.
-- `SECRET_KEY`, `SUPABASE_DATABASE_URL` e `FERNET_KEY`: valores configurados manualmente.
-- `FLASK_ENV=production`.
+## IDs e coleta
 
-Configure também as variáveis de Storage e SMTP quando essas funcionalidades forem usadas. O deploy automático e a branch acompanhada dependem das configurações efetivas no painel do Render.
-
-O rate limiter de `app.py` usa armazenamento em memória. Revise essa configuração antes de ampliar o número de processos. O aplicativo também cria um diretório local para termos: confirme onde cada tipo de arquivo é armazenado e a estratégia de persistência antes de depender de uploads em produção.
-
-## Nomenclatura e coleta de hardware
-
-A geração de IDs fica em `utils/id_generator.py`. O padrão de inventário é:
+A geracao de IDs fica em utils/id_generator.py. Use as siglas definidas no modulo, maiusculas e sem acentos:
 
 ```text
 TIPO-LOCAL-SETOR-ID
 NT-TNG-FT-01
 IMP-CEN-ADM-02
-CL-SL2-COO-04
-DK-SFR-ALP-01
 ```
 
-Use as siglas de tipo, local e setor definidas no módulo (`SIGLAS_TIPO`, `SIGLAS_LOCAL` e `SIGLAS_SETOR`), mantendo letras maiúsculas e sem acentos. Valide as restrições de hostname no ambiente antes de aplicar o identificador ao sistema operacional.
+Valide as restricoes de hostname antes de aplicar o ID ao sistema operacional. O coletor Windows fica em scripts/COLETAR_PC.bat; o fluxo descrito pelo projeto e importar o TXT em Computadores → Importar Coleta. O exemplo de demonstracao esta em examples/inventario_ficticio.txt.
 
-O coletor Windows fica em `scripts/COLETAR_PC.bat`. O fluxo descrito pelo projeto é executar o coletor na máquina, selecionar o TXT em Computadores → Importar Coleta e informar o identificador do ativo. Revise o conteúdo dos relatórios antes de compartilhar: dados de hardware e rede podem identificar equipamentos internos.
+Os tres relatorios reais tiveram o conteudo substituido por avisos. Seus caminhos legados ainda aguardam exclusao; dados antigos continuam no historico Git. A limpeza do historico nao foi realizada. Novas coletas sao ignoradas pelo Git; nao force sua inclusao.
 
-## APIs
+## Testes e validacao
 
-As rotas são distribuídas pelos blueprints registrados em `app.py`, incluindo ativos, estoque, pedidos, manutenções, chips, dashboard, descartes, transferências, histórico, importação/exportação, busca, tutoriais e QR codes.
-
-Os decorators e os contratos de cada blueprint são a referência para métodos HTTP, caminhos, payloads e permissões. Não presuma que todos os módulos implementam o mesmo CRUD. Para uma documentação completa da API, catalogue as rotas e seus contratos em documento próprio ou especificação OpenAPI, validando-os contra o código e os testes.
-
-## Testes
-
-O `pytest.ini` descobre testes em `tests/` e exclui `tests/scratch/`. O pytest não está listado em `requirements.txt`; instale-o no ambiente de desenvolvimento:
+Suite da aplicacao:
 
 ```bash
-python -m pip install pytest
+python -m pip install -r requirements-dev.txt
 python -m pytest
 ```
 
-Para executar somente os testes de inventário:
+pytest.ini descobre tests/ e exclui tests/scratch/. Revise conftest.py e as dependencias externas; nunca use a base de producao para testes. A suite completa ainda nao foi executada nesta revisao.
+
+Testes isolados dos utilitarios, sem Flask ou banco:
 
 ```bash
-python -m pytest tests/test_inventario.py -v
+python -m unittest discover -s checks -v
 ```
 
-Revise `tests/conftest.py` e os testes selecionados para identificar mocks, credenciais e dependências externas antes de executá-los. Use uma base de testes separada de produção quando houver acesso ao banco. Esta atualização do README não representa execução ou aprovação da suíte.
+Cinco testes da logica dos novos utilitarios passaram no ambiente de revisao. Isso nao valida a aplicacao inteira. O workflow Repository checks executa validacao sintatica, esses testes e empacotamento Windows; consulte seu resultado antes de declarar o build aprovado. O workflow nao executa migrations, suite Flask completa nem teste funcional do executavel.
 
-## Empacotamento para Windows
-
-Execute a partir da raiz:
+## Build Windows
 
 ```bash
-python -m pip install pyinstaller==6.11.1
+python -m pip install -r requirements-build.txt
 python scripts/build_exe.py
 ```
 
-O caminho esperado pelo script é `dist/InventarioTI/InventarioTI.exe`, em distribuição `onedir`.
+Saida esperada: dist/InventarioTI/InventarioTI.exe, em modo onedir. O script utiliza InventarioTI.spec, que inclui templates e static, excluindo uploads e arquivos locais de ambiente. Modulos internos sao descobertos pelos arquivos Python das pastas do projeto.
 
-Aviso: o script atual copia automaticamente o `.env` da raiz para a pasta de distribuição quando ele existe. Embora isso não seja o mesmo que embutir o arquivo no binário, a distribuição resultante pode conter credenciais reais. Não distribua esse pacote sem revisar e remover segredos. Para usuários finais, priorize o acesso web.
+O .env nao e copiado nem empacotado. O script bloqueia a distribuicao se encontrar arquivos de ambiente na saida. Configure credenciais no destino e nao entregue um pacote com segredos a usuarios finais. O empacotamento em CI nao substitui um teste em maquina limpa nem verifica o acesso ao banco.
 
-O script também mantém hidden imports antigos (`id_generator` e `db_layer`, sem o prefixo `utils`) e declara explicitamente apenas `templates` como dados. Revise o empacotamento dos módulos e dos recursos estáticos e faça um teste do pacote em máquina limpa antes de considerar o executável pronto. `InventarioTI.spec` também está versionado; alinhe os dois caminhos de build antes de padronizar a distribuição.
+## Manutencao e seguranca
 
-## Segurança e manutenção
+Consulte scripts/maintenance/README.md. A antiga reescrita de autorizacao por regex foi aposentada: audit_idor.py apenas lista funcoes para revisao e nao certifica protecao contra IDOR. strip_css.py simula por padrao; --apply exige verificacoes e grava backup. Wrappers legados na raiz preservam compatibilidade, sem efeitos ao importar. Os demais scripts antigos nao foram auditados integralmente.
 
-O código de inicialização inclui exigência de `SECRET_KEY`, pool de conexões, utilitários de autenticação e criptografia, rate limiting e tratamento de erros que oculta o traceback fora de desenvolvimento. Isso não substitui uma auditoria de autorização, isolamento por localidade, uploads e gestão de segredos.
+O codigo inclui autenticacao, criptografia, pool de conexoes, rate limiting e tratamento de erros. Isso nao equivale a auditoria completa de autorizacao, isolamento por localidade ou uploads. O estado das correcoes e limitacoes esta em docs/correcoes-repositorio.md.
 
-Pendências identificadas na revisão estática:
+## Contribuicao
 
-- Atualizar o catálogo e padronizar a identificação das migrations sem alterar o histórico aplicado de forma indiscriminada.
-- Revisar os TXT de inventário versionados em `scripts/`; substituir exemplos reais por dados fictícios quando necessário.
-- Avaliar mover scripts pontuais da raiz, como `patch_idor.py` e `strip_css.py`, para `scripts/maintenance/`, ajustando os caminhos envolvidos.
-- Separar dependências de desenvolvimento e build das dependências de execução.
-- Revisar o build Windows, principalmente a cópia automática de credenciais e a inclusão de recursos.
-- A raiz revisada não contém `.github/`, `LICENSE`, `CONTRIBUTING.md` ou `SECURITY.md`. Avaliar CI e documentação de contribuição e segurança; a licença deve ser definida pelo titular do projeto, não presumida.
+Crie uma branch, preserve a separacao entre rotas e servicos, documente variaveis e migrations, execute os testes aplicaveis em ambiente isolado e abra um Pull Request com os resultados. A licenca deve ser definida pelo titular; nenhuma licenca foi presumida nesta revisao.
 
-## Contribuição
-
-1. Crie uma branch: `git checkout -b feature/minha-feature`.
-2. Preserve a separação entre rotas, serviços e utilitários.
-3. Documente novas variáveis, migrations e mudanças de comportamento.
-4. Execute os testes aplicáveis em ambiente isolado.
-5. Abra um Pull Request descrevendo alterações e validações realizadas.
-
-Revisão documental: 13 de outubro de 2026. Análise estática dos arquivos consultados; sem execução de testes, migrations, build ou validação do serviço em produção.
+Revisao: 13 de outubro de 2026. Sem acesso ao banco de producao ou reescrita do historico Git.
