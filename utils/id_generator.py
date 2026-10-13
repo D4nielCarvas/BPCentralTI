@@ -38,7 +38,6 @@ from utils.equipment_types import SETOR_TABELA_OVERRIDE as _SETOR_TABELA_OVERRID
 if TYPE_CHECKING:
     import psycopg2.extensions
 
-# ── Tabelas de siglas ──────────────────────────────────────────────────────────
 # Fonte: Guia de Padronização de Nomenclatura de TI
 
 # A. Tipos de Equipamento
@@ -99,8 +98,6 @@ SIGLAS_SETOR: dict[str, str] = {
 # Prefixo exclusivo para Celulares Turma (formato CL-TRM-NN)
 _TURMA_PREFIX = "CL-TRM-"
 
-
-# ── Funções públicas — Equipamentos padrão ─────────────────────────────────────
 
 def gerar_id_ativo(tipo: str, localidade: str, setor: str, sequencial: int) -> str:
     """
@@ -187,8 +184,6 @@ def sugerir_id(
     seq = proximo_sequencial(cur, tipo, localidade, setor)
     return gerar_id_ativo(tipo, localidade, setor, seq)
 
-
-# ── Funções públicas — Celulares Turma (formato especial CL-TRM-NN) ───────────
 
 def gerar_id_turma(sequencial: int) -> str:
     """

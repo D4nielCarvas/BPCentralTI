@@ -1,12 +1,10 @@
-/* ==========================================================================
    BP CENTRAL TI — GLOBAL DESIGN SYSTEM & TOKENS
    Aesthetic Architecture: Precision Industrial IT Fleet Management
    Standard: Anthropic Frontend Design (Intentionality, High-Legibility, Anti-AI-Slop)
-   ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
-/* ── Design Tokens & Themes ────────────────────────────────────────────── */
+/* Design Tokens & Themes */
 :root,
 html[data-theme="dark"] {
   /* 4-6 Core Base Palette (Industrial Slate & Obsidian) */
@@ -96,7 +94,7 @@ html[data-theme="light"] {
   --modal-backdrop-bg: rgba(15, 23, 42, 0.55);
 }
 
-/* ── Reset & Baseline ─────────────────────────────────────────────────── */
+/* Reset & Baseline */
 *, *::before, *::after {
   margin: 0;
   padding: 0;
@@ -150,7 +148,7 @@ a {
   text-decoration: none;
 }
 
-/* ── Typography Guidance (Anti-AI-Slop: No generic ALL-CAPS everywhere) ─ */
+/* Typography Guidance */
 h1, h2, h3, h4, h5, h6 {
   color: var(--text);
   font-weight: 600;
@@ -162,7 +160,7 @@ p, li, span, label {
   max-width: 82ch; /* Guidance: line lengths under 80-85 characters */
 }
 
-/* ── Universal Tabular Numerals (Precision alignment in dense IT tables) ── */
+/* Universal Tabular Numerals (Precision alignment in dense IT tables) */
 table,
 thead th,
 tbody td,
@@ -196,7 +194,7 @@ input[type="number"],
   letter-spacing: -0.01em;
 }
 
-/* ── Theme Toggle Button ──────────────────────────────────────────────── */
+/* Theme Toggle Button */
 .theme-toggle-btn {
   background: var(--bg2);
   border: 1px solid var(--border);
@@ -236,7 +234,7 @@ input[type="number"],
   transform: rotate(12deg) scale(1.08);
 }
 
-/* ── Layout: Sidebar & Main Area ──────────────────────────────────────── */
+/* Layout: Sidebar & Main Area */
 #sidebar {
   width: var(--sidebar-w);
   min-height: 100vh;
@@ -281,7 +279,7 @@ input[type="number"],
   padding: 24px 28px;
 }
 
-/* ── Sidebar Components ──────────────────────────────────────────────── */
+/* Sidebar Components */
 .sidebar-logo {
   padding: 20px 22px 18px;
   border-bottom: 1px solid var(--border);
@@ -473,7 +471,7 @@ nav {
   background: var(--bg2);
 }
 
-/* ── Button System (Precision, High-Tactility) ────────────────────────── */
+/* Button System */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -564,7 +562,7 @@ nav {
   pointer-events: none;
 }
 
-/* ── Form Controls & Inputs (Legible & Intentional) ───────────────────── */
+/* Form Controls & Inputs */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -635,7 +633,7 @@ input[type="file"]::file-selector-button:hover {
   background: var(--bg3);
 }
 
-/* ── Panels, Cards & Surfaces ─────────────────────────────────────────── */
+/* Panels, Cards & Surfaces */
 .panel, .form-card, .table-card {
   background: var(--bg2);
   border: 1px solid var(--border);
@@ -666,7 +664,7 @@ input[type="file"]::file-selector-button:hover {
   color: var(--text);
 }
 
-/* ── High-Density Data Grids (Tables) ─────────────────────────────────── */
+/* High-Density Data Grids (Tables) */
 .table-responsive {
   overflow-x: auto;
   width: 100%;
@@ -726,7 +724,7 @@ tbody tr:hover td {
   font-weight: 500;
 }
 
-/* ── Badges (Functional Telemetry, High-Contrast) ─────────────────────── */
+/* Badges */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -794,7 +792,7 @@ tbody tr:hover td {
   font-weight: 600;
 }
 
-/* ── Flash Messages & Toast Notifications ────────────────────────────── */
+/* Flash Messages & Toast Notifications */
 .flash-container, #toast-container {
   display: flex;
   flex-direction: column;
@@ -837,7 +835,7 @@ tbody tr:hover td {
   color: var(--cyan);
 }
 
-/* ── Modals & Dialogs ─────────────────────────────────────────────────── */
+/* Modals & Dialogs */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -923,7 +921,7 @@ tbody tr:hover td {
   gap: 10px;
 }
 
-/* ── Stat Mini Counters ───────────────────────────────────────────────── */
+/* Stat Mini Counters */
 .stat-mini {
   display: flex;
   gap: 12px;
@@ -961,7 +959,7 @@ tbody tr:hover td {
   color: var(--text);
 }
 
-/* ── Notifications Center ─────────────────────────────────────────────── */
+/* Notifications Center */
 .notif-bell {
   position: relative;
   cursor: pointer;
@@ -1075,7 +1073,7 @@ tbody tr:hover td {
   margin-top: 2px;
 }
 
-/* ── Sortable Tables ─────────────────────────────────────────────────── */
+/* Sortable Tables */
 thead th {
   cursor: pointer;
   user-select: none;
@@ -1086,7 +1084,7 @@ thead th:hover {
   color: var(--text2);
 }
 
-/* ── Timeline (Rastreabilidade Operacional) ────────────────────────────── */
+/* Timeline (Rastreabilidade Operacional) */
 .timeline {
   position: relative;
   padding-left: 20px;
@@ -1144,7 +1142,7 @@ thead th:hover {
   margin-top: 4px;
 }
 
-/* ── Auth Layout (High-Security Clean Technical Gate) ─────────────────── */
+/* Auth Layout */
 .auth-body {
   justify-content: center;
   align-items: center;
@@ -1239,7 +1237,7 @@ html[data-theme="light"] .auth-logo {
   font-weight: 500;
 }
 
-/* ── Responsive Architecture ─────────────────────────────────────────── */
+/* Responsive Architecture */
 @media (max-width: 860px) {
   body {
     flex-direction: column;

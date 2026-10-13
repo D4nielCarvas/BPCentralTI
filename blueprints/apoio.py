@@ -1,18 +1,4 @@
-"""
-blueprints/apoio.py — Painel de Apoio (Administrador de Celulares de Inspeção).
-
-Acesso: usuários com role='apoio' (administrador dos celulares de inspeção).
-Funcionalidades:
-    - Listagem completa de todos os celulares de inspeção de todas as fazendas.
-    - Edição de cadastros (incluindo credenciais Gmail e MIP).
-    - Campos sensíveis visíveis: gmail, senha, usuario_mip, senha_mip, id_sistema.
-
-Segurança:
-    - _apoio_or_admin_required: exige role == 'apoio' ou 'admin'.
-    - Whitelist explícita de campos editáveis no POST — nunca aceita campos
-      arbitrários do body (prevenção de mass assignment).
-    - id_ativo (PK) nunca é alterado — vem exclusivamente da URL.
-"""
+"""Painel de apoio para administração de celulares de inspeção."""
 
 from __future__ import annotations
 
@@ -38,10 +24,7 @@ def _apoio_or_admin_required(f):
     return decorated
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # LISTAGEM — todos os celulares de inspeção de todas as fazendas
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @apoio_bp.route("/celulares-inspecao")
 @_apoio_or_admin_required
 def celulares_inspecao():
@@ -107,10 +90,7 @@ def celulares_inspecao():
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # EDIÇÃO — atualizar cadastro de um celular de inspeção
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @apoio_bp.route("/celulares-inspecao/<id_ativo>/editar", methods=["GET", "POST"])
 @_apoio_or_admin_required
 def editar_celular_inspecao(id_ativo: str):
@@ -122,8 +102,6 @@ def editar_celular_inspecao(id_ativo: str):
         id_sistema, fazenda, setor, responsavel, cargo, modelo, status,
         gmail, senha, usuario_mip, senha_mip, data_entrega,
         data_devolucao, observacoes.
-
-    Complexidade: O(1) — operação por chave primária.
     """
     with acquire_conn() as conn:
         with conn.cursor() as cur:

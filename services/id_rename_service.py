@@ -1,25 +1,4 @@
-"""
-services/id_rename_service.py — Responsabilidade única: renomear id_ativo.
-
-Quando um ativo muda de fazenda/setor durante uma transferência, seu ID
-precisa ser atualizado para refletir a nova localização (ex: CL-CEN-ADM-01
-→ CL-SMN-AGR-03). Esta classe encapsula esse comportamento de forma
-isolada e testável.
-
-Por que IDs mudam?
-    Os IDs são mnemônicos físicos — facilitam identificar um ativo só
-    pelo código. Etiquetas são reimpressas após cada transferência.
-    Esse comportamento é mantido por compatibilidade com o processo operacional.
-
-Complexidade:
-    O(k) onde k = quantidade de registros históricos do ativo.
-    Os UPDATEs em historico e transferencias usam índices já existentes.
-
-Risco documentado:
-    Gaps no sequencial são permanentes em caso de rollback — por design da
-    tabela id_sequenciais (INSERT ... ON CONFLICT DO UPDATE não é reversível).
-    Isso é aceitável e esperado; não representa perda de dados.
-"""
+"""Geração e atualização de IDs de ativos durante transferências."""
 
 from __future__ import annotations
 
@@ -124,8 +103,6 @@ class IdRenameService:
 
         logger.info("id_ativo renomeado: %s → %s", id_ativo, novo_id)
         return novo_id
-
-    # ── Helpers privados ───────────────────────────────────────────────────────
 
     def _resolver_sigla_tipo(
         self,

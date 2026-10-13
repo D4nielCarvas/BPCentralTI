@@ -1,23 +1,4 @@
-"""
-scripts/seed_localidades.py - Seed completo: localidades + primeiro admin.
-
-Execucao:
-    python scripts/seed_localidades.py
-
-O que faz:
-    1. Insere as 15 localidades padrao (idempotente por nome).
-    2. Cria o PRIMEIRO USUARIO ADMIN padrao se nao existir nenhum admin.
-       Login: admin | Senha: admin123
-
-ATENCAO: Troque a senha do admin na primeira execucao em producao
-         acessando /admin/usuarios e criando um novo admin.
-
-Seguranca:
-    - Senha armazenada com generate_password_hash (werkzeug - pbkdf2:sha256).
-    - Idempotente: nao duplica localidades nem usuarios existentes.
-
-Complexidade: O(n) - n = 15 localidades.
-"""
+"""Carga inicial de localidades e usuário administrador padrão."""
 
 from __future__ import annotations
 
@@ -60,8 +41,6 @@ ADMIN_LOGIN = "admin"
 ADMIN_NOME  = "Administrador TI"
 ADMIN_SENHA = "admin123"   # TROQUE APOS O PRIMEIRO ACESSO
 
-
-# ─────────────────────────────────────────────────────────────────────────────
 
 def seed_localidades(cur) -> tuple[int, int]:
     """Insere localidades ausentes. Retorna (inseridos, ignorados)."""
@@ -107,8 +86,6 @@ def seed_admin(cur) -> bool:
     print("  ATENCAO: Troque a senha apos o primeiro acesso!")
     return True
 
-
-# ─────────────────────────────────────────────────────────────────────────────
 
 def seed() -> None:
     init_pool(minconn=1, maxconn=2)

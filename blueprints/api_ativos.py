@@ -13,10 +13,8 @@ from werkzeug.utils import secure_filename
 bp = Blueprint('api_ativos', __name__, url_prefix='')
 
 # COMPUTADORES
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @bp.route("/api/computadores", methods=["GET"])
-@login_required  # P7: exige autenticação para listar
+@login_required
 def listar_computadores() -> Response:
     """Lista computadores/notebooks com filtros."""
     return _list_table(
@@ -31,7 +29,7 @@ def listar_computadores() -> Response:
 
 
 @bp.route("/api/computadores", methods=["POST"])
-@admin_required  # P7: apenas admin pode criar
+@admin_required
 def criar_computador() -> tuple[Response, int] | Response:
     """Cadastra um novo computador ou notebook."""
     d = request.json
@@ -62,7 +60,7 @@ def criar_computador() -> tuple[Response, int] | Response:
 
 
 @bp.route("/api/computadores/<id_ativo>", methods=["GET"])
-@login_required  # P7: exige autenticação para consultar
+@login_required
 def get_computador(id_ativo: str) -> Response:
     """Retorna dados de um computador pelo ID do ativo."""
     fazenda_nome = get_fazenda_nome_filter()
@@ -104,12 +102,8 @@ def atualizar_computador(id_ativo: str) -> Response:
     return jsonify({"ok": True, "msg": "Computador atualizado!"})
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# IMPRESSORAS
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @bp.route("/api/impressoras", methods=["GET"])
-@login_required  # P7: exige autenticação para listar
+@login_required
 def listar_impressoras() -> Response:
     """Lista impressoras com filtros."""
     return _list_table(
@@ -122,7 +116,7 @@ def listar_impressoras() -> Response:
 
 
 @bp.route("/api/impressoras", methods=["POST"])
-@admin_required  # P7: apenas admin pode criar
+@admin_required
 def criar_impressora() -> tuple[Response, int] | Response:
     """Cadastra uma nova impressora."""
     d = request.json
@@ -150,7 +144,7 @@ def criar_impressora() -> tuple[Response, int] | Response:
 
 
 @bp.route("/api/impressoras/<id_ativo>", methods=["GET"])
-@login_required  # P7: exige autenticação para consultar
+@login_required
 def get_impressora(id_ativo: str) -> Response:
     """Retorna dados de uma impressora."""
     fazenda_nome = get_fazenda_nome_filter()
@@ -188,12 +182,8 @@ def atualizar_impressora(id_ativo: str) -> Response:
     return jsonify({"ok": True, "msg": "Impressora atualizada!"})
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# ESTABILIZADORES
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @bp.route("/api/estabilizadores", methods=["GET"])
-@login_required  # P7: exige autenticação para listar
+@login_required
 def listar_estabilizadores() -> Response:
     """Lista estabilizadores/nobreakes com filtros."""
     return _list_table(
@@ -203,7 +193,7 @@ def listar_estabilizadores() -> Response:
 
 
 @bp.route("/api/estabilizadores", methods=["POST"])
-@admin_required  # P7: apenas admin pode criar
+@admin_required
 def criar_estabilizador() -> tuple[Response, int] | Response:
     """Cadastra um novo estabilizador ou nobreak."""
     d = request.json
@@ -225,7 +215,7 @@ def criar_estabilizador() -> tuple[Response, int] | Response:
 
 
 @bp.route("/api/estabilizadores/<id_ativo>", methods=["GET"])
-@login_required  # P7: exige autenticação para consultar
+@login_required
 def get_estabilizador(id_ativo: str) -> Response:
     """Retorna dados de um estabilizador."""
     fazenda_nome = get_fazenda_nome_filter()
@@ -258,12 +248,8 @@ def atualizar_estabilizador(id_ativo: str) -> Response:
     return jsonify({"ok": True, "msg": "Estabilizador atualizado!"})
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# STARLINK
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @bp.route("/api/starlink", methods=["GET"])
-@login_required  # P7: exige autenticação para listar
+@login_required
 def listar_starlink() -> Response:
     """Lista antenas Starlink com filtros."""
     return _list_table(
@@ -276,7 +262,7 @@ def listar_starlink() -> Response:
 
 
 @bp.route("/api/starlink", methods=["POST"])
-@admin_required  # P7: apenas admin pode criar
+@admin_required
 def criar_starlink() -> tuple[Response, int] | Response:
     """Cadastra uma nova antena Starlink. Item 7: inclui campos de login."""
     d = request.json
@@ -295,7 +281,7 @@ def criar_starlink() -> tuple[Response, int] | Response:
                         d.get("status", "Ativo"), d.get("data_instalacao"), d.get("data_aquisicao"),
                         d.get("plano"), d.get("observacoes"),
                         d.get("id_starlink"), d.get("numero_kit"),
-                        d.get("email_login"), encrypt_field(d.get("senha_login")),  # P1: criptografa antes de gravar
+                        d.get("email_login"), encrypt_field(d.get("senha_login")),
                     ),
                 )
                 log_historico(cur, d["id_ativo"], "Starlink", "Cadastro")
@@ -305,7 +291,7 @@ def criar_starlink() -> tuple[Response, int] | Response:
 
 
 @bp.route("/api/starlink/<id_ativo>", methods=["GET"])
-@login_required  # P7: exige autenticação para consultar
+@login_required
 def get_starlink(id_ativo: str) -> Response:
     """Retorna dados de uma antena Starlink. P1: descriptografa senha_login antes de retornar."""
     fazenda_nome = get_fazenda_nome_filter()
@@ -316,7 +302,7 @@ def get_starlink(id_ativo: str) -> Response:
             else:
                 row = _fetch_one(cur, "SELECT * FROM starlink WHERE id_ativo=%s", (id_ativo,))
     if row and row.get("senha_login"):
-        row["senha_login"] = decrypt_field(row["senha_login"])  # P1: descriptografa para exibição
+        row["senha_login"] = decrypt_field(row["senha_login"])
     return jsonify(row)
 
 
@@ -339,7 +325,7 @@ def atualizar_starlink(id_ativo: str) -> Response:
                     d.get("data_instalacao"), d.get("data_aquisicao"), d.get("plano"),
                     d.get("observacoes"),
                     d.get("id_starlink"), d.get("numero_kit"),
-                    d.get("email_login"), encrypt_field(d.get("senha_login")),  # P1: criptografa antes de gravar
+                    d.get("email_login"), encrypt_field(d.get("senha_login")),
                     id_ativo,
                 ),
             )
@@ -347,12 +333,9 @@ def atualizar_starlink(id_ativo: str) -> Response:
     return jsonify({"ok": True, "msg": "Starlink atualizada!"})
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # CELULARES TURMA (Item 4)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @bp.route("/api/celulares_turma", methods=["GET"])
-@login_required  # P7: exige autenticação para listar
+@login_required
 def listar_celulares_turma() -> Response:
     """Lista celulares de turma com filtros de status e busca textual."""
     return _list_table(
@@ -365,7 +348,7 @@ def listar_celulares_turma() -> Response:
 
 
 @bp.route("/api/celulares_turma", methods=["POST"])
-@admin_required  # P7: apenas admin pode criar
+@admin_required
 def criar_celular_turma() -> tuple[Response, int] | Response:
     """Cadastra um novo celular de turma (ID no formato CL-TRM-NN)."""
     d = request.json
@@ -384,7 +367,7 @@ def criar_celular_turma() -> tuple[Response, int] | Response:
                         d.get("fazenda"), d.get("setor"), d.get("modelo"), d.get("tipo"),
                         d.get("status", "Ativo"), d.get("uso_celular"), d.get("carregador"),
                         d.get("termo_assinado"), d.get("data_entrega"), d.get("data_devolucao"),
-                        d.get("gmail_clockin"), encrypt_field(d.get("senha")), d.get("usuario_anterior"),  # P1: criptografa senha
+                        d.get("gmail_clockin"), encrypt_field(d.get("senha")), d.get("usuario_anterior"),
                         d.get("imei_1"), d.get("imei_2"), d.get("num_serie"),
                         d.get("armazenamento"), d.get("observacoes"),
                     ),
@@ -396,7 +379,7 @@ def criar_celular_turma() -> tuple[Response, int] | Response:
 
 
 @bp.route("/api/celulares_turma/<id_ativo>", methods=["GET"])
-@login_required  # P7: exige autenticação para consultar
+@login_required
 def get_celular_turma(id_ativo: str) -> Response:
     """Retorna dados de um celular de turma. P1: descriptografa senha antes de retornar."""
     fazenda_nome = get_fazenda_nome_filter()
@@ -407,12 +390,12 @@ def get_celular_turma(id_ativo: str) -> Response:
             else:
                 row = _fetch_one(cur, "SELECT * FROM celulares_turma WHERE id_ativo=%s", (id_ativo,))
     if row and row.get("senha"):
-        row["senha"] = decrypt_field(row["senha"])  # P1: descriptografa para exibição
+        row["senha"] = decrypt_field(row["senha"])
     return jsonify(row)
 
 
 @bp.route("/api/celulares_turma/<id_ativo>", methods=["PUT"])
-@admin_required  # P7: apenas admin pode editar
+@admin_required
 def atualizar_celular_turma(id_ativo: str) -> Response:
     """Atualiza dados de um celular de turma."""
     d = request.json
@@ -429,7 +412,7 @@ def atualizar_celular_turma(id_ativo: str) -> Response:
                     d.get("num_turma"), d.get("responsavel"), d.get("fazenda"), d.get("setor"),
                     d.get("modelo"), d.get("tipo"), d.get("status"), d.get("uso_celular"),
                     d.get("carregador"), d.get("termo_assinado"), d.get("data_entrega"),
-                    d.get("data_devolucao"), d.get("gmail_clockin"), encrypt_field(d.get("senha")),  # P1: criptografa senha
+                    d.get("data_devolucao"), d.get("gmail_clockin"), encrypt_field(d.get("senha")),
                     d.get("usuario_anterior"), d.get("imei_1"), d.get("imei_2"),
                     d.get("num_serie"), d.get("armazenamento"), d.get("observacoes"),
                     id_ativo,
@@ -439,23 +422,10 @@ def atualizar_celular_turma(id_ativo: str) -> Response:
     return jsonify({"ok": True, "msg": "Celular de turma atualizado!"})
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-
 
 @bp.route("/api/ativos/<id_ativo>")
 def get_ativo_universal(id_ativo: str) -> tuple[Response, int] | Response:
-    """
-    Busca um ativo em todas as tabelas de equipamentos pelo ID.
-
-    Usado pela aba de Manutenção para autopreenchimento de campos.
-    Complexidade: O(k) onde k = número de tabelas (~8 queries no pior caso).
-
-    Args:
-        id_ativo: ID do ativo no padrão TIPO-LOCAL-SETOR-NN ou CL-TRM-NN.
-
-    Returns:
-        JSON com os dados do ativo + campo 'tipo_equipamento', ou 404.
-    """
+    """Busca um ativo em todas as tabelas de equipamentos pelo ID."""
     with get_db() as conn:
         with conn.cursor() as cur:
             for tabela, tipo_nome in _TABELAS_ATIVO_BUSCA:

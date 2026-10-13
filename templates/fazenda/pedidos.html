@@ -21,7 +21,7 @@
 
 {% block content %}
 
-{# ── Sumário de status ─────────────────────────────────────────────────────── #}
+{# Sumário de status #}
 <div class="stat-mini">
   {% set contagens = {'pendente': 0, 'em_analise': 0, 'aprovado': 0, 'recusado': 0, 'concluido': 0} %}
   {% for p in pedidos %}{% set _ = contagens.update({p.status: contagens.get(p.status, 0) + 1}) %}{% endfor %}

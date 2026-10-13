@@ -1,26 +1,4 @@
-"""
-services/transferencia_service.py — Orquestrador central do sistema de transferências.
-
-Responsabilidades:
-    1. Validar o payload de entrada (regras de negócio puras, sem banco).
-    2. Selecionar o handler correto via Strategy Pattern.
-    3. Executar a transferência dentro de uma única transação de banco.
-    4. Delegar renomeação de ID ao IdRenameService.
-    5. Registrar o log no histórico do ativo.
-
-NÃO é responsabilidade desta classe:
-    - Serializar/deserializar HTTP (responsabilidade do blueprint).
-    - Fazer commit/rollback (responsabilidade do acquire_conn).
-
-Design Patterns:
-    - Service Layer (Martin Fowler — Patterns of Enterprise Application Architecture)
-    - Strategy (seleção de handler por tipo_transferencia)
-
-Complexidade:
-    - Caminho feliz sem renomeação: O(1) — 2 queries com acesso por PK.
-    - Caminho com renomeação de ID: O(k), k = registros históricos do ativo.
-    - Caminho de migração de tipo (Celular→Turma): O(k) + custo do INSERT.
-"""
+"""Orquestrador do fluxo de transferências de ativos."""
 
 from __future__ import annotations
 
@@ -45,8 +23,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# ── Exceções de domínio ────────────────────────────────────────────────────────
-
 class TransferenciaError(Exception):
     """Erro de negócio na criação de transferência. HTTP 400."""
 
@@ -59,8 +35,6 @@ class StatusBloqueadoError(Exception):
     """Ativo está em status que impede transferência. HTTP 409."""
 
 
-# ── Mapeamento Strategy ────────────────────────────────────────────────────────
-
 _HANDLERS: dict[str, TransferenciaHandler] = {
     "Estoque para Usuario": EstoqueParaUsuarioHandler(),
     "Usuario para Estoque": UsuarioParaEstoqueHandler(),
@@ -70,8 +44,6 @@ _HANDLERS: dict[str, TransferenciaHandler] = {
 
 _STATUS_BLOQUEADOS = {"Manutenção", "Descartado"}
 
-
-# ── Service ───────────────────────────────────────────────────────────────────
 
 class TransferenciaService:
     """Ponto de entrada único para criação de transferências."""
@@ -178,8 +150,6 @@ class TransferenciaService:
 
         return {"ok": True, "id_ativo": id_ativo_final}
 
-    # ── Validação de negócio (sem banco) ──────────────────────────────────────
-
     def _validar(self, payload: dict) -> None:
         """
         Valida todas as regras de negócio que independem do banco de dados.
@@ -216,8 +186,6 @@ class TransferenciaService:
 
         if tipo_transf == "Usuario para Turma" and not payload.get("turma_destino"):
             raise TransferenciaError("turma_destino é obrigatório para 'Usuario para Turma'.")
-
-    # ── Acesso ao banco ────────────────────────────────────────────────────────
 
     def _buscar_e_validar_ativo(
         self,

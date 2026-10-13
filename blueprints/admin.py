@@ -1,18 +1,4 @@
-"""
-blueprints/admin.py — Gestão de usuários do sistema (apenas admins).
-
-Rotas protegidas pelo decorator @admin_required.
-Usa werkzeug.security.generate_password_hash para armazenar senhas com segurança.
-
-Segurança:
-    - admin_required retorna 403 para qualquer role != 'admin'.
-    - localidade_id forçado para NULL quando role == 'admin' (sem exceção).
-    - Senha nunca armazenada em texto plano — hash pbkdf2:sha256.
-
-Risco de segurança a monitorar:
-    - Username duplicado: tratado com try/except na inserção (UNIQUE constraint).
-    - Senha mínima: validada no backend (mínimo 6 caracteres).
-"""
+"""Gestão de usuários e perfis de acesso (rotas admin)."""
 
 from __future__ import annotations
 
@@ -25,16 +11,10 @@ from utils.db_layer import acquire_conn, fetch_all, fetch_one
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# LISTAGEM DE USUÁRIOS
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @admin_bp.route("/usuarios")
 @admin_required
 def listar_usuarios():
-    """
-    Lista todos os usuários do sistema com seus perfis dinâmicos.
-    """
+
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             usuarios = fetch_all(
@@ -72,29 +52,10 @@ def listar_usuarios():
     return render_template("admin/usuarios.html", usuarios=usuarios, localidades=localidades, perfis=perfis)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# CRIAÇÃO DE USUÁRIO
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @admin_bp.route("/usuarios/novo", methods=["GET", "POST"])
 @admin_required
 def novo_usuario():
-    """
-    Formulário para criar novo usuário (GET) e processar inserção (POST).
 
-    POST form fields:
-        username     — login único (case-insensitive, salvo em lowercase).
-        nome         — nome de exibição.
-        senha        — senha em texto plano (mínimo 6 chars); armazenada como hash.
-        role         — 'admin' ou 'viewer'.
-        localidade_id — obrigatório se role == 'viewer'; forçado NULL se role == 'admin'.
-
-    Regras de negócio:
-        - role == 'admin' → localidade_id = NULL (sem exceção).
-        - role == 'viewer' sem localidade_id → erro de validação.
-        - Username duplicado → erro amigável (não expõe stack trace).
-    """
-    # Pré-carrega localidades e perfis para o formulário
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             localidades = fetch_all(
@@ -113,7 +74,6 @@ def novo_usuario():
         perfil_id_raw = request.form.get("perfil_id") or None
         localidade_id_raw = request.form.get("localidade_id") or None
 
-        # ── Validações ────────────────────────────────────────────────────────
         errors: list[str] = []
 
         if not username:
@@ -137,7 +97,7 @@ def novo_usuario():
                 form=request.form,
             )
 
-        # Regra: Admin Master ignora localidade. Apoio e Viewer podem ter localidade vinculada ou visão global
+    
         is_admin_master = False
         is_apoio = False
         for p in perfis:
@@ -156,8 +116,8 @@ def novo_usuario():
         else:
             role = "viewer"
 
-        # ── Hash da senha (werkzeug — pbkdf2:sha256 por padrão) ──────────────
         senha_hash = generate_password_hash(senha)
+
 
         try:
             with acquire_conn() as conn:
@@ -187,7 +147,7 @@ def novo_usuario():
                 form=request.form,
             )
 
-    # GET — exibe formulário limpo
+
     return render_template(
         "admin/novo_usuario.html",
         localidades=localidades,
@@ -196,12 +156,7 @@ def novo_usuario():
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# GERENCIAMENTO DE PERFIS DE ACESSO (RBAC)
-# ═══════════════════════════════════════════════════════════════════════════════
 
-# Mapa de todas as permissões disponíveis no sistema, agrupadas por categoria.
-# Cada entrada: (chave_json, rótulo_exibido)
 PERMISSOES_SISTEMA = {
     "Dados dos Membros": [
         ("ver_telefones",         "Ver números de telefone"),
@@ -267,7 +222,7 @@ def novo_perfil():
             flash("O nome do perfil é obrigatório.", "warning")
             return render_template("admin/perfis.html", perfis=[], permissoes_sistema=PERMISSOES_SISTEMA)
 
-        # Coleta permissões do formulário (checkboxes)
+
         permissoes = {}
         for grupo, perms in PERMISSOES_SISTEMA.items():
             for chave, _ in perms:
@@ -339,10 +294,6 @@ def excluir_perfil(perfil_id: int):
     return redirect(url_for("admin.listar_perfis"))
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# TOGGLE ATIVO/INATIVO
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @admin_bp.route("/usuarios/<int:usuario_id>/toggle-ativo", methods=["POST"])
 @admin_required
 def toggle_ativo_usuario(usuario_id: int):
@@ -368,10 +319,6 @@ def toggle_ativo_usuario(usuario_id: int):
     flash(f"Usuario '{usuario['login']}' {estado_str}.", "success")
     return redirect(url_for("admin.listar_usuarios"))
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# RESET DE SENHA PELO ADMIN
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @admin_bp.route("/usuarios/<int:usuario_id>/resetar-senha", methods=["POST"])
 @admin_required
@@ -403,10 +350,6 @@ def resetar_senha_usuario(usuario_id: int):
     flash(f"Senha do usuario '{usuario['login']}' redefinida com sucesso.", "success")
     return redirect(url_for("admin.listar_usuarios"))
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# EDITAR USUÁRIO (ROLE/LOCALIDADE)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @admin_bp.route("/usuarios/<int:usuario_id>/editar", methods=["POST"])
 @admin_required

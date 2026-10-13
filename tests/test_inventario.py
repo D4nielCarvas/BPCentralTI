@@ -27,10 +27,7 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # TESTES: id_generator.py
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class TestGeradorId(unittest.TestCase):
     """Testes para o módulo id_generator."""
 
@@ -172,10 +169,7 @@ class TestGeradorId(unittest.TestCase):
         self.assertTrue(obrigatorios.issubset(set(SIGLAS_SETOR.keys())))
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # TESTES: resource_path (app.py)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class TestResourcePath(unittest.TestCase):
     """Testes para a função resource_path do app.py."""
 
@@ -218,10 +212,7 @@ class TestResourcePath(unittest.TestCase):
             del sys._MEIPASS
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # TESTES: Parse do arquivo de coleta (.bat output)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class TestParseColeta(unittest.TestCase):
     """
     Testes para o parse do arquivo INI gerado pelo COLETAR_PC.bat.
@@ -298,10 +289,7 @@ class TestParseColeta(unittest.TestCase):
         self.assertNotIn("marca", ausentes)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # TESTES: Validações de Transferência
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class TestValidacoesTransferencia(unittest.TestCase):
     """
     Testes para as regras de validação do módulo de transferências.
@@ -400,10 +388,7 @@ class TestValidacoesTransferencia(unittest.TestCase):
         self.assertNotIn("Estoque", status_bloqueados)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # TESTES: Helpers do app.py
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class TestHelpers(unittest.TestCase):
     """Testes para as funções auxiliares do app.py."""
 
@@ -452,10 +437,6 @@ class TestHelpers(unittest.TestCase):
         from app import allowed_file
         self.assertFalse(allowed_file("arquivo_sem_extensao"))
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# RUNNER
-# ═══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -8,8 +8,6 @@ from utils.api_utils import _list_table, log_historico
 bp = Blueprint('api_manutencoes', __name__, url_prefix='')
 
 # MANUTENÇÕES
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @bp.route("/api/manutencoes", methods=["GET"])
 @login_required
 def listar_manutencoes() -> Response:
@@ -222,5 +220,3 @@ def atualizar_manutencao(mid: int) -> Response:
 
     return jsonify({"ok": True, "msg": "Manutenção atualizada!"})
 
-
-# ═══════════════════════════════════════════════════════════════════════════════

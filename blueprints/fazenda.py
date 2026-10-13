@@ -1,19 +1,4 @@
-"""
-blueprints/fazenda.py — Blueprint de acesso restrito por localidade (viewers).
-
-Fornece visibilidade de ativos, estoque e manutenções filtrados pela localidade
-do usuário logado, além do CRUD de pedidos_viewer.
-
-Patterns: Blueprint (Flask) + Filtro de Tenant (get_localidade_filter).
-Segurança:
-    - Todas as rotas exigem autenticação via @viewer_required.
-    - Risco IDOR (Insecure Direct Object Reference) mitigado:
-      pedidos são sempre filtrados por usuario_id OU localidade_id da sessão —
-      nunca confiar em IDs recebidos sem validação adicional.
-    - O campo localidade_id gravado no pedido vem SEMPRE da sessão, nunca do body.
-    - Role 'apoio': manutenções e pedidos filtrados por usuario_id (visão própria).
-Complexidade: O(n) listagem, O(1) CRUD por id primário.
-"""
+"""Visão do viewer: ativos, estoque, manutenções e pedidos filtrados por localidade."""
 
 from __future__ import annotations
 
@@ -91,8 +76,6 @@ _TABELA_CONFIG: dict[str, dict] = {
 }
 
 
-# ── Helper interno ────────────────────────────────────────────────────────────
-
 def _build_localidade_clause(
     localidade_id: int | None,
     params: list[Any],
@@ -115,10 +98,6 @@ def _build_localidade_clause(
         return f" AND {col} = %s"
     return ""
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ITENS / EQUIPAMENTOS ATIVOS DA FAZENDA
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @fazenda_bp.route("/itens")
 @viewer_required
@@ -183,10 +162,6 @@ def listar_itens():
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# ESTOQUE DA FAZENDA
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @fazenda_bp.route("/estoque")
 @viewer_required
 def listar_estoque():
@@ -232,10 +207,6 @@ def listar_estoque():
         mostrar_zerado=mostrar_zerado,
     )
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# MANUTENÇÕES DA FAZENDA
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @fazenda_bp.route("/manutencoes")
 @viewer_required
@@ -299,10 +270,6 @@ def listar_manutencoes():
         busca=busca,
     )
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# TUTORIAIS
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @fazenda_bp.route("/tutoriais")
 @viewer_required
 def tutoriais():
@@ -312,10 +279,6 @@ def tutoriais():
     """
     return render_template("fazenda/tutoriais.html")
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# PEDIDOS DO VIEWER
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @fazenda_bp.route("/pedidos")
 @viewer_required
@@ -390,14 +353,7 @@ def listar_pedidos():
 @fazenda_bp.route("/pedidos/novo", methods=["GET", "POST"])
 @viewer_required
 def novo_pedido():
-    """
-    Formulário para criar um novo pedido (GET) e processar o envio (POST).
-
-    Segurança e Integridade:
-        - Localidade detectada automaticamente a partir da fazenda do usuário.
-        - Campos estruturados: Item, Quantidade, Motivo/Descrição, Urgência.
-        - Alertas automáticos para administradores para novos pedidos.
-    """
+    """Formulário e processamento de novo pedido."""
     localidade_id_sessao = get_localidade_filter()
     usuario_id = get_usuario_id()
     role = session.get("role")
@@ -665,13 +621,7 @@ def novo_pedido():
 @fazenda_bp.route("/pedidos/<int:pedido_id>")
 @viewer_required
 def detalhe_pedido(pedido_id: int):
-    """
-    Exibe o detalhe de um pedido e seu histórico de status.
-
-    Segurança (anti-IDOR):
-        - Viewer: valida que o pedido pertence ao usuario_id da sessão.
-        - Admin: acesso irrestrito.
-    """
+    """Exibe o detalhe de um pedido e seu histórico de status."""
     usuario_id = get_usuario_id()
     role = session.get("role")
 

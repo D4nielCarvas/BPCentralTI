@@ -1,19 +1,4 @@
-"""
-tests/test_transferencia_service.py — Testes unitários do sistema de transferências.
-
-Cobertura:
-    - Validação de payload (TransferenciaService._validar)
-    - Todos os 4 tipos de transferência via handlers isolados
-    - IdRenameService (lógica pura, sem banco)
-    - Exceções de domínio (TransferenciaError, AtivoNaoEncontradoError, StatusBloqueadoError)
-
-Estratégia:
-    Todos os testes são UNITÁRIOS — sem dependência de banco ou Flask.
-    O banco é substituído por Mock/MagicMock onde necessário.
-    Os handlers recebem um cursor mockado e seus SQL são verificados via assert_called.
-
-Complexidade dos testes: O(1) — sem I/O real.
-"""
+"""Testes unitários para o fluxo de transferências e renomeação de IDs."""
 
 from __future__ import annotations
 
@@ -22,10 +7,7 @@ from datetime import date, timedelta
 from unittest.mock import MagicMock, patch, call
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# TESTES: Validação de payload (TransferenciaService._validar)
-# ═══════════════════════════════════════════════════════════════════════════════
-
+# Validação de payload (TransferenciaService._validar)
 class TestTransferenciaServiceValidacao(unittest.TestCase):
     """Testa todas as regras de validação de negócio — sem banco de dados."""
 
@@ -42,8 +24,6 @@ class TestTransferenciaServiceValidacao(unittest.TestCase):
         except TransferenciaError as exc:
             return False, str(exc)
 
-    # ── Tipo de equipamento ────────────────────────────────────────────────────
-
     def test_tipo_equipamento_invalido_rejeitado(self):
         ok, msg = self._validar({"tipo_equipamento": "Geladeira", "id_ativo": "X"})
         self.assertFalse(ok)
@@ -57,8 +37,6 @@ class TestTransferenciaServiceValidacao(unittest.TestCase):
             "responsavel_destino": "João Silva",
         })
         self.assertTrue(ok)
-
-    # ── Data de transferência ──────────────────────────────────────────────────
 
     def test_data_futura_rejeitada(self):
         ok, msg = self._validar({
@@ -109,8 +87,6 @@ class TestTransferenciaServiceValidacao(unittest.TestCase):
         })
         self.assertTrue(ok)
 
-    # ── Estoque para Usuario ───────────────────────────────────────────────────
-
     def test_estoque_usuario_sem_responsavel_rejeitado(self):
         ok, msg = self._validar({
             "tipo_equipamento": "Celular",
@@ -128,8 +104,6 @@ class TestTransferenciaServiceValidacao(unittest.TestCase):
             "responsavel_destino": "João Silva",
         })
         self.assertTrue(ok)
-
-    # ── Usuario para Estoque ───────────────────────────────────────────────────
 
     def test_usuario_estoque_sem_data_devolucao_rejeitado(self):
         ok, msg = self._validar({
@@ -149,8 +123,6 @@ class TestTransferenciaServiceValidacao(unittest.TestCase):
         })
         self.assertTrue(ok)
 
-    # ── Usuario para Usuario ───────────────────────────────────────────────────
-
     def test_usuario_usuario_sem_responsavel_rejeitado(self):
         ok, msg = self._validar({
             "tipo_equipamento": "Celular",
@@ -168,8 +140,6 @@ class TestTransferenciaServiceValidacao(unittest.TestCase):
             "responsavel_destino": "Maria",
         })
         self.assertTrue(ok)
-
-    # ── Usuario para Turma ─────────────────────────────────────────────────────
 
     def test_usuario_turma_sem_turma_destino_rejeitado(self):
         ok, msg = self._validar({
@@ -189,8 +159,6 @@ class TestTransferenciaServiceValidacao(unittest.TestCase):
         })
         self.assertTrue(ok)
 
-    # ── Status bloqueados ──────────────────────────────────────────────────────
-
     def test_status_bloqueados_definidos_corretamente(self):
         from services.transferencia_service import _STATUS_BLOQUEADOS
         self.assertIn("Manutenção", _STATUS_BLOQUEADOS)
@@ -199,10 +167,7 @@ class TestTransferenciaServiceValidacao(unittest.TestCase):
         self.assertNotIn("Estoque", _STATUS_BLOQUEADOS)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# TESTES: Handlers (Strategy Pattern)
-# ═══════════════════════════════════════════════════════════════════════════════
-
+# Handlers de transferência
 class TestHandlerUsuarioEstoque(unittest.TestCase):
     """Handler: Usuário → Estoque."""
 
@@ -324,10 +289,7 @@ class TestHandlerUsuarioTurmaUpdateSimples(unittest.TestCase):
         self.assertIn("num_turma", sql)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # TESTES: IdRenameService (lógica pura, sem banco)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class TestIdRenameService(unittest.TestCase):
     """Testa a lógica de decisão de renomeação — sem banco real."""
 
@@ -382,10 +344,7 @@ class TestIdRenameService(unittest.TestCase):
         import services.id_rename_service  # noqa: F401
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # TESTES: Exceções de domínio
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class TestExcecoesDeDominio(unittest.TestCase):
     """Garante que as exceções customizadas são subclasses corretas."""
 
@@ -402,10 +361,7 @@ class TestExcecoesDeDominio(unittest.TestCase):
         self.assertTrue(issubclass(StatusBloqueadoError, Exception))
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # TESTES: Legado — mantidos para não quebrar CI
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class TestValidacoesTransferenciaLegado(unittest.TestCase):
     """
     Mantém compatibilidade com os testes originais de test_inventario.py.
@@ -445,10 +401,7 @@ class TestValidacoesTransferenciaLegado(unittest.TestCase):
         self.assertIn("inválida", msg)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # TESTES: Gerenciamento de Linhas/Chips (blueprints.celulares)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class TestGerenciamentoChipsCelular(unittest.TestCase):
     """Testa funções de ciclo de vida de chips e linhas de celular com cursor mockado."""
 

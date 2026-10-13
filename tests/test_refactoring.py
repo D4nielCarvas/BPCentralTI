@@ -14,10 +14,6 @@ from unittest.mock import MagicMock, patch, call
 import pytest
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# FIXTURES
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @pytest.fixture
 def app():
     """Cria instância Flask de teste com pool mockado."""
@@ -44,10 +40,7 @@ def client(app):
     return flask_app.test_client()
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # FASE 1 — db_layer (Connection Pool)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class TestDbLayer:
     """Testa o comportamento do pool de conexões."""
 
@@ -125,10 +118,7 @@ class TestDbLayer:
             db_layer._pool = original
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # FASE 2 — Race Condition (SELECT FOR UPDATE)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class TestMovimentarEstoque:
     """Testa a correção da race condition em movimentar_estoque."""
 
@@ -210,10 +200,7 @@ class TestMovimentarEstoque:
         assert response.status_code == 400
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # FASE 3 — Blueprint celulares_bp
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class TestCelularesBlueprint:
     """Testa as rotas do blueprint celulares_bp."""
 

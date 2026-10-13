@@ -10,8 +10,6 @@ from utils.api_utils import _list_table, validate_file_mime
 bp = Blueprint('api_pedidos', __name__, url_prefix='')
 
 # PEDIDOS
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @bp.route("/api/pedidos", methods=["GET"])
 @login_required
 def listar_pedidos() -> Response:
@@ -131,8 +129,6 @@ def atualizar_pedido(pid: int) -> tuple[Response, int] | Response:
 
     return jsonify({"ok": True, "msg": "Pedido atualizado!"})
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 @bp.route("/api/pedidos/<int:pid>/upload-nota", methods=["POST"])

@@ -17,7 +17,7 @@
 
     <form method="POST" action="{{ url_for('apoio.editar_celular_inspecao', id_ativo=celular.id_ativo) }}">
 
-      {# ── Identificação ──────────────────────────────────────── #}
+{# Identificação #}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
 
         <div class="form-group">
@@ -73,7 +73,7 @@
 
       </div>
 
-      {# ── Credenciais Google ─────────────────────────────────── #}
+{# Credenciais Google #}
       <div style="margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
           {{ icon_key(13) }}
@@ -93,7 +93,7 @@
         </div>
       </div>
 
-      {# ── Credenciais MIP ────────────────────────────────────── #}
+{# Credenciais MIP #}
       <div style="margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--cyan);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
           {{ icon_device(13) }}
@@ -113,7 +113,7 @@
         </div>
       </div>
 
-      {# ── Datas ──────────────────────────────────────────────── #}
+{# Datas #}
       <div style="margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
           {{ icon_calendar(13) }}
@@ -133,7 +133,7 @@
         </div>
       </div>
 
-      {# ── Observações ────────────────────────────────────────── #}
+{# Observações #}
       <div style="padding-top:14px;border-top:1px solid var(--border);margin-top:4px">
         <div class="form-group">
           <label>Observações</label>

@@ -1,13 +1,4 @@
-"""
-blueprints/chamados.py — Rotas de Chamados para viewers (Portal Fazenda / Helpdesk).
-
-Segurança:
-    - viewer_required em todas as rotas.
-    - Anti-IDOR: viewers só acessam chamados da sua localidade_id de sessão.
-    - localidade_id e usuario_id SEMPRE lidos da sessão — nunca do body.
-
-Complexidade: O(n) para listagem; O(1) para criação e envio de mensagem.
-"""
+"""Rotas de chamados de suporte para o portal da fazenda."""
 
 from __future__ import annotations
 
@@ -36,10 +27,6 @@ _TABELAS_EQUIPAMENTOS = [
 ]
 
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LISTAGEM DE CHAMADOS DA LOCALIDADE
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @chamados_bp.route("/")
 @viewer_required
@@ -82,10 +69,6 @@ def listar_chamados():
         status_validos=sorted(_STATUS_VALIDOS),
     )
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# NOVO CHAMADO
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @chamados_bp.route("/novo", methods=["GET", "POST"])
 @viewer_required
@@ -230,22 +213,10 @@ def novo_chamado():
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# DETALHE + CHAT DO CHAMADO
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @chamados_bp.route("/<int:chamado_id>", methods=["GET", "POST"])
 @viewer_required
 def detalhe_chamado(chamado_id: int):
-    """
-    Exibe o chamado e o histórico de mensagens (chat).
-
-    POST: Insere nova mensagem do usuário.
-    Se o status era 'pendente_usuario', volta para 'em_atendimento' automaticamente.
-
-    Segurança Anti-IDOR:
-        Viewer só acessa chamados da própria localidade_id de sessão.
-    """
+    """Exibe o chamado e gerencia o envio de mensagens."""
     localidade_id = get_localidade_filter()
     usuario_id    = get_usuario_id()
     role          = session.get("role")
@@ -384,10 +355,6 @@ def detalhe_chamado(chamado_id: int):
         status_validos=sorted(_STATUS_VALIDOS),
     )
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# REGISTRAR MOVIMENTAÇÃO DO EQUIPAMENTO (FAZENDA)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @chamados_bp.route("/<int:chamado_id>/movimentacao", methods=["POST"])
 @viewer_required

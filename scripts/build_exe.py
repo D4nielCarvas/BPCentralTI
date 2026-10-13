@@ -30,7 +30,6 @@ import subprocess
 import sys
 
 
-# ── Comando PyInstaller ───────────────────────────────────────────────────────
 # Equivalente ao comando abaixo executado manualmente:
 #
 # pyinstaller \

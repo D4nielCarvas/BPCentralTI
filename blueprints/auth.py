@@ -1,24 +1,4 @@
-"""
-blueprints/auth.py — Blueprint de autenticacao completo.
-
-Rotas:
-    GET/POST /login              — Login com email ou username
-    GET/POST /cadastro           — Auto-cadastro (role sempre 'viewer')
-    GET/POST /recuperar-senha    — Solicita link de recuperacao por e-mail
-    GET/POST /resetar-senha/<t>  — Redefine senha via token valido
-    GET      /logout             — Encerra sessao
-
-Seguranca:
-    - Senhas: werkzeug.security.generate/check_password_hash (pbkdf2:sha256).
-    - Tokens: secrets.token_urlsafe(32) — 256 bits de entropia.
-    - Tokens expiram em 1 hora e sao marcados como usado=TRUE apos uso.
-    - Session fixation: session.clear() antes de gravar nova sessao.
-    - SMTP: credenciais apenas via os.environ — nunca hardcoded.
-
-Risco a monitorar:
-    - Rate-limit no /recuperar-senha (nao implementado aqui — usar Nginx/WAF).
-    - Emails com texto puro incluidos como fallback para clientes sem HTML.
-"""
+"""Autenticação: login, cadastro, recuperação de senha e logout."""
 
 from __future__ import annotations
 
@@ -45,8 +25,6 @@ auth_bp = Blueprint("auth", __name__)
 def ratelimit_handler(e):
     flash("Muitas tentativas de acesso. Por favor, aguarde alguns instantes antes de tentar novamente.", "warning")
     return redirect(url_for("auth.login"))
-
-# ── Utilitario de e-mail ──────────────────────────────────────────────────────
 
 def enviar_email_recuperacao(email_destino: str, token: str, base_url: str = "") -> bool:
     """
@@ -125,10 +103,6 @@ def enviar_email_recuperacao(email_destino: str, token: str, base_url: str = "")
         print(f"[AUTH] Falha ao enviar e-mail para {email_destino}: {exc}")
         return False
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LOGIN
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 @limiter.limit("10 per minute")
@@ -217,10 +191,7 @@ def login():
     return render_template("auth/login.html")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # CADASTRO (auto-cadastro — sempre viewer)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @auth_bp.route("/cadastro", methods=["GET", "POST"])
 def cadastro():
     """
@@ -288,20 +259,11 @@ def cadastro():
     return render_template("auth/cadastro.html", localidades=localidades, form={})
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # RECUPERACAO DE SENHA — solicitar link
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @auth_bp.route("/recuperar-senha", methods=["GET", "POST"])
 @limiter.limit("5 per hour", key_func=lambda: request.form.get("email", get_remote_address()))
 def recuperar_senha():
-    """
-    GET  — Formulario pedindo apenas o e-mail.
-    POST — Gera token seguro e envia e-mail com link de recuperacao.
-
-    Seguranca: retorna sempre a mesma mensagem neutra,
-    independente de o e-mail existir ou nao (evita user enumeration).
-    """
+    """Solicitação de recuperação de senha e envio de token por e-mail."""
     if request.method == "POST":
         email_input = (request.form.get("email") or "").strip().lower()
 
@@ -338,10 +300,7 @@ def recuperar_senha():
     return render_template("auth/recuperar_senha.html")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # RESETAR SENHA — via token
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @auth_bp.route("/resetar-senha/<token>", methods=["GET", "POST"])
 def resetar_senha(token: str):
     """
@@ -412,10 +371,6 @@ def resetar_senha(token: str):
 
     return render_template("auth/nova_senha.html", token=token)
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LOGOUT
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @auth_bp.route("/logout")
 def logout():

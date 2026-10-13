@@ -32,7 +32,7 @@
 
 <body>
 
-  <!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
+  <!-- Sidebar -->
   <div id="sidebar">
     <div class="sidebar-logo">
       <div class="logo-icon" aria-hidden="true">
@@ -174,7 +174,7 @@
 
   </div>
 
-  <!-- ── Main Content ───────────────────────────────────────────────────────── -->
+  <!-- Main Content -->
   <div id="main">
     <div id="topbar">
       <button class="btn btn-ghost mobile-only" id="mobile-menu-btn" style="margin-right: 12px; padding: 4px 10px;"
@@ -272,7 +272,7 @@
 
   {% if session.usuario_id %}
   <script>
-    // ─── ALERTA SONORO DE EMERGÊNCIA (Web Audio API) ─────────────────────────
+    // ALERTA SONORO DE EMERGÊNCIA (Web Audio API)
     function playUrgentAlertSound() {
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -299,7 +299,7 @@
       }
     }
 
-    // ─── NOTIFICAÇÕES DESKTOP PUSH & POLLING ──────────────────────────────────────
+    // NOTIFICAÇÕES DESKTOP PUSH & POLLING
     (function () {
       let lastNotifId = parseInt(localStorage.getItem('lastNotifId')) || 0;
       const isAdmin = {{ 'true' if (session.role == 'admin' or session.is_admin_master) else 'false' }};

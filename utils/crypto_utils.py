@@ -1,30 +1,4 @@
-"""
-crypto_utils.py — Utilitários de criptografia simétrica para campos sensíveis.
-
-Usa Fernet (AES-128-CBC + HMAC-SHA256) da biblioteca `cryptography`.
-A chave é lida da variável de ambiente FERNET_KEY, gerada uma vez e
-armazenada no .env.
-
-Gere a chave com:
-    python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-
-Uso:
-    from crypto_utils import encrypt_field, decrypt_field
-
-    # Antes de gravar no banco
-    senha_enc = encrypt_field(senha_plain)  # → "gAAAAA..."
-
-    # Ao ler do banco para exibir
-    senha_plain = decrypt_field(senha_enc)  # → "senha original"
-
-Segurança:
-    - Nunca armazene a FERNET_KEY no controle de versão.
-    - Se a chave for comprometida, rotacione com MultiFernet.
-    - Campos criptografados não são pesquisáveis (ILIKE não funciona).
-
-Complexidade:
-    - encrypt/decrypt: O(n) onde n = tamanho do campo — desprezível para senhas.
-"""
+"""Utilitários de criptografia simétrica (Fernet) para campos sensíveis."""
 
 from __future__ import annotations
 

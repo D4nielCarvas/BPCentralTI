@@ -573,13 +573,13 @@
 </div>
 
 <script>
-  // ── Constantes & Estado ──────────────────────────────────────────────────
+// Constantes & Estado
   const CHAMADO_ID = Number("{{ chamado.id }}");
   const MEU_ID = Number("{{ usuario_id }}");
   let ultimoId = Number("{{ mensagens[-1].id if mensagens else 0 }}");
   let arquivoAtual = null;
 
-  // ── Elementos do DOM ─────────────────────────────────────────────────────
+// Elementos do DOM
   const chatMsgs = document.getElementById('chat-msgs');
   const formMsg = document.getElementById('form-msg');
   const textareaMsg = document.getElementById('reply-textarea');
@@ -592,7 +592,7 @@
   const btnRemoveAnexo = document.getElementById('anexo-preview-btn-remove');
   const chatPanel = document.getElementById('chat-panel');
 
-  // ── Lightbox Functions ───────────────────────────────────────────────────
+// Lightbox Functions
   function abrirLightbox(src, nome) {
     const modal = document.getElementById('chat-lightbox');
     const img = document.getElementById('lightbox-img');
@@ -624,7 +624,7 @@
     if (e.key === 'Escape') fecharLightboxDirect();
   });
 
-  // ── Client-Side Image Compressor (Canvas) ────────────────────────────────
+// Client-Side Image Compressor (Canvas)
   async function comprimirImagemSeNecessario(file, maxDim = 1920, quality = 0.85) {
     if (!file.type.startsWith('image/') || file.type === 'image/gif') {
       return file;
@@ -676,7 +676,7 @@
     return (bytes / 1048576).toFixed(2) + ' MB';
   }
 
-  // ── Gerenciamento do Arquivo/Print Selecionado ────────────────────────────
+// Gerenciamento do Arquivo/Print Selecionado
   async function setArquivo(file) {
     if (!file) {
       limparArquivo();
@@ -724,7 +724,7 @@
     });
   }
 
-  // ── Suporte a Colar Imagens (Ctrl + V) em qualquer lugar ──────────────────
+// Suporte a Colar Imagens (Ctrl + V) em qualquer lugar
   document.addEventListener('paste', function(e) {
     if (e.clipboardData && e.clipboardData.files.length > 0) {
       const file = e.clipboardData.files[0];
@@ -736,7 +736,7 @@
     }
   });
 
-  // ── Drag & Drop de Prints/Arquivos ────────────────────────────────────────
+// Drag & Drop de Prints/Arquivos
   if (chatPanel) {
     ['dragenter', 'dragover'].forEach(eventName => {
       chatPanel.addEventListener(eventName, (e) => {
@@ -762,7 +762,7 @@
     });
   }
 
-  // ── Renderizador de Bolhas de Mensagens ───────────────────────────────────
+// Renderizador de Bolhas de Mensagens
   function buildMsg(m, isSending = false) {
     let anexoHtml = '';
     if (m.caminho_arquivo) {
@@ -803,7 +803,7 @@
   }
   scrollToBottom();
 
-  // ── Envio Assíncrono via AJAX / Fetch ─────────────────────────────────────
+// Envio Assíncrono via AJAX / Fetch
   if (formMsg) {
     // Atalho Ctrl+Enter
     if (textareaMsg) {
@@ -923,7 +923,7 @@
     }
   }
 
-  // ── Delta Polling Adaptativo ──────────────────────────────────────────────
+// Delta Polling Adaptativo
   let pollTimer = null;
   async function pollMensagens() {
     try {

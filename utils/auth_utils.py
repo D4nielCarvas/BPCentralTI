@@ -1,16 +1,4 @@
-"""
-auth_utils.py - Utilitarios de autenticacao e controle de acesso multi-tenant.
-
-Padrao: Decorator (AOP) + sessao Flask.
-Complexidade: O(1) - todas as verificacoes sao leituras de sessao em memoria.
-
-Seguranca:
-    - Nunca confie no localidade_id vindo do corpo da requisicao.
-      Use sempre get_localidade_filter() para obter o valor da sessao.
-    - Senhas armazenadas com werkzeug.security.generate_password_hash (pbkdf2:sha256).
-    - Risco de IDOR: validar sempre que o pedido_id pertence ao usuario_id
-      da sessao antes de exibir (feito nas rotas do blueprint fazenda.py).
-"""
+"""Controle de acesso, decorators de autenticação e filtros de sessão."""
 
 from __future__ import annotations
 
@@ -19,8 +7,6 @@ from typing import Optional
 
 from flask import abort, redirect, session, url_for
 
-
-# ── Filtro de localidade ──────────────────────────────────────────────────────
 
 def is_admin_user() -> bool:
     """
@@ -99,8 +85,6 @@ def has_permission(perm_name: str) -> bool:
         return bool(permissoes.get(perm_name))
     return False
 
-
-# ── Decorators de acesso ──────────────────────────────────────────────────────
 
 def login_required(f):
     """

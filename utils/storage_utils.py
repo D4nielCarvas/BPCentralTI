@@ -20,20 +20,7 @@ def get_supabase_headers() -> dict:
     }
 
 def upload_file_to_supabase(bucket: str, file_path: str, file_bytes: bytes, content_type: str) -> bool:
-    """
-    Faz upload de um arquivo para o bucket do Supabase via REST API.
-    
-    Complexidade: O(N) onde N é o tamanho do arquivo em bytes (enviado via rede).
-    
-    Args:
-        bucket: Nome do bucket (ex: 'tutoriais')
-        file_path: Caminho do arquivo dentro do bucket (ex: 'video.mp4')
-        file_bytes: Conteúdo do arquivo em bytes
-        content_type: Mimetype do arquivo (ex: 'video/mp4')
-        
-    Returns:
-        True se sucesso, False caso contrário.
-    """
+    """Faz upload de um arquivo para o bucket do Supabase via REST API."""
     base_url = get_supabase_storage_url()
     if not base_url:
         print("Erro: SUPABASE_URL não configurado no .env")

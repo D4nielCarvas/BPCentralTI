@@ -1,20 +1,4 @@
-"""
-db_layer.py — Camada de acesso ao banco de dados com pooling de conexões.
-
-Substitui o context manager `get_db()` do app.py monolítico por um pool
-reutilizável (ThreadedConnectionPool), reduzindo a latência de handshake
-TLS/TCP com o Supabase em ~50–200ms por request.
-
-Pattern: Object Pool
-Complexidade: O(1) amortizado por acquire/release.
-
-Uso:
-    from db_layer import acquire_conn
-
-    with acquire_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT 1")
-"""
+"""Camada de acesso ao banco de dados com pooling de conexões."""
 
 from __future__ import annotations
 
@@ -28,8 +12,6 @@ import psycopg2.pool
 from dotenv import load_dotenv
 
 load_dotenv()
-
-# ── Configuração do pool ──────────────────────────────────────────────────────
 
 _DATABASE_URL: str = os.environ["SUPABASE_DATABASE_URL"]
 
@@ -119,8 +101,6 @@ def acquire_conn() -> Generator[psycopg2.extensions.connection, None, None]:
         if conn is not None:
             _pool.putconn(conn)
 
-
-# ── Helpers de resultado ──────────────────────────────────────────────────────
 
 def row_to_dict(
     row: Optional[psycopg2.extras.RealDictRow],

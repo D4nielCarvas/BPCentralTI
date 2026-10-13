@@ -802,7 +802,7 @@
   </div>
 
   <script>
-    // ─── RBAC ───────────────────────────────────────────────────────────────────
+    // RBAC
     const canAnexarTermos = ("{{ 'true' if has_permission('anexar_termos') else 'false' }}" === "true");
     const canVerTermos = ("{{ 'true' if has_permission('ver_termos') else 'false' }}" === "true");
     const canEditarEquip = ("{{ 'true' if has_permission('editar_equipamentos') else 'false' }}" === "true");
@@ -848,7 +848,7 @@
       document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">`);
     }
 
-    // ─── CONSTANTES ─────────────────────────────────────────────────────────────
+    // CONSTANTES
     const FAZENDAS = ['Central', 'São Manoel', 'Tangará', 'São Pedro', 'São Judas', 'São Francisco',
       'Santana', 'Santa Eliza', 'Santa Lucia', 'Santa Lucia 2', 'Caroline', 'São João',
       'Santa Luzia', 'Santa Adelina', 'Santa Francisca', 'CD'];
@@ -869,13 +869,13 @@
       'STR': 'Sestr', 'AGR': 'Agrícola', 'CDP': 'CD', 'INP': 'Inspeção', 'LDR': 'Líderes', 'TI': 'TI', 'BLC': 'Balança', 'COA': 'COA', 'RH': 'RH'
     };
 
-    // ─── STATE ───────────────────────────────────────────────────────────────────
+    // STATE
     let currentPage = 'dashboard';
     let modalCtx = {};
     let filterState = {};
     let globalSearchFilter = '';
 
-    // ─── NAV ─────────────────────────────────────────────────────────────────────
+    // NAV
     document.querySelectorAll('.nav-item[data-page]').forEach(el => {
       el.addEventListener('click', () => showPage(el.dataset.page));
     });
@@ -941,7 +941,7 @@
     }
 
 
-    // ─── API ─────────────────────────────────────────────────────────────────────
+    // API
     async function api(path, method = 'GET', body = null) {
       try {
         const opts = { method, headers: { 'Content-Type': 'application/json' } };
@@ -956,7 +956,7 @@
       }
     }
 
-    // ─── UX: LOADING / SPINNER ────────────────────────────────────────────────
+    // UX: LOADING / SPINNER
     /**
      * Bloqueia/desbloqueia um botão com spinner para evitar duplo clique.
      * @param {HTMLButtonElement} btn
@@ -988,7 +988,7 @@
       ).join('');
     }
 
-    // ─── PAGINACAO ────────────────────────────────────────────────────────────
+    // PAGINACAO
     const pageState = {};
     const PAGE_LIMIT = 50;
 
@@ -1043,7 +1043,7 @@
       }
     }
 
-    // ─── FORMATAÇÃO DE TELEFONE ───────────────────────────────────────────────
+    // FORMATAÇÃO DE TELEFONE
     function formatPhone(el) {
       let v = el.value.replace(/\D/g, '');
       if (v.length > 11) v = v.slice(0, 11);
@@ -1055,7 +1055,7 @@
       el.value = v;
     }
 
-    // ─── SUGESTÃO DE ID ──────────────────────────────────────────────────────────
+    // SUGESTÃO DE ID
     async function triggerIdSuggestion() {
       const { mode, type } = modalCtx;
       if (mode !== 'new') return;
@@ -1135,7 +1135,7 @@
       }
     }
 
-    // ─── DASHBOARD ───────────────────────────────────────────────────────────────
+    // DASHBOARD
     async function loadDashboard() {
       const d = await api('/api/dashboard'); const eq = d.equipamentos;
       document.getElementById('dash-stats').innerHTML = `
@@ -1158,7 +1158,7 @@
         : '<div class="empty"><div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><p>Nenhuma manutenção em aberto</p></div>';
     }
 
-    // ─── STATUS / HELPERS ────────────────────────────────────────────────────────
+    // STATUS / HELPERS
     function statusBadge(s) {
       const map = {
         Ativo: 'badge-ativo', Inativo: 'badge-inativo', 'Manutenção': 'badge-manut', Descartado: 'badge-desc',
@@ -1237,7 +1237,7 @@
       }
     }
 
-    // ─── LOADERS ─────────────────────────────────────────────────────────────────
+    // LOADERS
     let localSearchTimeout;
     function handleLocalSearch(page) {
       clearTimeout(localSearchTimeout);
@@ -1635,7 +1635,7 @@
 
     async function editCelularTurma(id) { openCelularTurmaModal(await api(`/api/celulares_turma/${id}`)); }
 
-    // ─── MODAL ───────────────────────────────────────────────────────────────────
+    // MODAL
     function openModal(title, bodyHtml, ctx, showSave = true) {
       document.getElementById('modal-title').textContent = title;
       document.getElementById('modal-body').innerHTML = bodyHtml;
@@ -1731,7 +1731,7 @@
     async function editEstoque(id) { openEstoqueModal(await api(`/api/estoque/${id}`)); }
     async function editToner(id) { openTonerModal(await api(`/api/toners/${id}`)); }
 
-    // ─── FORM HELPERS ────────────────────────────────────────────────────────────
+    // FORM HELPERS
     const st = (f, d, opts, onchange = '') => {
       const options = Array.isArray(opts) ? opts : Object.entries(opts).map(([k, v]) => ({ v: k, l: v }));
       return `<select name="${f}" ${onchange ? `onchange="${onchange}"` : ''}>
@@ -1758,7 +1758,7 @@
   ${Object.entries(SIGLAS_SETOR_JS).map(([k, v]) => `<option value="${v}" ${(d?.setor || '') == v ? 'selected' : ''}>${v} (${k})</option>`).join('')}
 </select>`);
 
-    // ─── MODALS CELULARES ─────────────────────────────────────────────────────────
+    // MODALS CELULARES
     // Helper: toggle exibir/ocultar senha (padrão unificado em todos os modais)
     function toggleSenha(inputId, btn) {
       const inp = document.getElementById(inputId);
@@ -1766,7 +1766,7 @@
       inp.type = inp.type === 'password' ? 'text' : 'password';
       btn.textContent = inp.type === 'password' ? '\uD83D\uDC41' : '\uD83D\uDEAB';
     }
-    // Helper: campo de senha com botão toggle visível (Design Pattern: Factory)
+    // Helper: campo de senha com botão toggle visível 
     function pwdField(name, d, label, inputId) {
       const uid = inputId || ('pwd-' + name);
       const val = (d && d[name]) ? d[name] : '';
@@ -2359,7 +2359,7 @@
       set('local_atual', data.fazenda || data.setor || '');
     }
 
-    // ─── UPLOAD PDF ──────────────────────────────────────────────────────────────
+    // UPLOAD PDF
     function uploadPDF(tipo, id_ativo) {
       const input = document.createElement('input');
       input.type = 'file'; input.accept = '.pdf';
@@ -2377,7 +2377,7 @@
       input.click();
     }
 
-    // ─── ESTOQUE: MOVIMENTAR ─────────────────────────────────────────────────────
+    // ESTOQUE: MOVIMENTAR
     function movimentarEstoque(eid, tipo, item) {
       const label = tipo === 'entrada' ? 'Registrar Entrada' : 'Registrar Saída';
       const html = `<form id="modal-form">
@@ -2482,7 +2482,7 @@
       };
     }
 
-    // ─── TUTORIAIS ───────────────────────────────────────────────────────────────
+    // TUTORIAIS
     async function loadTutoriais() {
       const grid = document.getElementById('tutoriais-grid');
       grid.innerHTML = '<p>Carregando tutoriais...</p>';
@@ -2570,7 +2570,7 @@
       }
     }
 
-    // ─── ATALHOS ─────────────────────────────────────────────────────────────────
+    // ATALHOS
     function newManutFromAtivo(id, tipo, modelo) { showPage('manutencoes'); openManutModal(null, { id_ativo: id, tipo_equipamento: tipo, modelo }); }
     function newDescarteFromAtivo(id, tipo, modelo) { showPage('descartes'); openDescarteModal(null, { id_ativo: id, tipo_equipamento: tipo, modelo }); }
 
@@ -2599,10 +2599,10 @@
       });
     });
 
-    // ─── EXPORTAR ─────────────────────────────────────────────────────────────────
+    // EXPORTAR
     function exportar(tabela) { window.open(`/api/exportar/${tabela}`, '_blank'); }
 
-    // ─── TOAST ───────────────────────────────────────────────────────────────────
+    // TOAST
     function toast(msg, type = 'info') {
       const icons = {
         success: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
@@ -2616,7 +2616,7 @@
       setTimeout(() => el.remove(), 3500);
     }
 
-    // ─── ALERTA SONORO DE EMERGÊNCIA (Web Audio API) ─────────────────────────
+    // ALERTA SONORO DE EMERGÊNCIA (Web Audio API)
     function playUrgentAlertSound() {
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -2643,7 +2643,7 @@
       }
     }
 
-    // ─── NOTIFICAÇÕES DESKTOP PUSH & POLLING ──────────────────────────────────────
+    // NOTIFICAÇÕES DESKTOP PUSH & POLLING
     let lastNotifId = parseInt(localStorage.getItem('lastNotifId')) || 0;
     
     function initDesktopNotifications() {
@@ -2911,7 +2911,7 @@ document.querySelectorAll('button[onclick^="exportar("]').forEach(btn => {
 </div>
 
 <style>
-/* ── Estilos do modal QR ───────────────────────────────── */
+/* Estilos do modal QR */
 #modal-qr.open { display: flex !important; }
 </style>
 

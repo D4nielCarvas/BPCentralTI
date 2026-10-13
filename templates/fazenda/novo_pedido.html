@@ -26,7 +26,7 @@
   <div class="form-card-body">
     <form method="POST" action="{{ url_for('fazenda.novo_pedido') }}" id="form-novo-pedido">
 
-      {# ── Identificação da Fazenda / Localidade ── #}
+{# Identificação da Fazenda / Localidade #}
       {% if session.role == 'admin' and localidades %}
       <div class="form-group" style="margin-bottom:18px">
         <label for="localidade_id" style="display:flex;align-items:center;gap:6px">
@@ -64,7 +64,7 @@
       <input type="hidden" name="localidade_id" value="{{ localidade_id_sessao or '' }}">
       {% endif %}
 
-      {# ── Grid: Item & Quantidade ── #}
+{# Grid: Item & Quantidade #}
       <div style="display:grid;grid-template-columns:1fr 140px;gap:16px;margin-bottom:12px">
         <div class="form-group">
           <label for="item">Item Solicitado *</label>
@@ -89,7 +89,7 @@
         </div>
       </div>
 
-      {# ── Painel Dinâmico de Status do Estoque ── #}
+{# Painel Dinâmico de Status do Estoque #}
       <div id="painel-status-estoque" style="margin-bottom:18px;display:none">
         <div id="aviso-estoque-disponivel" style="display:none;padding:10px 14px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:8px;font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:10px">
           <span style="color:#10b981;display:inline-flex;align-items:center;">
@@ -116,7 +116,7 @@
         </div>
       </div>
 
-      {# ── Nível de Urgência (Seletores Visuais Modernos) ── #}
+{# Nível de Urgência (Seletores Visuais Modernos) #}
       <div class="form-group" style="margin-bottom:20px">
         <label style="margin-bottom:8px;display:block">Nível de Urgência *</label>
         <input type="hidden" name="urgencia" id="input-urgencia" value="media">
@@ -161,7 +161,7 @@
         </div>
       </div>
 
-      {# ── Motivo / Justificativa ── #}
+{# Motivo / Justificativa #}
       <div class="form-group" style="margin-bottom:24px">
         <label for="motivo">Descrição / Motivo da Solicitação *</label>
         <textarea name="motivo" id="motivo" rows="5" maxlength="2000"
@@ -173,7 +173,7 @@
         </div>
       </div>
 
-      {# ── Ações do Formulário ── #}
+{# Ações do Formulário #}
       <div class="form-actions" style="display:flex;justify-content:flex-end;gap:12px;border-top:1px solid var(--border);padding-top:16px">
         <a href="{{ url_for('fazenda.listar_pedidos') }}" class="btn btn-ghost">Cancelar</a>
         <button type="submit" id="btn-enviar" class="btn btn-primary" style="padding:10px 24px;font-weight:600">

@@ -1,18 +1,4 @@
-"""
-api_qrcode.py — Rotas para geração, ação e impressão de QR Codes.
-
-Responsabilidades:
-    - GET  /qr/<tipo>/<id>         → Página de ação ao escanear o QR (admin required)
-    - GET  /api/qr/info/<tipo>/<id>  → JSON com dados resumidos do item
-    - POST /api/qr/ativo/checkin/<tipo>/<id> → Registra "Chegou na TI" para um ativo
-    - POST /api/qr/estoque/<id>/saida       → Baixa rápida de estoque via QR
-
-Segurança:
-    - Todas as rotas exigem @admin_required.
-    - Nenhuma rota expõe dados sensíveis (senhas, etc.).
-
-Complexidade: O(1) — todas as operações são lookups por PK.
-"""
+"""Rotas para geração, consulta e ações via QR Code."""
 
 from __future__ import annotations
 
@@ -23,8 +9,6 @@ from utils.auth_utils import admin_required
 from utils.api_utils import log_historico
 
 bp = Blueprint("api_qrcode", __name__, url_prefix="")
-
-# ── Mapeamento tipo → tabela e campos relevantes ──────────────────────────────
 
 _TIPO_CONFIG: dict[str, dict] = {
     "estoque": {
@@ -82,7 +66,6 @@ def _get_item(tipo: str, item_id: str) -> dict | None:
     """
     Busca um item pelo tipo e ID.
     Retorna dict com os dados ou None se não encontrado.
-    Complexidade: O(1) — lookup por PK.
     """
     cfg = _TIPO_CONFIG.get(tipo)
     if not cfg:
@@ -115,8 +98,6 @@ def _get_chamados_ativo(id_ativo: str) -> list[dict]:
             )
     return rows
 
-
-# ── ROTA PRINCIPAL: Página de ação ao escanear o QR ──────────────────────────
 
 @bp.route("/qr/<tipo>/<item_id>")
 @admin_required
@@ -168,8 +149,6 @@ def qr_action_page(tipo: str, item_id: str) -> Response:
     )
 
 
-# ── ROTA DE IMPRESSÃO: Página isolada para Smart Label Printer 650 ────────────
-
 @bp.route("/qr/imprimir/<tipo>/<item_id>")
 @admin_required
 def qr_imprimir_etiqueta(tipo: str, item_id: str) -> Response:
@@ -201,17 +180,12 @@ def qr_imprimir_etiqueta(tipo: str, item_id: str) -> Response:
 
 
 
-# ── API: Dados resumidos de um item (para modal no sistema) ───────────────────
-
 @bp.route("/api/qr/info/<tipo>/<item_id>")
 @admin_required
 def api_qr_info(tipo: str, item_id: str) -> Response:
     """
     Retorna JSON com os dados resumidos do item para exibição no modal de QR.
     Não expõe campos sensíveis (senha_windows, etc.).
-
-    Campos sensíveis excluídos: senha_windows, senha_starlink.
-    Complexidade: O(1).
     """
     cfg = _TIPO_CONFIG.get(tipo)
     if not cfg:
@@ -234,25 +208,10 @@ def api_qr_info(tipo: str, item_id: str) -> Response:
     })
 
 
-# ── API: Registrar "Chegou na TI" para um ativo ───────────────────────────────
-
 @bp.route("/api/qr/ativo/checkin/<tipo>/<item_id>", methods=["POST"])
 @admin_required
 def api_qr_checkin_ativo(tipo: str, item_id: str) -> Response:
-    """
-    Registra que um ativo chegou ao setor de TI.
-
-    Ações realizadas:
-      1. Atualiza o campo `status` para 'Com TI' na tabela correspondente.
-      2. Loga no histórico: 'Chegou na TI' com o responsável da sessão.
-
-    Critérios de aceite:
-      - Retorna 404 se o item não existir.
-      - Retorna 400 se o tipo não for de ativo (ex: estoque).
-      - Status anterior é preservado no log do histórico.
-
-    Complexidade: O(1).
-    """
+    """Registra recebimento do ativo no setor de TI via QR Code."""
     if tipo == "estoque":
         return jsonify({"ok": False, "msg": "Use a rota de saída para itens de estoque."}), 400
 
@@ -295,24 +254,10 @@ def api_qr_checkin_ativo(tipo: str, item_id: str) -> Response:
     })
 
 
-# ── API: Saída rápida de estoque via QR ──────────────────────────────────────
-
 @bp.route("/api/qr/estoque/<int:eid>/saida", methods=["POST"])
 @admin_required
 def api_qr_saida_estoque(eid: int) -> Response:
-    """
-    Registra saída de estoque via QR code.
-
-    Delega a lógica de movimentação (com lock pessimista TOCTOU) à tabela
-    diretamente, replicando o comportamento de /api/estoque/<id>/movimentar.
-
-    Critérios de aceite:
-      - Retorna 404 se o item não existir.
-      - Retorna 400 se a quantidade for inválida ou estoque insuficiente.
-      - Loga na tabela estoque_movimentacoes.
-
-    Complexidade: O(1) com SELECT FOR UPDATE.
-    """
+    """Registra saída de estoque via QR Code."""
     d = request.json or {}
 
     try:
@@ -328,7 +273,7 @@ def api_qr_saida_estoque(eid: int) -> Response:
 
     with get_db() as conn:
         with conn.cursor() as cur:
-            # Lock pessimista: elimina race condition TOCTOU
+            # Bloqueia a linha para evitar concorrência
             cur.execute("SELECT * FROM estoque WHERE id=%s FOR UPDATE", (eid,))
             item = row_to_dict(cur.fetchone())
             if not item:

@@ -8,8 +8,6 @@ from utils.api_utils import _list_table
 bp = Blueprint('api_estoque', __name__, url_prefix='')
 
 # ESTOQUE
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @bp.route("/api/estoque", methods=["GET"])
 @login_required
 def listar_estoque() -> Response:
@@ -114,15 +112,7 @@ def atualizar_estoque(eid: int) -> Response:
 @bp.route("/api/estoque/<int:eid>/movimentar", methods=["POST"])
 @admin_required
 def movimentar_estoque(eid: int) -> tuple[Response, int] | Response:
-    """
-    Registra entrada ou saída de um item de estoque.
-
-    Usa SELECT FOR UPDATE para evitar race condition TOCTOU:
-    dois requests simultâneos não conseguem ler e modificar o mesmo
-    saldo concorrentemente — o segundo aguarda o commit do primeiro.
-
-    Complexidade: O(1) — operação em linha única com lock pessimista.
-    """
+    """Registra movimentação de entrada ou saída no estoque."""
     d = request.json or {}
     tipo = d.get("tipo")
     if tipo not in ("entrada", "saida"):
@@ -138,7 +128,7 @@ def movimentar_estoque(eid: int) -> tuple[Response, int] | Response:
 
     with get_db() as conn:
         with conn.cursor() as cur:
-            # FOR UPDATE: bloqueia a linha até o commit — elimina race condition
+            # Bloqueia a linha para evitar concorrência
             cur.execute("SELECT * FROM estoque WHERE id=%s FOR UPDATE", (eid,))
             item = row_to_dict(cur.fetchone())
             if not item:
@@ -177,11 +167,7 @@ def historico_estoque(eid: int) -> Response:
     return jsonify(rows)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-
 # IMPRESSORAS POR FAZENDA (para seleção no Toner)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @bp.route("/api/impressoras/por_fazenda")
 @login_required
 def impressoras_por_fazenda() -> Response:
@@ -196,10 +182,6 @@ def impressoras_por_fazenda() -> Response:
             )
     return jsonify(rows)
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# TONERS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @bp.route("/api/toners", methods=["GET"])
 @login_required
@@ -319,5 +301,3 @@ def historico_trocas(tid: int) -> Response:
             )
     return jsonify(rows)
 
-
-# ═══════════════════════════════════════════════════════════════════════════════

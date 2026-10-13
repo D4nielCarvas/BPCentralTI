@@ -47,7 +47,7 @@
       align-items: center;
     }
 
-    /* ── Header ───────────────────────────────── */
+    /* Header */
     .qr-header {
       width: 100%;
       background: var(--surface);
@@ -80,7 +80,7 @@
     .badge-ativo   { background: var(--accent-glow); color: #60a5fa; }
     .badge-erro    { background: var(--red-bg); color: var(--red); }
 
-    /* ── Main container ───────────────────────── */
+    /* Main container */
     .qr-container {
       width: 100%;
       max-width: 500px;
@@ -90,7 +90,7 @@
       gap: 16px;
     }
 
-    /* ── Card ─────────────────────────────────── */
+    /* Card */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -107,7 +107,7 @@
       margin-bottom: 12px;
     }
 
-    /* ── Item info ────────────────────────────── */
+    /* Item info */
     .item-name {
       font-size: 22px;
       font-weight: 800;
@@ -179,7 +179,7 @@
       color: var(--text-muted);
     }
 
-    /* ── Formulário de saída (estoque) ────────── */
+    /* Formulário de saída (estoque) */
     .form-group { margin-bottom: 14px; }
     .form-label {
       display: block;
@@ -206,7 +206,7 @@
       box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
-    /* ── Botões ───────────────────────────────── */
+    /* Botões */
     .btn {
       width: 100%;
       padding: 14px;
@@ -256,7 +256,7 @@
     }
     .btn-outline:hover { background: var(--surface2); color: var(--text); }
 
-    /* ── Alerta de feedback ───────────────────── */
+    /* Alerta de feedback */
     .alert {
       padding: 14px 16px;
       border-radius: var(--radius-sm);
@@ -271,7 +271,7 @@
     .alert-error   { background: var(--red-bg);   color: var(--red);   border: 1px solid rgba(239,68,68,0.25); }
     .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
 
-    /* ── Chamados em aberto ───────────────────── */
+    /* Chamados em aberto */
     .chamado-item {
       display: flex;
       gap: 10px;
@@ -294,7 +294,7 @@
       color: var(--text);
     }
 
-    /* ── Erro page ────────────────────────────── */
+    /* Erro page */
     .error-container {
       text-align: center;
       padding: 40px 20px;
@@ -308,7 +308,7 @@
     }
     .error-msg { color: var(--text-muted); font-size: 14px; }
 
-    /* ── Spinner ──────────────────────────────── */
+    /* Spinner */
     .spinner {
       width: 18px; height: 18px;
       border: 2px solid rgba(255,255,255,0.3);
@@ -321,7 +321,7 @@
     .loading .btn-text { display: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Divider ──────────────────────────────── */
+    /* Divider */
     .divider {
       display: flex;
       align-items: center;
@@ -336,7 +336,7 @@
       background: var(--border);
     }
 
-    /* ─── @media print — Etiqueta SLP-650 ────── */
+    /* @media print — Etiqueta SLP-650 */
     /* Dimensões: 1-1/8" × 3-1/2" = 28.6mm × 88.9mm
        A impressora SLP-650 aparece como impressora Windows
        com tamanho de papel configurado para o rolo.
@@ -423,7 +423,7 @@
 </head>
 <body>
 
-<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<!-- Header -->
 <header class="qr-header">
   <span class="logo-icon">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
@@ -438,7 +438,7 @@
   {% endif %}
 </header>
 
-<!-- ── Área de impressão (invisível na tela, impressa pelo @media print) ──── -->
+<!-- Área de impressão (invisível na tela, impressa pelo @media print) -->
 <div id="label-print-area">
   <div class="label-inner">
     <div class="label-qr-area" id="label-qr-canvas"></div>
@@ -453,11 +453,11 @@
   </div>
 </div>
 
-<!-- ── Conteúdo principal ──────────────────────────────────────────────────── -->
+<!-- Conteúdo principal -->
 <main class="qr-container">
 
   {% if erro %}
-  <!-- ── Página de erro ────────────────────────────────────────────────────── -->
+  <!-- Página de erro -->
   <div class="card error-container">
     <div class="error-icon" style="color:var(--red);">
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -674,7 +674,7 @@
   const ITEM_ID = {{ item_id | tojson }};
   const QR_URL  = window.location.href; // URL atual = conteúdo do QR
 
-  /* ── Gerar QR code para a etiqueta de impressão ── */
+  /* Gerar QR code para a etiqueta de impressão */
   window.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById('label-qr-canvas');
     if (el) {
@@ -689,7 +689,7 @@
     }
   });
 
-  /* ── Utilitário: mostrar alerta ─────────────────── */
+  /* Utilitário: mostrar alerta */
   function showAlert(boxId, type, msg) {
     const box = document.getElementById(boxId);
     box.className = `alert alert-${type} show`;
@@ -700,7 +700,7 @@
     box.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
-  /* ── Utilitário: estado de loading do botão ─────── */
+  /* Utilitário: estado de loading do botão */
   function setLoading(btnId, loading) {
     const btn = document.getElementById(btnId);
     if (loading) {

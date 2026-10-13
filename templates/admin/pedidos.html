@@ -48,7 +48,7 @@
 
 {% block content %}
 
-{# ── Banner de Alerta para Administradores de Pedidos Urgentes ── #}
+{# Banner de Alerta para Administradores de Pedidos Urgentes #}
 {% if qtd_pedidos_urgentes > 0 %}
 <div style="margin-bottom:18px;background:linear-gradient(90deg, rgba(239,68,68,0.18), rgba(249,115,22,0.12));border:1px solid rgba(239,68,68,0.4);border-radius:10px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 15px rgba(239,68,68,0.15)">
   <div style="display:flex;align-items:center;gap:12px">
@@ -68,7 +68,7 @@
 </div>
 {% endif %}
 
-{# ── Totalizadores ──────────────────────────────────────────────────────────── #}
+{# Totalizadores #}
 <div class="stat-mini">
   {% set total = pedidos | length %}
   {% set pendentes   = pedidos | selectattr('status','equalto','pendente')   | list | length %}

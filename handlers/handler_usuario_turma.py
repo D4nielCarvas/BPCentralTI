@@ -68,8 +68,6 @@ class UsuarioParaTurmaHandler(TransferenciaHandler):
                 turma_destino, fazenda_dest, setor_dest, data_entrega,
             )
 
-    # ── Sub-fluxo A: UPDATE simples ────────────────────────────────────────────
-
     def _update_turma_existente(
         self, cur, id_ativo, tabela, ativo_atual,
         turma_destino, fazenda_dest, setor_dest, data_entrega,
@@ -93,8 +91,6 @@ class UsuarioParaTurmaHandler(TransferenciaHandler):
             ),
         )
         return id_ativo
-
-    # ── Sub-fluxo B: Migração com snapshot ─────────────────────────────────────
 
     def _migrar_para_turma(
         self, cur, id_ativo, tabela, ativo_atual,

@@ -1,12 +1,4 @@
-"""
-blueprints/celulares.py — Blueprint para todas as rotas de celulares.
-
-Cobre 4 entidades: celulares, celulares_ponto, celulares_inspecao, celulares_turma.
-Mantém compatibilidade total com os endpoints existentes.
-
-Patterns: Blueprint (Flask), Repository (acesso via db_layer).
-Complexidade: O(n) listagem com paginação, O(1) CRUD por id_ativo.
-"""
+"""Rotas e API para gestão de celulares."""
 
 from __future__ import annotations
 
@@ -127,8 +119,6 @@ def _list_paginado(tabela: str, colunas_busca: list[str]) -> Response:
         q: Busca textual (ILIKE) nas colunas especificadas.
         page: Número da página (padrão=1).
         per_page: Itens por página (padrão=100, máx=500).
-
-    Complexidade: O(n) onde n = registros retornados após filtros.
     Big-O espaço: O(k) onde k = per_page.
     """
     filtro = request.args.get("status", "")
@@ -181,10 +171,6 @@ def _list_paginado(tabela: str, colunas_busca: list[str]) -> Response:
 
     return jsonify(_mask_telefones(rows))
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# CELULARES
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @celulares_bp.route("/celulares", methods=["GET"])
 def listar_celulares() -> Response:
@@ -297,10 +283,6 @@ def atualizar_celular(id_ativo: str) -> tuple[Response, int] | Response:
     return jsonify({"ok": True, "msg": "Celular atualizado!"})
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# CELULARES PONTO
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @celulares_bp.route("/celulares_ponto", methods=["GET"])
 def listar_celulares_ponto() -> Response:
     """Lista celulares de ponto com filtros e paginação."""
@@ -388,10 +370,6 @@ def atualizar_celular_ponto(id_ativo: str) -> tuple[Response, int] | Response:
             _log(cur, id_ativo, "Celular Ponto", "Edição")
     return jsonify({"ok": True, "msg": "Celular de ponto atualizado!"})
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# CELULARES INSPEÇÃO
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @celulares_bp.route("/celulares_inspecao", methods=["GET"])
 def listar_celulares_inspecao() -> Response:
@@ -486,10 +464,6 @@ def atualizar_celular_inspecao(id_ativo: str) -> tuple[Response, int] | Response
             _log(cur, id_ativo, "Celular Inspeção", "Edição")
     return jsonify({"ok": True, "msg": "Celular de inspeção atualizado!"})
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# CELULARES TURMA
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @celulares_bp.route("/celulares_turma", methods=["GET"])
 def listar_celulares_turma() -> Response:

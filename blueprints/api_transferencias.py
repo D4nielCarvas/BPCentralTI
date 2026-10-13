@@ -47,8 +47,6 @@ _UNION_ESTOQUE_SQL = """
 """
 
 
-# ── Rotas ──────────────────────────────────────────────────────────────────────
-
 @api_transferencias_bp.route("/api/transferencias", methods=["POST"])
 @admin_required
 def criar_transferencia() -> Response:

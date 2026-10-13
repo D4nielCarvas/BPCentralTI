@@ -10,7 +10,7 @@
 
 {% block content %}
 <style>
-/* ── Perfis Page ─────────────────────────────────────────── */
+/* Perfis Page */
 .perfis-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -109,7 +109,7 @@
   opacity: 0.5;
 }
 
-/* ── Modal de Permissões ───────────────────────────── */
+/* Modal de Permissões */
 .perm-modal-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -185,7 +185,7 @@ input:checked + .slider:before { transform:translateX(18px);background:var(--gre
 }
 </style>
 
-{# ── Cabeçalho Informativo ─────────────────────────────────────────────────── #}
+{# Cabeçalho Informativo #}
 <div style="margin-bottom:18px;padding:14px 18px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:10px;font-size:13px;color:var(--text2)">
   <strong style="color:var(--accent)">Como funciona:</strong>
   Crie cargos personalizados e defina exatamente o que cada tipo de usuário pode ver e fazer.
@@ -256,7 +256,7 @@ input:checked + .slider:before { transform:translateX(18px);background:var(--gre
 </div>
 
 
-{# ── Modal: Novo Perfil ────────────────────────────────────────────────────── #}
+{# Modal: Novo Perfil #}
 <div id="modal-novo-perfil" class="modal-overlay">
   <div class="glass-modal">
     <h3 style="font-size:16px;margin-bottom:4px">＋ Novo Cargo</h3>
@@ -310,7 +310,7 @@ input:checked + .slider:before { transform:translateX(18px);background:var(--gre
 </div>
 
 
-{# ── Modal: Editar Perfil ─────────────────────────────────────────────────── #}
+{# Modal: Editar Perfil #}
 <div id="modal-editar-perfil" class="modal-overlay">
   <div class="glass-modal">
     <h3 style="font-size:16px;margin-bottom:4px">Editar Cargo</h3>
@@ -361,7 +361,7 @@ input:checked + .slider:before { transform:translateX(18px);background:var(--gre
 
 
 <script>
-  // ── Modal Novo Perfil ──────────────────────────────────────
+// Modal Novo Perfil
   function abrirModalNovoPerfil() {
     document.getElementById('modal-novo-perfil').style.display = 'flex';
   }
@@ -380,7 +380,7 @@ input:checked + .slider:before { transform:translateX(18px);background:var(--gre
     container.querySelectorAll('input[type=checkbox]').forEach(cb => cb.disabled = this.checked);
   });
 
-  // ── Modal Editar Perfil ────────────────────────────────────
+// Modal Editar Perfil
   function abrirEditar(id, perfil, perms) {
     document.getElementById('editar-perfil-label').textContent = 'Editando: ' + perfil.nome;
     document.getElementById('form-editar-perfil').action = '/admin/perfis/' + id + '/editar';

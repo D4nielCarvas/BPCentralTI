@@ -1,13 +1,4 @@
-"""
-blueprints/admin_chamados.py — Painel de Chamados para técnicos de TI.
-
-Fluxo:
-    1. Admin acessa /admin/chamados → vê fila de abertos + seus chamados.
-    2. Clica "Assumir" → atribuido_a = usuario_id, status → em_atendimento.
-    3. Abre o chat → troca mensagens, muda status, transfere ou gera manutenção.
-
-Segurança: admin_required em todas as rotas. Nunca confia em IDs do body.
-"""
+"""Painel de chamados para técnicos de TI (rotas admin)."""
 
 from __future__ import annotations
 
@@ -30,7 +21,6 @@ _STATUS_VALIDOS = frozenset({
 })
 _PRIORIDADES = ["baixa", "media", "alta", "urgente"]
 
-# ── Helper: query base de chamados com etiquetas ──────────────────────────────
 _QUERY_CHAMADOS = """
     SELECT
         c.id, c.titulo, c.descricao, c.prioridade, c.status,
@@ -46,10 +36,6 @@ _QUERY_CHAMADOS = """
     LEFT JOIN usuarios ua ON ua.id = c.atribuido_a
 """
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# DASHBOARD: FILA + MEUS CHAMADOS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @admin_chamados_bp.route("/")
 @admin_required
@@ -119,10 +105,6 @@ def dashboard_chamados():
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# ASSUMIR CHAMADO
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @admin_chamados_bp.route("/<int:chamado_id>/assumir", methods=["POST"])
 @admin_required
 def assumir_chamado(chamado_id: int):
@@ -148,10 +130,6 @@ def assumir_chamado(chamado_id: int):
     flash("Chamado assumido com sucesso!", "success")
     return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# DETALHE + CHAT DO CHAMADO (ADMIN)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @admin_chamados_bp.route("/<int:chamado_id>", methods=["GET", "POST"])
 @admin_required
@@ -317,10 +295,6 @@ def detalhe_chamado_admin(chamado_id: int):
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# GERENCIAR ETIQUETAS DO CHAMADO
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @admin_chamados_bp.route("/<int:chamado_id>/etiquetas", methods=["POST"])
 @admin_required
 def gerenciar_etiquetas_chamado(chamado_id: int):
@@ -343,10 +317,6 @@ def gerenciar_etiquetas_chamado(chamado_id: int):
     flash("Etiquetas atualizadas com sucesso.", "success")
     return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# REGISTRAR MOVIMENTAÇÃO DO EQUIPAMENTO
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @admin_chamados_bp.route("/<int:chamado_id>/movimentacao", methods=["POST"])
 @admin_required
@@ -398,10 +368,6 @@ def movimentacao_equipamento(chamado_id: int):
     return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# TRANSFERIR CHAMADO PARA OUTRO TÉCNICO
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @admin_chamados_bp.route("/<int:chamado_id>/transferir", methods=["POST"])
 @admin_required
 def transferir_chamado(chamado_id: int):
@@ -431,10 +397,6 @@ def transferir_chamado(chamado_id: int):
     flash(f"Chamado transferido para {tecnico['nome']}.", "success")
     return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# GERAR MANUTENÇÃO A PARTIR DO CHAMADO
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @admin_chamados_bp.route("/<int:chamado_id>/gerar-manutencao", methods=["POST"])
 @admin_required
@@ -536,10 +498,6 @@ def gerar_manutencao(chamado_id: int):
     flash(f"Manutenção criada com sucesso ({os_manutencao})!", "success")
     return redirect(url_for("admin_chamados.detalhe_chamado_admin", chamado_id=chamado_id))
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# MODELOS PRE-PRONTOS DE CHAMADOS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @admin_chamados_bp.route("/modelos", methods=["GET", "POST"])
 @admin_required
@@ -658,10 +616,6 @@ def toggle_modelo(modelo_id: int):
     flash("Status do modelo atualizado.", "success")
     return redirect(url_for("admin_chamados.gerenciar_modelos"))
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LER NOTIFICAÇÃO
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @admin_chamados_bp.route("/notificacao/<int:notif_id>/ler")
 def ler_notificacao(notif_id: int):

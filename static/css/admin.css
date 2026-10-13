@@ -1,8 +1,6 @@
-/* ==========================================================================
    BP CENTRAL TI — ADMIN PANEL DESIGN SYSTEM
    Exclusivo para a Central de Operações & Inventário (index.html)
    Standard: Anthropic Frontend Design (Intentionality, High-Legibility, Anti-AI-Slop)
-   ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
@@ -92,7 +90,7 @@ body, #sidebar, #topbar, .table-card, .stat-card, .modal, .form-group input, .fo
               color 0.15s ease;
 }
 
-/* ── Theme Toggle Button ──────────────────────────────────────────────── */
+/* Theme Toggle Button */
 .theme-toggle-btn {
   background: var(--bg2);
   border: 1px solid var(--border);
@@ -147,7 +145,7 @@ html[data-theme="light"] .badge-aberto {
   color: var(--accent);
 }
 
-/* ── Reset & Baseline ─────────────────────────────────────────────────── */
+/* Reset & Baseline */
 *, *::before, *::after {
   margin: 0;
   padding: 0;
@@ -185,7 +183,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Sidebar ─────────────────────────────────────────────────────────── */
+/* Sidebar */
 #sidebar {
   width: var(--sidebar-w);
   min-height: 100vh;
@@ -396,7 +394,7 @@ nav {
   stroke-width: 1.8;
 }
 
-/* ── Main Layout & Topbar ────────────────────────────────────────────── */
+/* Main Layout & Topbar */
 #main {
   flex: 1;
   display: flex;
@@ -491,7 +489,7 @@ nav {
   color: var(--text);
 }
 
-/* ── Buttons ─────────────────────────────────────────────────────────── */
+/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -582,14 +580,14 @@ nav {
   pointer-events: none;
 }
 
-/* ── Content Area ────────────────────────────────────────────────────── */
+/* Content Area */
 #content {
   flex: 1;
   overflow-y: auto;
   padding: 22px 24px;
 }
 
-/* ── JS-generated Table Utilities (tabular-nums + IBM Plex Mono) ─────── */
+/* JS-generated Table Utilities (tabular-nums + IBM Plex Mono) */
 /* These classes are used in template literals inside index.html JS       */
 .td-mono {
   font-family: 'IBM Plex Mono', monospace;
@@ -661,7 +659,7 @@ nav {
   border-bottom: none;
 }
 
-/* ── QR Modal (self-contained themed component) ──────────────────────── */
+/* QR Modal (self-contained themed component) */
 .modal-qr-backdrop {
   display: none;
   position: fixed;
@@ -805,7 +803,7 @@ nav {
 }
 
 
-/* ── Stat Cards (Anti-AI-Slop: Precision Telemetry Indicators) ────────── */
+/* Stat Cards */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -864,7 +862,7 @@ nav {
   font-family: 'IBM Plex Mono', monospace;
 }
 
-/* ── Table Card & Controls ───────────────────────────────────────────── */
+/* Table Card & Controls */
 .table-card {
   background: var(--bg2);
   border: 1px solid var(--border);
@@ -937,7 +935,7 @@ nav {
   font-weight: 500;
 }
 
-/* ── Universal Tabular Numerals (Precision alignment in dense IT tables) ── */
+/* Universal Tabular Numerals (Precision alignment in dense IT tables) */
 table,
 thead th,
 tbody td,
@@ -1018,7 +1016,7 @@ tbody tr:hover td {
   font-weight: 500;
 }
 
-/* ── Badges (Calm, Desaturated Telemetry Indicators) ─────────────────── */
+/* Badges */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -1093,7 +1091,7 @@ tbody tr:hover td {
   font-weight: 600;
 }
 
-/* ── Modal ───────────────────────────────────────────────────────────── */
+/* Modal */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1175,7 +1173,7 @@ tbody tr:hover td {
   gap: 10px;
 }
 
-/* ── Form Components ─────────────────────────────────────────────────── */
+/* Form Components */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1248,7 +1246,7 @@ tbody tr:hover td {
   margin-bottom: 10px;
 }
 
-/* ── Toast Notifications ─────────────────────────────────────────────── */
+/* Toast Notifications */
 #toast-container {
   position: fixed;
   bottom: 20px;
@@ -1277,7 +1275,7 @@ tbody tr:hover td {
 .toast.error   { border-left: 3px solid var(--red); }
 .toast.info    { border-left: 3px solid var(--accent); }
 
-/* ── Page Visibility & Helpers ───────────────────────────────────────── */
+/* Page Visibility & Helpers */
 .page { display: none; }
 .page.active { display: block; }
 
@@ -1304,7 +1302,7 @@ tbody tr:hover td {
   margin-bottom: 20px;
 }
 
-/* ── Activity Feed ───────────────────────────────────────────────────── */
+/* Activity Feed */
 .activity-item {
   display: flex;
   align-items: center;
@@ -1343,7 +1341,7 @@ tbody tr:hover td {
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Table Action Buttons & Extras ───────────────────────────────────── */
+/* Table Action Buttons & Extras */
 .tbl-actions {
   display: flex;
   gap: 4px;
@@ -1409,7 +1407,7 @@ tbody tr:hover td {
   transition: all 0.2s;
 }
 
-/* ── Notification Dropdown ───────────────────────────────────────────── */
+/* Notification Dropdown */
 .notif-bell {
   position: relative;
   cursor: pointer;
@@ -1522,7 +1520,7 @@ tbody tr:hover td {
   font-size: 12px;
 }
 
-/* ── Sortable Table Headers ───────────────────────────────────────────── */
+/* Sortable Table Headers */
 thead th {
   cursor: pointer;
   user-select: none;

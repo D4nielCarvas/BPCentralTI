@@ -11,7 +11,7 @@
 {% block content %}
 
 <style>
-  /* ── Estilos da Visualização de Fazendas ── */
+  /* Estilos da Visualização de Fazendas */
   .fazenda-chip-item {
     cursor: pointer;
     display: flex;
@@ -188,7 +188,7 @@
   {% endif %}
 </div>
 
-{# ── Modal de Reset de Senha ────────────────────────────────────────────── #}
+{# Modal de Reset de Senha #}
 <div id="modal-reset" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
      z-index:1000;align-items:center;justify-content:center">
   <div style="background:#13161e;border:1px solid #2e364d;border-radius:14px;
@@ -213,7 +213,7 @@
   </div>
 </div>
 
-{# ── Modal de Edição de Usuário e Visualização de Fazendas ────────────────── #}
+{# Modal de Edição de Usuário e Visualização de Fazendas #}
 <div id="modal-editar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6); backdrop-filter:blur(5px);
      z-index:1000;align-items:center;justify-content:center;padding:20px;">
   <div class="glass-modal" style="max-width:580px;width:100%;max-height:92vh;overflow-y:auto;">
@@ -259,7 +259,7 @@
         </select>
       </div>
 
-      {# ── PAINEL VISUAL DE TODAS AS FAZENDAS NA ÁREA ── #}
+{# PAINEL VISUAL DE TODAS AS FAZENDAS NA ÁREA #}
       <div class="fazendas-visual-area" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--text)">

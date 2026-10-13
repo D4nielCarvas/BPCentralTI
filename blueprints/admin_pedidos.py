@@ -1,17 +1,4 @@
-"""
-blueprints/admin_pedidos.py — Rotas admin para gestão dos pedidos_viewer.
-
-Protegidas por @admin_required: apenas usuários com role='admin' acessam.
-
-Fluxo de atualização de status:
-    1. Valida que novo_status é um valor permitido.
-    2. Lê o status anterior diretamente do banco (nunca do body).
-    3. Insere registro em pedido_viewer_historico.
-    4. Atualiza pedidos_viewer.atualizado_em via trigger (ou explicitamente).
-
-Complexidade: O(1) update + insert (operações por chave primária).
-Segurança: admin_required rejeita com 403 qualquer usuário não-admin.
-"""
+"""Rotas admin para gestão de pedidos (aprovação, baixa de estoque)."""
 
 from __future__ import annotations
 
@@ -104,10 +91,6 @@ def _tentar_baixa_estoque(
 
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# LISTAGEM GERAL DE PEDIDOS
-# ═══════════════════════════════════════════════════════════════════════════════
-
 _URGENCIAS_VALIDAS = ["baixa", "media", "alta", "urgente"]
 
 @admin_pedidos_bp.route("/pedidos")
@@ -189,10 +172,6 @@ def listar_pedidos_admin():
         urgencias=_URGENCIAS_VALIDAS,
     )
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# DETALHE E ATUALIZAÇÃO DE STATUS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @admin_pedidos_bp.route("/pedidos/<int:pedido_id>")
 @admin_required

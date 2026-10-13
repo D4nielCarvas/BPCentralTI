@@ -9,7 +9,7 @@
 {% block content %}
 <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
 
-  {# ── Coluna esquerda: cabeçalho + chat ─────────────────────────────────── #}
+{# Coluna esquerda: cabeçalho + chat #}
   <div>
     {# Dados do chamado #}
     <div class="form-card" style="margin-bottom:20px">
@@ -180,7 +180,7 @@
     </div>
   </div>
 
-  {# ── Coluna direita: painel de ações ──────────────────────────────────── #}
+{# Coluna direita: painel de ações #}
   <div style="display:flex;flex-direction:column;gap:14px">
 
     {# Info #}
@@ -357,13 +357,13 @@
 </div>
 
 <script>
-  // ── Constantes & Estado ──────────────────────────────────────────────────
+// Constantes & Estado
   const CHAMADO_ID = Number("{{ chamado.id }}");
   const MEU_ID = Number("{{ usuario_id }}");
   let ultimoId = Number("{{ mensagens[-1].id if mensagens else 0 }}");
   let arquivoAtual = null;
 
-  // ── Elementos do DOM ─────────────────────────────────────────────────────
+// Elementos do DOM
   const chatMsgs = document.getElementById('chat-msgs');
   const formResp = document.getElementById('form-resp');
   const textareaMsg = document.getElementById('reply-textarea');
@@ -385,7 +385,7 @@
     if (el.dataset.accent) el.style.accentColor = el.dataset.accent;
   });
 
-  // ── Lightbox Functions ───────────────────────────────────────────────────
+// Lightbox Functions
   function abrirLightbox(src, nome) {
     const modal = document.getElementById('chat-lightbox');
     const img = document.getElementById('lightbox-img');
@@ -424,7 +424,7 @@
     if (e.key === 'Escape') fecharLightboxDirect();
   });
 
-  // ── Client-Side Image Compressor (Canvas) ────────────────────────────────
+// Client-Side Image Compressor (Canvas)
   async function comprimirImagemSeNecessario(file, maxDim = 1920, quality = 0.85) {
     if (!file.type.startsWith('image/') || file.type === 'image/gif') {
       return file;
@@ -476,7 +476,7 @@
     return (bytes / 1048576).toFixed(2) + ' MB';
   }
 
-  // ── Gerenciamento do Arquivo/Print Selecionado ────────────────────────────
+// Gerenciamento do Arquivo/Print Selecionado
   async function setArquivo(file) {
     if (!file) {
       limparArquivo();
@@ -524,7 +524,7 @@
     });
   }
 
-  // ── Suporte a Colar Imagens (Ctrl + V) em qualquer lugar ──────────────────
+// Suporte a Colar Imagens (Ctrl + V) em qualquer lugar
   document.addEventListener('paste', function(e) {
     if (e.clipboardData && e.clipboardData.files.length > 0) {
       const file = e.clipboardData.files[0];
@@ -536,7 +536,7 @@
     }
   });
 
-  // ── Drag & Drop de Prints/Arquivos ────────────────────────────────────────
+// Drag & Drop de Prints/Arquivos
   if (chatPanel) {
     ['dragenter', 'dragover'].forEach(eventName => {
       chatPanel.addEventListener(eventName, (e) => {
@@ -562,7 +562,7 @@
     });
   }
 
-  // ── Renderizador de Bolhas de Mensagens ───────────────────────────────────
+// Renderizador de Bolhas de Mensagens
   function buildMsg(m, isSending = false) {
     const img_exts = ['jpg','jpeg','png','gif','webp','bmp'];
     let anexoHtml = '';
@@ -604,7 +604,7 @@
   }
   scrollToBottom();
 
-  // ── Envio Assíncrono via AJAX / Fetch ─────────────────────────────────────
+// Envio Assíncrono via AJAX / Fetch
   if (formResp) {
     if (textareaMsg) {
       textareaMsg.addEventListener('keydown', function(e) {
@@ -709,7 +709,7 @@
     }
   }
 
-  // ── Delta Polling Adaptativo ──────────────────────────────────────────────
+// Delta Polling Adaptativo
   let pollTimer = null;
   async function pollMensagens() {
     try {

@@ -5,7 +5,7 @@
 
 {% block head %}
 <style>
-  /* ── Tabs ── */
+  /* Tabs */
   .tabs-wrap {
     display: flex;
     gap: 6px;
@@ -53,11 +53,11 @@
     background: rgba(59,130,246,.25);
     color: var(--accent);
   }
-  /* ── Panels ── */
+  /* Panels */
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
-  /* ── Search inline ── */
+  /* Search inline */
   .tab-search-wrap {
     position: relative;
   }
@@ -100,7 +100,7 @@
 </div>
 {% else %}
 
-{# ── Totalizadores rápidos ────────────────────────────────── #}
+{# Totalizadores rápidos #}
 <div class="stat-mini" style="margin-bottom:22px">
   <div class="stat-mini-card">
     <div class="label">Total Geral</div>
@@ -117,7 +117,7 @@
 {% set can_gerar_termo = has_permission('gerar_termos') %}
 
 
-{# ── Tab Bar ──────────────────────────────────────────────── #}
+{# Tab Bar #}
 <div class="tabs-wrap" id="tabs-bar">
   {% for tipo in tipos_habilitados %}
   {% set tid = loop.index %}
@@ -132,7 +132,7 @@
   {% endfor %}
 </div>
 
-{# ── Tab Panels ───────────────────────────────────────────── #}
+{# Tab Panels #}
 {% for tipo in tipos_habilitados %}
 {% set tid = loop.index %}
 {% set itens = itens_por_tipo[tipo] %}
@@ -294,9 +294,9 @@
 </div>
 {% endfor %}
 
-{# ── Scripts ──────────────────────────────────────────────── #}
+{# Scripts #}
 
-{# ── Modal de Edição (embutido) ───────────────────────────── #}
+{# Modal de Edição (embutido) #}
 <div id="edit-modal-overlay" style="
   display:none; position:fixed; inset:0; z-index:9000;
   background:rgba(0,0,0,.6); backdrop-filter:blur(4px);
@@ -323,7 +323,7 @@
 </div>
 
 <script>
-  /* ── Tab navigation ───────────────────────────────────────── */
+  /* Tab navigation */
   function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tabId);
@@ -342,7 +342,7 @@
     });
   }
 
-  /* ── Upload de Termo PDF ──────────────────────────────────── */
+  /* Upload de Termo PDF */
   function uploadPDF(tipo, id_ativo) {
     const input = document.createElement('input');
     input.type = 'file';
@@ -367,7 +367,7 @@
     input.click();
   }
 
-  /* ── Modal de Edição ──────────────────────────────────────── */
+  /* Modal de Edição */
   let _editCtx = {};
 
   // Mapeamento tipo_api → endpoint REST
@@ -579,7 +579,7 @@
     if (e.target === this) closeEditModal();
   });
 
-  /* ── Gerar Termo PDF ──────────────────────────────────────── */
+  /* Gerar Termo PDF */
   function toggleAll(source, tblId, tid) {
     const checkboxes = document.querySelectorAll(`#${tblId} tbody tr:not([style*="display: none"]) .chk-termo`);
     checkboxes.forEach(chk => chk.checked = source.checked);
