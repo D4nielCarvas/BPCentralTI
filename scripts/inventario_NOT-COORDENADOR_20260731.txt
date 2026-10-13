@@ -1,4 +1,0 @@
-Relatorio real retirado desta revisao por conter identificadores de equipamento e rede.
-Use examples/inventario_ficticio.txt para demonstracoes.
-Este caminho legado sera removido em uma etapa de limpeza.
-A substituicao nao elimina o conteudo dos commits anteriores.
