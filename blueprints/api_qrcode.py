@@ -16,7 +16,6 @@ Complexidade: O(1) — todas as operações são lookups por PK.
 
 from __future__ import annotations
 
-from datetime import date, datetime
 from flask import Blueprint, jsonify, render_template, request, session, Response
 
 from utils.db_layer import acquire_conn as get_db, fetch_one as _fetch_one, row_to_dict
@@ -291,7 +290,7 @@ def api_qr_checkin_ativo(tipo: str, item_id: str) -> Response:
 
     return jsonify({
         "ok": True,
-        "msg": f"✅ Registrado: {item_id} está Com TI.",
+        "msg": f"Registrado: {item_id} está Com TI.",
         "status_anterior": status_anterior,
     })
 
@@ -355,7 +354,7 @@ def api_qr_saida_estoque(eid: int) -> Response:
 
     return jsonify({
         "ok": True,
-        "msg": f"✅ Saída de {qtd} {item.get('unidade','un')} registrada!",
+        "msg": f"Saída de {qtd} {item.get('unidade','un')} registrada!",
         "nova_quantidade": nova_qtd,
         "item_nome": item.get("item", ""),
     })

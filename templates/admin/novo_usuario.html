@@ -49,7 +49,7 @@
 
 <div class="form-card" style="max-width:580px">
   <div class="form-card-header">
-    <h3>➕ Criar Novo Usuário</h3>
+    <h3>Criar Novo Usuário</h3>
     <p style="font-size:12px;color:var(--text3);margin-top:4px">
       Cadastre novos membros e defina o cargo e as fazendas com permissão de visualização.
     </p>
@@ -93,7 +93,7 @@
           {% for p in perfis %}
           <option value="{{ p.id }}" data-master="{{ '1' if p.is_admin_master else '0' }}" data-nome="{{ p.nome }}"
                   {% if form.get('perfil_id') | string == p.id | string %}selected{% endif %}>
-            {% if p.is_admin_master %}👑{% else %}🔖{% endif %} {{ p.nome }} {% if p.is_admin_master %}(Admin Master){% endif %}
+            {{ p.nome }} {% if p.is_admin_master %}(Admin Master){% endif %}
           </option>
           {% endfor %}
         </select>
@@ -106,11 +106,11 @@
             Localidade Vinculada <span style="color:var(--text3);font-weight:400" id="lbl-loc-opt">(opcional)</span>
           </label>
           <button type="button" onclick="selecionarTodasFazendasNovo()" class="btn btn-ghost btn-xs" style="font-size:11px;color:var(--accent);padding:2px 8px;">
-            🌐 Selecionar Todas
+            Selecionar Todas
           </button>
         </div>
         <select id="localidade_id" name="localidade_id" onchange="aoMudarPerfilOuLocalidadeNovo()">
-          <option value="">🌐 Sem localidade vinculada (Todas as Fazendas)</option>
+          <option value="">Sem localidade vinculada (Todas as Fazendas)</option>
           {% for loc in localidades %}
           <option value="{{ loc.id }}" data-nome="{{ loc.nome }}" data-tipo="{{ loc.tipo }}"
             {% if form.get('localidade_id', '') | string == loc.id | string %}selected{% endif %}>
@@ -127,11 +127,10 @@
       <div class="fazendas-visual-area" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--text)">
-            <span>🌾</span>
             <span>Fazendas com Visualização Ativa</span>
           </div>
           <span id="scope-badge" class="badge" style="background:rgba(16,185,129,.15);color:var(--green);font-size:11px;font-weight:600">
-            🌐 Todas as Fazendas
+            Todas as Fazendas
           </span>
         </div>
 
@@ -144,10 +143,9 @@
           {% for loc in localidades %}
           <div class="fazenda-chip-item chip-active" id="chip-novo-loc-{{ loc.id }}" data-id="{{ loc.id }}" data-nome="{{ loc.nome }}" onclick="clicarChipFazendaNovo({{ loc.id }})">
             <span style="display:flex;align-items:center;gap:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-              {% if loc.tipo == 'cd' %}🏢{% elif loc.tipo == 'central' %}🏛️{% else %}🌾{% endif %}
               <span style="overflow:hidden;text-overflow:ellipsis;">{{ loc.nome }}</span>
             </span>
-            <span class="chip-status-tag" style="font-size:10px;font-weight:700;color:var(--green);margin-left:4px;">✓</span>
+            <span class="chip-status-tag" style="font-size:10px;font-weight:700;color:var(--green);margin-left:4px;">OK</span>
           </div>
           {% endfor %}
         </div>
@@ -156,7 +154,7 @@
       <div class="form-actions">
         <a href="{{ url_for('admin.listar_usuarios') }}" class="btn btn-ghost">Cancelar</a>
         <button type="submit" id="btn-criar" class="btn btn-primary">
-          💾 Criar Usuário
+          Criar Usuário
         </button>
       </div>
     </form>
@@ -215,7 +213,7 @@
       badge.style.background = 'rgba(59,130,246,0.18)';
       badge.style.color = '#60a5fa';
       badge.style.border = '1px solid rgba(59,130,246,0.4)';
-      badge.textContent = `👑 Acesso Total (${TOTAL_LOCALIDADES} Fazendas)`;
+      badge.textContent = `Acesso Total (${TOTAL_LOCALIDADES} Fazendas)`;
 
       desc.textContent = 'Admin Master possui acesso irrestrito e visualização completa de todas as fazendas e unidades da empresa.';
       lblLocOpt.textContent = '(ignorado para Admin Master)';
@@ -224,7 +222,7 @@
 
       chips.forEach(chip => {
         chip.className = 'fazenda-chip-item chip-admin-master';
-        chip.querySelector('.chip-status-tag').textContent = '✓ Total';
+        chip.querySelector('.chip-status-tag').textContent = 'Total';
         chip.querySelector('.chip-status-tag').style.color = '#60a5fa';
       });
 
@@ -240,16 +238,16 @@
         badge.style.border = '1px solid rgba(16,185,129,0.4)';
         
         if (perfilNome === 'Apoio Inspeção') {
-          badge.textContent = `🌐 Apoio Global (${TOTAL_LOCALIDADES} Fazendas)`;
+          badge.textContent = `Apoio Global (${TOTAL_LOCALIDADES} Fazendas)`;
           desc.textContent = 'O usuário tem visualização global de celulares de inspeção e ativos de todas as fazendas.';
         } else {
-          badge.textContent = `🌐 Todas as Fazendas (${TOTAL_LOCALIDADES})`;
+          badge.textContent = `Todas as Fazendas (${TOTAL_LOCALIDADES})`;
           desc.textContent = 'Sem restrição de localidade vinculada: o usuário pode visualizar todas as fazendas cadastradas.';
         }
 
         chips.forEach(chip => {
           chip.className = 'fazenda-chip-item chip-active';
-          chip.querySelector('.chip-status-tag').textContent = '✓ Visível';
+          chip.querySelector('.chip-status-tag').textContent = 'Visível';
           chip.querySelector('.chip-status-tag').style.color = 'var(--green)';
         });
 
@@ -258,7 +256,7 @@
         badge.style.background = 'rgba(245,158,11,0.18)';
         badge.style.color = '#fbbf24';
         badge.style.border = '1px solid rgba(245,158,11,0.4)';
-        badge.textContent = `🌾 Restrito: ${locNome || '1 Fazenda'}`;
+        badge.textContent = `Restrito: ${locNome || '1 Fazenda'}`;
 
         desc.innerHTML = `Visualização restrita <strong>exclusivamente</strong> à fazenda <strong>${locNome}</strong>. As demais fazendas ficam bloqueadas.`;
 
@@ -267,11 +265,11 @@
           if (chipId == locId) {
             chip.className = 'fazenda-chip-item chip-active';
             chip.style.borderColor = 'rgba(245,158,11,0.5)';
-            chip.querySelector('.chip-status-tag').textContent = '✓ Ativa';
+            chip.querySelector('.chip-status-tag').textContent = 'Ativa';
             chip.querySelector('.chip-status-tag').style.color = '#fbbf24';
           } else {
             chip.className = 'fazenda-chip-item chip-inactive';
-            chip.querySelector('.chip-status-tag').textContent = '🔒 Bloqueada';
+            chip.querySelector('.chip-status-tag').textContent = 'Bloqueada';
             chip.querySelector('.chip-status-tag').style.color = 'var(--text3)';
           }
         });
@@ -287,7 +285,7 @@
   document.getElementById('form-novo-usuario').addEventListener('submit', function () {
     const btn = document.getElementById('btn-criar');
     btn.disabled = true;
-    btn.textContent = '⏳ Salvando…';
+    btn.textContent = 'Salvando…';
   });
 </script>
 {% endblock %}

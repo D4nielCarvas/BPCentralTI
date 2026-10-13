@@ -1,12 +1,9 @@
 from flask import Blueprint, request, jsonify, Response
 from typing import Any
 from datetime import date
-import psycopg2
-
 from utils.db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetch_one as _fetch_one, row_to_dict
-from utils.auth_utils import login_required, admin_required, get_fazenda_nome_filter
-from utils.crypto_utils import encrypt_field, decrypt_field
-from utils.api_utils import _list_table, log_historico
+from utils.auth_utils import login_required, admin_required
+from utils.api_utils import _list_table
 
 bp = Blueprint('api_estoque', __name__, url_prefix='')
 

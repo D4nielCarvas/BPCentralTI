@@ -26,13 +26,13 @@
         {% set urg = (pedido.urgencia or 'media') | lower %}
         <div>
           {% if urg in ('urgente', 'critica') %}
-            <span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);font-weight:700">🚨 Urgente / Crítica</span>
+            <span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);font-weight:700">Urgente / Crítica</span>
           {% elif urg == 'alta' %}
-            <span class="badge" style="background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.4);font-weight:700">🟠 Alta Prioridade</span>
+            <span class="badge" style="background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.4);font-weight:700">Alta Prioridade</span>
           {% elif urg == 'baixa' %}
-            <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3)">🟢 Baixa</span>
+            <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3)">Baixa</span>
           {% else %}
-            <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)">🟡 Média</span>
+            <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)">Média</span>
           {% endif %}
         </div>
       </div>
@@ -59,13 +59,17 @@
             background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:var(--text);
           {% endif %}">
           {% if info_estoque.suficiente %}
-            <span style="font-size:18px">✅</span>
+            <span style="display:inline-flex;align-items:center;color:#10b981">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </span>
             <div>
               <strong style="color:#10b981">Item Disponível em Estoque:</strong>
               <span>Saldo atual de <strong>{{ info_estoque.disponivel }} {{ info_estoque.unidade or 'un' }}</strong> (Suficiente para atendimento imediato).</span>
             </div>
           {% else %}
-            <span style="font-size:18px">⚠️</span>
+            <span style="display:inline-flex;align-items:center;color:#f59e0b">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </span>
             <div>
               <strong style="color:#f59e0b">Necessário Solicitar Compra / Reposição:</strong>
               <span>
@@ -90,7 +94,7 @@
           </div>
           <div>
             <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Fazenda / Localidade</div>
-            <div style="font-size:13px;color:var(--text);font-weight:600">🌾 {{ pedido.localidade_nome }}</div>
+            <div style="font-size:13px;color:var(--text);font-weight:600">{{ pedido.localidade_nome }}</div>
           </div>
           <div>
             <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Criado em</div>
@@ -117,7 +121,7 @@
     {# Timeline do histórico #}
     <div class="form-card">
       <div class="form-card-header">
-        <h3>🕒 Histórico de Status</h3>
+        <h3>Histórico de Status</h3>
       </div>
       <div class="form-card-body">
         {% if historico %}
@@ -168,7 +172,7 @@
   <div>
     <div class="form-card">
       <div class="form-card-header">
-        <h3>⚙ Atualizar Status</h3>
+        <h3>Atualizar Status</h3>
         <p style="font-size:12px;color:var(--text3);margin-top:4px">
           O status atual é
           <span class="badge badge-{{ pedido.status | lower | replace(' ','_') }}" style="vertical-align:middle">
@@ -202,7 +206,7 @@
 
           <div class="form-actions">
             <button type="submit" class="btn btn-primary" id="btn-salvar-status">
-              💾 Salvar
+              Salvar
             </button>
           </div>
         </form>
@@ -214,11 +218,11 @@
       <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Atalhos Rápidos</div>
       <div style="display:flex;flex-direction:column;gap:7px">
         {% for s, label, cls in [
-          ('pendente','⏳ Retornar para Pendente','btn-ghost'),
-          ('em_analise','🔍 Colocar Em Análise','btn-warn'),
-          ('aprovado','✅ Aprovar Pedido','btn-success'),
-          ('recusado','❌ Recusar Pedido','btn-danger'),
-          ('concluido','🏁 Marcar Concluído','btn-ghost')
+          ('pendente','Retornar para Pendente','btn-ghost'),
+          ('em_analise','Colocar Em Análise','btn-warn'),
+          ('aprovado','Aprovar Pedido','btn-success'),
+          ('recusado','Recusar Pedido','btn-danger'),
+          ('concluido','Marcar Concluído','btn-ghost')
         ] %}
         {% if s != pedido.status %}
         <form method="POST"

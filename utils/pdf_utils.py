@@ -1,14 +1,11 @@
 import os
-from fpdf import FPDF
 from datetime import datetime
-import io
+from fpdf import FPDF
+
 
 class TermoResponsabilidadePDF(FPDF):
     def header(self):
-        # Configurar fonte
         self.set_font('helvetica', '', 9)
-        
-        # Larguras das colunas
         col1_w = 40
         col2_w = 120
         col3_w = 30
@@ -16,11 +13,8 @@ class TermoResponsabilidadePDF(FPDF):
         x_start = self.get_x()
         y_start = self.get_y()
         
-        # Desenhar bordas da tabela
-        # Linha superior
         self.line(x_start, y_start, x_start + col1_w + col2_w + col3_w, y_start)
         
-        # Coluna 1 (Logo + Codigo)
         self.set_xy(x_start, y_start)
         logo_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'logo.png')
         if os.path.exists(logo_path):
@@ -36,13 +30,11 @@ class TermoResponsabilidadePDF(FPDF):
         self.set_font('helvetica', '', 8)
         self.cell(col1_w, 5, 'BP - RH 001', border='LBR', align='C')
         
-        # Coluna 2 (Título)
         self.set_xy(x_start + col1_w, y_start)
         self.set_font('helvetica', 'B', 14)
-        self.set_text_color(100, 100, 100) # cinza
+        self.set_text_color(100, 100, 100)
         self.multi_cell(col2_w, 15, 'TERMO DE CIÊNCIA E\nRESPONSABILIDADE', border=1, align='C')
         
-        # Coluna 3 (Emissão e Versão)
         self.set_font('helvetica', 'B', 8)
         self.set_xy(x_start + col1_w + col2_w, y_start)
         self.cell(col3_w, 7, 'Emissão', border='LTR', align='C')
@@ -58,7 +50,7 @@ class TermoResponsabilidadePDF(FPDF):
         self.set_font('helvetica', '', 8)
         self.cell(col3_w, 8, '1.00', border='LBR', align='C')
         
-        self.set_text_color(0, 0, 0) # reset to black
+        self.set_text_color(0, 0, 0)
         self.ln(20)
 
     def footer(self):
@@ -66,34 +58,26 @@ class TermoResponsabilidadePDF(FPDF):
         self.set_font('helvetica', '', 8)
         self.set_text_color(128)
         
-        # Linha
         self.line(self.get_x(), self.get_y(), self.w - self.l_margin, self.get_y())
         self.ln(2)
-        
-        # Texto do footer
         self.cell(0, 10, 'Branco Peres Agronegocios - Termo de Ciência e Responsabilidade', 0, 0, 'C')
-        
-        # Numero da pagina
         self.set_x(-20)
         self.cell(0, 10, str(self.page_no()), 0, 0, 'R')
+
 
 def gerar_termo_equipamentos_pdf(equipamentos):
     """
     Gera o Termo de Responsabilidade em PDF para uma lista de equipamentos.
-    Retorna os bytes do PDF.
-    
-    equipamentos: list of dicts com chaves: tipo_equipamento, modelo, id_ativo, fazenda
+    Retorna os bytes do PDF gerado.
     """
     pdf = TermoResponsabilidadePDF()
     pdf.add_page()
     
-    # Titulo central
     pdf.ln(10)
     pdf.set_font('helvetica', 'B', 14)
     pdf.cell(0, 10, 'TERMO DE CIÊNCIA E RESPONSABILIDADE', 0, 1, 'C')
     pdf.ln(5)
     
-    # Corpo do texto
     pdf.set_font('helvetica', '', 10)
     texto1 = (
         "Declaro para os devidos fins, que se fizerem necessários que recebi para uso durante o exercício "
@@ -114,7 +98,6 @@ def gerar_termo_equipamentos_pdf(equipamentos):
         "constam também na Cartilha do Colaborador e Diretriz para Desconto por Prejuízo Causado."
     )
     
-    # Justificado com identação na primeira linha
     pdf.multi_cell(0, 6, "        " + texto1, align='J')
     pdf.ln(4)
     pdf.multi_cell(0, 6, "        " + texto2, align='J')
@@ -122,12 +105,9 @@ def gerar_termo_equipamentos_pdf(equipamentos):
     pdf.multi_cell(0, 6, "        " + texto3, align='J')
     pdf.ln(10)
     
-    # Tabela de Equipamentos Recebidos
     pdf.set_font('helvetica', 'B', 10)
     pdf.cell(0, 6, "Equipamentos Recebidos:", ln=1)
-    pdf.set_font('helvetica', '', 9)
     
-    # Cabeçalho da tabelinha de equipamentos
     col_tipo = 40
     col_mod = 70
     col_id = 40
@@ -154,13 +134,10 @@ def gerar_termo_equipamentos_pdf(equipamentos):
         pdf.ln()
     
     pdf.ln(15)
-    
-    # Frase final
     pdf.set_font('helvetica', '', 10)
     pdf.cell(0, 6, "Por ser esta a expressão da verdade, firmo o presente.", align='R', ln=1)
     pdf.ln(10)
     
-    # Local e Data
     hoje = datetime.now()
     meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
     mes_extenso = meses[hoje.month - 1]
@@ -170,16 +147,11 @@ def gerar_termo_equipamentos_pdf(equipamentos):
     
     pdf.ln(25)
     
-    # Assinaturas
     x_center = pdf.w / 2
-    
-    # Linha de assinatura
     pdf.line(x_center - 40, pdf.get_y(), x_center + 40, pdf.get_y())
     pdf.ln(2)
     
     pdf.set_font('helvetica', '', 10)
-    
-    # Usando cell vazio para alinhar os textos de forma centralizada ou com margin
     pdf.cell(0, 6, "Funcionário: " + ("_" * 40), align='C', ln=1)
     pdf.cell(0, 6, "RG: " + ("_" * 53), align='C', ln=1)
     pdf.cell(0, 6, "CPF: " + ("_" * 51), align='C', ln=1)

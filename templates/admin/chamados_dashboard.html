@@ -21,7 +21,7 @@
       {% endfor %}
     </select>
     {% if filtro_local or filtro_prioridade %}
-    <a href="{{ url_for('admin_chamados.dashboard_chamados') }}" class="btn btn-ghost btn-sm">✖</a>
+    <a href="{{ url_for('admin_chamados.dashboard_chamados') }}" class="btn btn-ghost btn-sm" title="Limpar Filtros">&times;</a>
     {% endif %}
   </div>
 </form>
@@ -71,7 +71,7 @@
     <div style="display:flex;gap:5px">
       {% if show_assumir %}
       <form method="POST" action="{{ url_for('admin_chamados.assumir_chamado', chamado_id=c.id) }}" style="margin:0">
-        <button type="submit" class="btn btn-success btn-xs">✋ Assumir</button>
+        <button type="submit" class="btn btn-success btn-xs">Assumir</button>
       </form>
       {% endif %}
       <a href="{{ url_for('admin_chamados.detalhe_chamado_admin', chamado_id=c.id) }}"
@@ -84,7 +84,7 @@
 {# ── Fila de Abertos (sem técnico) #}
 <div class="table-card" style="margin-bottom:24px">
   <div class="table-header">
-    <h3>📥 Fila de Chamados Abertos</h3>
+    <h3>Fila de Chamados Abertos</h3>
     <span style="font-size:12px;color:var(--text3)">{{ fila_abertos | length }} aguardando atribuição</span>
   </div>
   {% if fila_abertos %}
@@ -101,7 +101,9 @@
   </table>
   {% else %}
   <div style="padding:40px;text-align:center;color:var(--text3)">
-    <div style="font-size:28px;margin-bottom:8px">✅</div>
+    <div style="margin-bottom:8px">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
     <div style="font-size:13px">Fila vazia — nenhum chamado aguardando atribuição.</div>
   </div>
   {% endif %}
@@ -110,7 +112,7 @@
 {# ── Meus Chamados em Andamento #}
 <div class="table-card">
   <div class="table-header">
-    <h3>🔧 Meus Chamados em Andamento</h3>
+    <h3>Meus Chamados em Andamento</h3>
     <span style="font-size:12px;color:var(--text3)">{{ meus_chamados | length }} em andamento</span>
   </div>
   {% if meus_chamados %}
@@ -135,23 +137,25 @@
 {# ── Chamados Fechados / Resolvidos #}
 <div class="table-card" style="margin-top:24px">
   <div class="table-header" style="flex-wrap:wrap;gap:10px;">
-    <h3>📁 Chamados Fechados / Resolvidos</h3>
+    <h3>Chamados Fechados / Resolvidos</h3>
     {% if mostrar_fechados %}
       <span style="font-size:12px;color:var(--text3)">{{ chamados_fechados | length }} registro(s)</span>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
         <div style="position:relative;">
-          <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:11px;pointer-events:none">🔍</span>
+          <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;display:inline-flex;align-items:center;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
           <input type="text" id="search-fechados" placeholder="Buscar chamado fechado…"
             oninput="filtrarFechados(this.value)"
             style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 10px 6px 28px;font-size:12px;font-family:inherit;outline:none;width:220px;">
         </div>
         <a href="{{ url_for('admin_chamados.dashboard_chamados', localidade=filtro_local, prioridade=filtro_prioridade) }}"
-           class="btn btn-ghost btn-sm" style="white-space:nowrap">🙈 Ocultar fechados</a>
+           class="btn btn-ghost btn-sm" style="white-space:nowrap">Ocultar fechados</a>
       </div>
     {% else %}
       <div style="margin-left:auto;">
         <a href="{{ url_for('admin_chamados.dashboard_chamados', fechados=1, localidade=filtro_local, prioridade=filtro_prioridade) }}"
-           class="btn btn-ghost btn-sm" style="white-space:nowrap">👁 Ver chamados fechados</a>
+           class="btn btn-ghost btn-sm" style="white-space:nowrap">Ver chamados fechados</a>
       </div>
     {% endif %}
   </div>
@@ -200,13 +204,15 @@
     </script>
     {% else %}
     <div style="padding:40px;text-align:center;color:var(--text3)">
-      <div style="font-size:28px;margin-bottom:8px">🗂️</div>
+      <div style="margin-bottom:8px">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </div>
       <div style="font-size:13px">Nenhum chamado fechado encontrado com os filtros atuais.</div>
     </div>
     {% endif %}
   {% else %}
   <div style="padding:28px;text-align:center;color:var(--text3);font-size:13px">
-    Clique em <strong style="color:var(--text2)">👁 Ver chamados fechados</strong> para carregar o histórico.
+    Clique em <strong style="color:var(--text2)">Ver chamados fechados</strong> para carregar o histórico.
   </div>
   {% endif %}
 </div>

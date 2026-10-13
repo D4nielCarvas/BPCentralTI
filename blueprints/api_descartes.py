@@ -23,7 +23,7 @@ def criar_descarte() -> Response:
         "Celular":           "celulares",
         "Celular Ponto":     "celulares_ponto",
         "Celular Turma":     "celulares_turma",
-        "Celular Inspeção":  "celulares_inspecao",  # [FIX-4] estava ausente — status nunca era atualizado para 'Descartado'
+        "Celular Inspeção":  "celulares_inspecao",
         "Computador":        "computadores",
         "Impressora":        "impressoras",
         "Estabilizador":     "estabilizadores",

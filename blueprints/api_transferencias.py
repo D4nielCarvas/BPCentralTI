@@ -26,8 +26,7 @@ api_transferencias_bp = Blueprint("api_transferencias", __name__)
 
 _service = TransferenciaService()
 
-# ── UNION ALL estático para ativos em estoque (Sprint 2.2) ────────────────────
-# Substitui 8 queries separadas por 1 round-trip — O(k) onde k = ativos em estoque.
+# Consulta consolidada de ativos com status 'Estoque'
 _UNION_ESTOQUE_SQL = """
     SELECT id_ativo, modelo, fazenda, setor,   updated_at, 'Celular'          AS tipo_equipamento FROM celulares         WHERE status='Estoque'
     UNION ALL

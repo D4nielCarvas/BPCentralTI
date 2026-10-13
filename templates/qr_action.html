@@ -425,7 +425,9 @@
 
 <!-- ── Header ──────────────────────────────────────────────────────────────── -->
 <header class="qr-header">
-  <span class="logo-icon">🖥️</span>
+  <span class="logo-icon">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+  </span>
   <span class="brand">BP Central TI</span>
   {% if not erro %}
     <span class="tipo-badge {% if tipo == 'estoque' %}badge-estoque{% else %}badge-ativo{% endif %}">
@@ -457,7 +459,9 @@
   {% if erro %}
   <!-- ── Página de erro ────────────────────────────────────────────────────── -->
   <div class="card error-container">
-    <div class="error-icon">⚠️</div>
+    <div class="error-icon" style="color:var(--red);">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
     <div class="error-title">Item não encontrado</div>
     <p class="error-msg">{{ erro }}</p>
   </div>
@@ -469,7 +473,7 @@
 
   <!-- Card de informações do item -->
   <div class="card">
-    <div class="card-title">📦 Item de Estoque</div>
+    <div class="card-title">Item de Estoque</div>
     <div class="item-name">{{ nome_display }}</div>
     <div class="item-id">ID #{{ item_id }}{% if item.cod_pedido %} · Pedido: {{ item.cod_pedido }}{% endif %}</div>
 
@@ -480,14 +484,14 @@
 
     {% if item.localizacao %}
     <div style="margin-top:10px; font-size:13px; color:var(--text-muted);">
-      📍 {{ item.localizacao }}
+      {{ item.localizacao }}
     </div>
     {% endif %}
   </div>
 
   <!-- Card de ação: Registrar Saída -->
   <div class="card">
-    <div class="card-title">⬇️ Registrar Saída</div>
+    <div class="card-title">Registrar Saída</div>
 
     <div id="alert-box" class="alert"></div>
 
@@ -524,21 +528,21 @@
         onclick="registrarSaida()"
         {% if item.quantidade == 0 %}disabled{% endif %}
       >
-        <span class="btn-text">⬇️ Confirmar Saída</span>
+        <span class="btn-text">Confirmar Saída</span>
         <span class="spinner"></span>
       </button>
     </form>
 
     {% if item.quantidade == 0 %}
     <p style="margin-top:12px;text-align:center;font-size:13px;color:var(--red);">
-      ⚠️ Estoque zerado — sem itens disponíveis para saída.
+      Estoque zerado — sem itens disponíveis para saída.
     </p>
     {% endif %}
   </div>
 
   <!-- Botão imprimir etiqueta -->
   <div class="divider">ou</div>
-  <button class="btn btn-outline" onclick="imprimirEtiqueta()">🖨️ Imprimir Etiqueta</button>
+  <button class="btn btn-outline" onclick="imprimirEtiqueta()">Imprimir Etiqueta</button>
 
   {% else %}
   <!-- ════════════════════════════════════════════
@@ -548,7 +552,7 @@
 
   <!-- Card de informações do ativo -->
   <div class="card">
-    <div class="card-title">💻 {{ cfg.label }}</div>
+    <div class="card-title">{{ cfg.label }}</div>
     <div class="item-name">{{ nome_display }}</div>
     <div class="item-id">{{ item_id }}</div>
 
@@ -600,7 +604,7 @@
   <!-- Card: Chamados em aberto -->
   {% if chamados %}
   <div class="card">
-    <div class="card-title">🔔 Chamados em Aberto ({{ chamados|length }})</div>
+    <div class="card-title">Chamados em Aberto ({{ chamados|length }})</div>
     {% for c in chamados %}
     <div class="chamado-item">
       <div>
@@ -615,13 +619,15 @@
 
   <!-- Card: Ação "Chegou na TI" -->
   <div class="card">
-    <div class="card-title">📥 Registrar Chegada na TI</div>
+    <div class="card-title">Registrar Chegada na TI</div>
 
     <div id="alert-box-ativo" class="alert"></div>
 
     {% if item.get('status') == 'Com TI' %}
     <div class="alert alert-success show" style="margin-bottom:14px;">
-      <span class="alert-icon">ℹ️</span>
+      <span class="alert-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      </span>
       <span>Este equipamento já está registrado como <strong>Com TI</strong>.</span>
     </div>
     {% endif %}
@@ -644,7 +650,7 @@
       class="btn btn-success"
       onclick="registrarCheckin()"
     >
-      <span class="btn-text">✅ Registrar: Chegou na TI</span>
+      <span class="btn-text">Registrar: Chegou na TI</span>
       <span class="spinner"></span>
     </button>
 
@@ -655,7 +661,7 @@
 
   <!-- Botão imprimir etiqueta -->
   <div class="divider">ou</div>
-  <button class="btn btn-outline" onclick="imprimirEtiqueta()">🖨️ Imprimir Etiqueta</button>
+  <button class="btn btn-outline" onclick="imprimirEtiqueta()">Imprimir Etiqueta</button>
 
   {% endif %}
 </main>
@@ -687,7 +693,10 @@
   function showAlert(boxId, type, msg) {
     const box = document.getElementById(boxId);
     box.className = `alert alert-${type} show`;
-    box.innerHTML = `<span class="alert-icon">${type === 'success' ? '✅' : '❌'}</span><span>${msg}</span>`;
+    const iconSvg = type === 'success'
+      ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+    box.innerHTML = `<span class="alert-icon">${iconSvg}</span><span>${msg}</span>`;
     box.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 

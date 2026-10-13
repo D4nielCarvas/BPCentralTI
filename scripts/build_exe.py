@@ -103,7 +103,7 @@ def main() -> None:
             print("\n  O arquivo .env foi copiado automaticamente")
             print("  para a pasta do executável.")
         else:
-            print("\n  ⚠️ IMPORTANTE:")
+            print("\n  AVISO:")
             print("  O arquivo .env não foi encontrado neste diretório.")
             print("  Crie-o ou copie-o para a mesma pasta do .exe")
             print("  antes de distribuir aos usuários.")

@@ -15,7 +15,6 @@ _LIMIT_MAX = 200  # teto de segurança para evitar dumps acidentais
 def historico_global() -> Response:
     """Retorna histórico global com paginação cursor-based.
 
-    [FIX-10] Substitui LIMIT 500 hardcoded por paginação real via cursor.
     Parâmetros de query:
         limit  (int, 1-200): quantidade de registros por página. Default: 100.
         before (int):        id do último registro recebido — retorna registros
@@ -66,10 +65,7 @@ def historico_global() -> Response:
 @api_historico_bp.route("/api/historico/<id_ativo>")
 @login_required
 def historico_ativo(id_ativo: str) -> Response:
-    """Retorna o histórico completo de um ativo específico.
-
-    [FIX-10] Seleciona colunas explícitas em vez de SELECT *.
-    """
+    """Retorna o histórico de eventos de um ativo específico."""
     with acquire_conn() as conn:
         with conn.cursor() as cur:
             rows = fetch_all(

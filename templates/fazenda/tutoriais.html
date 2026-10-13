@@ -1,6 +1,6 @@
 {% extends "fazenda/base_fazenda.html" %}
 
-{% block page_title %}🎓 Tutoriais{% endblock %}
+{% block page_title %}Tutoriais{% endblock %}
 
 {% block topbar_actions %}
   {% if session.role == 'admin' or session.is_admin_master %}
@@ -23,7 +23,7 @@
   <div class="modal">
     <div class="modal-head">
       <h3 id="modal-title">Modal</h3>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
     </div>
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-foot" id="modal-foot">
@@ -37,10 +37,14 @@
 
 <script>
   function toast(msg, type = 'info') {
-    const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+    const icons = {
+      success: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+      error: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+      info: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+    };
     const el = document.createElement('div');
     el.className = `toast ${type}`;
-    el.innerHTML = `<span>${icons[type]}</span> ${msg}`;
+    el.innerHTML = `<span style="display:inline-flex; align-items:center;">${icons[type] || icons.info}</span> <span>${msg}</span>`;
     document.getElementById('toast-container').appendChild(el);
     setTimeout(() => el.remove(), 3500);
   }

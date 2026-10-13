@@ -94,7 +94,7 @@
 
 {% if not tipos_habilitados %}
 <div style="padding:60px 20px; text-align:center; color:var(--text3);">
-  <div style="font-size:48px; margin-bottom:14px; opacity:.25">🔒</div>
+  <div style="margin-bottom:14px; opacity:.35;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
   <p style="font-size:14px; font-weight:600; color:var(--text2); margin-bottom:6px">Sem equipamentos para exibir</p>
   <p style="font-size:13px">Nenhum tipo de equipamento está habilitado no seu perfil de acesso.</p>
 </div>
@@ -108,7 +108,7 @@
   </div>
   {% for tipo in tipos_habilitados %}
   <div class="stat-mini-card">
-    <div class="label">{{ tipo_icones.get(tipo, '📋') }} {{ tipo }}</div>
+    <div class="label">{{ tipo }}</div>
     <div class="val">{{ itens_por_tipo[tipo] | length }}</div>
   </div>
   {% endfor %}
@@ -126,7 +126,7 @@
     data-tab="tab-{{ tid }}"
     onclick="switchTab('tab-{{ tid }}')"
   >
-    {{ tipo_icones.get(tipo, '📋') }} {{ tipo }}
+    {{ tipo }}
     <span class="tab-count">{{ itens_por_tipo[tipo] | length }}</span>
   </button>
   {% endfor %}
@@ -150,21 +150,23 @@
 
     {# Header com busca inline #}
     <div class="table-header">
-      <h3>{{ tipo_icones.get(tipo, '📋') }} {{ tipo }}</h3>
+      <h3>{{ tipo }}</h3>
       <span style="font-size:12px; color:var(--text3)">{{ itens | length }} registro(s)</span>
       
       <div style="margin-left: 10px;">
-        <button class="btn btn-ghost btn-sm" style="color:#10b981; border-color:rgba(16,185,129,.2);" onclick="exportarExcelDaTabela('tbl-{{ tid }}', 'Equipamentos_{{ tipo }}')">⬇ Excel</button>
+        <button class="btn btn-ghost btn-sm" style="color:#10b981; border-color:rgba(16,185,129,.2);" onclick="exportarExcelDaTabela('tbl-{{ tid }}', 'Equipamentos_{{ tipo }}')">Exportar Excel</button>
       </div>
 
       {% if can_gerar_termo %}
       <div style="margin-left: 10px;">
-        <button id="btn-termo-{{ tid }}" class="btn btn-primary btn-sm" style="display:none;" onclick="gerarTermoPDF('{{ tid }}')">📄 Gerar Termo PDF (<span id="count-termo-{{ tid }}">0</span>)</button>
+        <button id="btn-termo-{{ tid }}" class="btn btn-primary btn-sm" style="display:none;" onclick="gerarTermoPDF('{{ tid }}')">Gerar Termo PDF (<span id="count-termo-{{ tid }}">0</span>)</button>
       </div>
       {% endif %}
 
       <div class="tab-search-wrap" style="margin-left:auto">
-        <span class="tab-search-icon">🔍</span>
+        <span class="tab-search-icon" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </span>
         <input
           class="tab-search"
           type="text"
@@ -250,7 +252,7 @@
               {% if has_permission('ver_termos') %}
                 {% if item.termo_pdf %}
                   <a href="/termos/{{ item.termo_pdf }}" target="_blank"
-                     style="font-size:11px; color:var(--accent)">📄 PDF</a>
+                     style="font-size:11px; color:var(--accent)">PDF</a>
                 {% else %}
                   <span style="color:var(--text3); font-size:11px">—</span>
                 {% endif %}
@@ -259,13 +261,17 @@
                 <button
                   class="btn btn-ghost btn-xs"
                   onclick="uploadPDF('{{ tipo_api }}', '{{ item.id_ativo }}')"
-                  title="Anexar Termo">📎</button>
+                  title="Anexar Termo" aria-label="Anexar Termo">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 17.97 8.8l-8.58 8.58a2 2 0 0 1-2.83-2.83l7.87-7.87"/></svg>
+                </button>
               {% endif %}
               {% if has_permission('editar_equipamentos') %}
                 <button
                   class="btn btn-ghost btn-xs"
                   onclick="openEditModal('{{ tipo_api }}', '{{ item.id_ativo }}')"
-                  title="Editar">✏️</button>
+                  title="Editar" aria-label="Editar">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                </button>
               {% endif %}
             </div>
           </td>
@@ -279,7 +285,7 @@
 
     {% else %}
     <div style="padding:44px; text-align:center; color:var(--text3);">
-      <div style="font-size:36px; margin-bottom:10px; opacity:.25">{{ tipo_icones.get(tipo, '📋') }}</div>
+      <div style="margin-bottom:10px; opacity:.35;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></div>
       <p style="font-size:13px">Nenhum equipamento ativo de <strong style="color:var(--text2)">{{ tipo }}</strong> na sua localidade.</p>
     </div>
     {% endif %}
@@ -304,13 +310,13 @@
     <button onclick="closeEditModal()" style="
       position:absolute; top:14px; right:14px; background:none; border:none;
       color:var(--text3); font-size:20px; cursor:pointer; line-height:1;
-    ">✕</button>
+    ">&times;</button>
     <h3 id="edit-modal-title" style="margin:0 0 20px; font-size:16px; font-weight:600;">Editar</h3>
     <form id="edit-modal-form" onsubmit="submitEditModal(event)">
       <div id="edit-modal-body" style="display:grid; gap:12px;"></div>
       <div style="display:flex; gap:10px; margin-top:22px; justify-content:flex-end;">
         <button type="button" onclick="closeEditModal()" class="btn btn-ghost">Cancelar</button>
-        <button type="submit" class="btn btn-primary" id="edit-save-btn">💾 Salvar</button>
+        <button type="submit" class="btn btn-primary" id="edit-save-btn">Salvar</button>
       </div>
     </form>
   </div>
@@ -352,10 +358,10 @@
           { method: 'POST', body: form }
         );
         const res = await r.json();
-        if (res.ok) { alert('✅ Termo anexado com sucesso!'); location.reload(); }
-        else alert('❌ Erro: ' + res.msg);
+        if (res.ok) { alert('Termo anexado com sucesso!'); location.reload(); }
+        else alert('Erro: ' + res.msg);
       } catch (err) {
-        alert('❌ Erro na requisição: ' + err.message);
+        alert('Erro na requisição: ' + err.message);
       }
     };
     input.click();
@@ -422,10 +428,10 @@
       <div style="display:flex; flex-direction:column; gap:6px;">
         <div style="display:flex; gap:6px; align-items:center;">
           <input type="text" name="numero" id="input-cel-numero" value="${d.numero || ''}" placeholder="(16) 99999-1234" style="flex:1; padding:8px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:inherit; font-size:13px; outline:none;">
-          <button type="button" onclick="limparNumeroChip()" title="Limpar / Sem Chip" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; color:var(--text2); cursor:pointer; font-size:12px;">❌</button>
+          <button type="button" onclick="limparNumeroChip()" title="Limpar / Sem Chip" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; color:var(--text2); cursor:pointer; font-size:12px;">Limpar</button>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-size:11px; color:var(--text2); white-space:nowrap;">📶 Chip:</span>
+          <span style="font-size:11px; color:var(--text2); white-space:nowrap;">Chip:</span>
           <select id="select-chips-disp" onchange="onSelectChipDisponivel(this)" style="font-size:11px; padding:5px 8px; flex:1; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text);">
             <option value="">Carregando chips disponíveis...</option>
           </select>
@@ -521,10 +527,10 @@
     if (!endpoint) return;
     try {
       const r = await fetch(`/api/${endpoint}/${encodeURIComponent(idAtivo)}`);
-      if (!r.ok) { alert('❌ Equipamento não encontrado.'); return; }
+      if (!r.ok) { alert('Equipamento não encontrado.'); return; }
       const data = await r.json();
       _editCtx = { tipoApi, endpoint, idAtivo };
-      document.getElementById('edit-modal-title').textContent = `✏️ Editar — ${data.apelido || idAtivo}`;
+      document.getElementById('edit-modal-title').textContent = `Editar — ${data.apelido || idAtivo}`;
       document.getElementById('edit-modal-body').innerHTML = _buildForm(tipoApi, data);
       const ov = document.getElementById('edit-modal-overlay');
       ov.style.display = 'flex';
@@ -532,7 +538,7 @@
         loadChipsDisponiveis();
       }
     } catch(e) {
-      alert('❌ Erro ao carregar dados: ' + e.message);
+      alert('Erro ao carregar dados: ' + e.message);
     }
   }
 
@@ -544,7 +550,7 @@
   async function submitEditModal(e) {
     e.preventDefault();
     const btn = document.getElementById('edit-save-btn');
-    btn.disabled = true; btn.textContent = '⏳ Salvando...';
+    btn.disabled = true; btn.textContent = 'Salvando...';
     const form = document.getElementById('edit-modal-form');
     const payload = Object.fromEntries(new FormData(form).entries());
     try {
@@ -555,16 +561,16 @@
       });
       const res = await r.json();
       if (res.ok) {
-        alert('✅ Salvo com sucesso!');
+        alert('Salvo com sucesso!');
         closeEditModal();
         location.reload();
       } else {
-        alert('❌ Erro: ' + (res.msg || 'Falha ao salvar'));
+        alert('Erro: ' + (res.msg || 'Falha ao salvar'));
       }
     } catch(err) {
-      alert('❌ Erro na requisição: ' + err.message);
+      alert('Erro na requisição: ' + err.message);
     } finally {
-      btn.disabled = false; btn.textContent = '💾 Salvar';
+      btn.disabled = false; btn.textContent = 'Salvar';
     }
   }
 
@@ -601,7 +607,7 @@
     const ids = Array.from(checkboxes).map(c => c.value);
     const btn = document.getElementById(`btn-termo-${tid}`);
     const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Gerando...';
+    btn.innerHTML = 'Gerando...';
     btn.disabled = true;
     
     try {
@@ -630,10 +636,10 @@
         updateTermoBtn(tid);
       } else {
         const data = await response.json();
-        alert('❌ Erro: ' + (data.msg || 'Falha ao gerar termo'));
+        alert('Erro: ' + (data.msg || 'Falha ao gerar termo'));
       }
     } catch (err) {
-      alert('❌ Erro na requisição: ' + err.message);
+      alert('Erro na requisição: ' + err.message);
     } finally {
       btn.innerHTML = originalText;
       btn.disabled = false;

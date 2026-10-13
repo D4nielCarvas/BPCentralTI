@@ -1,4 +1,4 @@
-{% extends "fazenda/base_fazenda.html" %}
+﻿{% extends "fazenda/base_fazenda.html" %}
 
 {% block title %}Chamados — BP Central TI{% endblock %}
 {% block page_title %}Meus Chamados{% endblock %}
@@ -15,7 +15,7 @@
       {% endfor %}
     </select>
     {% if filtro_status %}
-    <a href="{{ url_for('chamados.listar_chamados') }}" class="btn btn-ghost btn-sm">✖</a>
+    <a href="{{ url_for('chamados.listar_chamados') }}" class="btn btn-ghost btn-sm">&times;</a>
     {% endif %}
   </div>
 </form>
@@ -62,7 +62,7 @@
 
 <div class="table-card">
   <div class="table-header">
-    <h3>🎫 Lista de Chamados</h3>
+    <h3>Lista de Chamados</h3>
     <span style="font-size:12px;color:var(--text3)">{{ chamados | length }} chamado(s)</span>
   </div>
 
@@ -117,7 +117,7 @@
   </div>
   {% else %}
   <div style="padding:50px;text-align:center;color:var(--text3)">
-    <div style="font-size:32px;margin-bottom:10px">🎫</div>
+    <div style="margin-bottom:12px" aria-hidden="true"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg></div>
     <div style="font-size:14px">Nenhum chamado encontrado.</div>
     <a href="{{ url_for('chamados.novo_chamado') }}" class="btn btn-primary btn-sm" style="margin-top:14px">
       Abrir Primeiro Chamado

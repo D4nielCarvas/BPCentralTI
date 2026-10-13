@@ -36,9 +36,11 @@
       {% endfor %}
     </select>
     
-    <button type="submit" class="btn btn-primary btn-sm">🔍</button>
+    <button type="submit" class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
     {% if busca or filtro_status or filtro_local or filtro_urgencia %}
-    <a href="{{ url_for('admin_pedidos.listar_pedidos_admin') }}" class="btn btn-ghost btn-sm" title="Limpar Filtros">✖</a>
+    <a href="{{ url_for('admin_pedidos.listar_pedidos_admin') }}" class="btn btn-ghost btn-sm" title="Limpar Filtros">&times;</a>
     {% endif %}
   </div>
 </form>
@@ -50,7 +52,9 @@
 {% if qtd_pedidos_urgentes > 0 %}
 <div style="margin-bottom:18px;background:linear-gradient(90deg, rgba(239,68,68,0.18), rgba(249,115,22,0.12));border:1px solid rgba(239,68,68,0.4);border-radius:10px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 15px rgba(239,68,68,0.15)">
   <div style="display:flex;align-items:center;gap:12px">
-    <div style="font-size:22px;animation:pulse 1.5s infinite">🚨</div>
+    <div style="display:inline-flex;align-items:center;justify-content:center;color:#ef4444;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
     <div>
       <div style="font-size:14px;font-weight:700;color:#f87171">Atenção da Administração de TI</div>
       <div style="font-size:12px;color:var(--text2)">
@@ -59,7 +63,7 @@
     </div>
   </div>
   <a href="{{ url_for('admin_pedidos.listar_pedidos_admin', urgencia='urgente', status='pendente') }}" class="btn btn-danger btn-sm" style="font-weight:600">
-    ⚡ Filtrar Urgentes
+    Filtrar Urgentes
   </a>
 </div>
 {% endif %}
@@ -138,13 +142,13 @@
         </td>
         <td>
           {% if urg in ('urgente', 'critica') %}
-            <span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);font-weight:700">🚨 Urgente</span>
+            <span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);font-weight:700">Urgente</span>
           {% elif urg == 'alta' %}
-            <span class="badge" style="background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.4)">🟠 Alta</span>
+            <span class="badge" style="background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.4)">Alta</span>
           {% elif urg == 'baixa' %}
-            <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3)">🟢 Baixa</span>
+            <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3)">Baixa</span>
           {% else %}
-            <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)">🟡 Média</span>
+            <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)">Média</span>
           {% endif %}
         </td>
         <td>

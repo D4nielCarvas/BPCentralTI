@@ -1,31 +1,31 @@
-# 🖥️ BP Central TI — v3.0
+# BP Central TI — v3.0
 
 > Sistema de gerenciamento e inventário de ativos de TI para empresas agrícolas, desenvolvido com **Flask + Supabase (PostgreSQL)** e interface web integrada.
 
 ---
 
-## 📋 Sumário
+## Sumário
 
-- [Visão Geral](#-visão-geral)
-- [Hospedagem no Render](#-hospedagem-no-render)
-- [Arquitetura do Sistema](#-arquitetura-do-sistema)
-- [Estrutura de Arquivos](#-estrutura-de-arquivos)
-- [Pré-requisitos](#-pré-requisitos)
-- [Instalação e Configuração](#-instalação-e-configuração)
-- [Variáveis de Ambiente](#-variáveis-de-ambiente)
-- [Banco de Dados](#-banco-de-dados)
-- [Padronização de Nomenclatura de TI](#-padronização-de-nomenclatura-de-ti)
-- [Módulos do Sistema](#-módulos-do-sistema)
-- [API REST — Referência Completa](#-api-rest--referência-completa)
-- [Coleta Automática via BAT](#-coleta-automática-via-bat)
-- [Build para Executável (.exe)](#-build-para-executável-exe)
-- [Testes](#-testes)
-- [Fluxos de Uso Principais](#-fluxos-de-uso-principais)
-- [Segurança e Boas Práticas](#-segurança-e-boas-práticas)
+- [Visão Geral](#visão-geral)
+- [Hospedagem no Render](#hospedagem-no-render)
+- [Arquitetura do Sistema](#arquitetura-do-sistema)
+- [Estrutura de Arquivos](#estrutura-de-arquivos)
+- [Pré-requisitos](#pré-requisitos)
+- [Instalação e Configuração](#instalação-e-configuração)
+- [Variáveis de Ambiente](#variáveis-de-ambiente)
+- [Banco de Dados](#banco-de-dados)
+- [Padronização de Nomenclatura de TI](#padronização-de-nomenclatura-de-ti)
+- [Módulos do Sistema](#módulos-do-sistema)
+- [API REST — Referência Completa](#api-rest--referência-completa)
+- [Coleta Automática via BAT](#coleta-automática-via-bat)
+- [Build para Executável (.exe)](#build-para-executável-exe)
+- [Testes](#testes)
+- [Fluxos de Uso Principais](#fluxos-de-uso-principais)
+- [Segurança e Boas Práticas](#segurança-e-boas-práticas)
 
 ---
 
-## 🎯 Visão Geral
+## Visão Geral
 
 O **BP Central TI v3** é uma aplicação web que centraliza o controle de todos os equipamentos de TI distribuídos entre fazendas e setores. O sistema é hospedado na nuvem via **Render** e persiste os dados no **Supabase (PostgreSQL)**. Também pode ser executado localmente como servidor Flask, abrindo automaticamente o navegador.
 
@@ -44,20 +44,20 @@ O **BP Central TI v3** é uma aplicação web que centraliza o controle de todos
 | **Manutenções** | Abertura e acompanhamento de ordens de serviço |
 | **Descartes** | Registro de baixa patrimonial de ativos |
 | **Transferências** | Movimentação de ativos entre responsáveis/fazendas |
-| **Pedidos** | Registro de pedidos feitos pelos funcionario |
+| **Pedidos** | Registro de pedidos feitos pelos funcionários |
 | **Histórico** | Auditoria de todas as operações realizadas |
 | **Dashboard** | Painel com estatísticas gerais e atividade recente |
 | **Coleta Automática** | Importação de dados de hardware via script `.bat` |
 
 ---
 
-## ☁️ Hospedagem no Render
+## Hospedagem no Render
 
 O sistema está hospedado na plataforma **Render** e pode ser acessado diretamente pelo navegador, sem necessidade de instalação local.
 
-🔗 **URL de Acesso:** [https://inventario-ti-v3.onrender.com](https://inventario-ti-v3.onrender.com)
+**URL de Acesso:** [https://inventario-ti-v3.onrender.com](https://inventario-ti-v3.onrender.com)
 
-> ⚠️ **Atenção — Cold Start:** O plano gratuito do Render suspende o serviço após períodos de inatividade. O primeiro acesso pode levar **até 60 segundos** para o servidor inicializar. Aguarde a tela de login carregar completamente.
+> **Atenção — Cold Start:** O plano gratuito do Render suspende o serviço após períodos de inatividade. O primeiro acesso pode levar **até 60 segundos** para o servidor inicializar. Aguarde a tela de login carregar completamente.
 
 ### Variáveis de Ambiente no Render
 
@@ -75,7 +75,7 @@ O Render realiza deploy automático a cada `git push` na branch `main`. Para for
 
 ---
 
-## 🏗️ Arquitetura do Sistema
+## Arquitetura do Sistema
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
@@ -109,7 +109,7 @@ O Render realiza deploy automático a cada `git push` na branch `main`. Para for
 
 ---
 
-## 📁 Estrutura de Arquivos
+## Estrutura de Arquivos
 
 ```text
 inventario-ti-v3/
@@ -152,10 +152,9 @@ inventario-ti-v3/
     └── scratch/            # Rascunhos de testes interativos e diagnósticos pontuais
 ```
 
-
 ---
 
-## ✅ Pré-requisitos
+## Pré-requisitos
 
 - **Python 3.10+** instalado
 - **Conta no [Supabase](https://supabase.com)** (plano gratuito funciona)
@@ -164,7 +163,7 @@ inventario-ti-v3/
 
 ---
 
-## 🚀 Instalação e Configuração
+## Instalação e Configuração
 
 > **Acesso rápido:** Para usar o sistema sem instalar nada, acesse diretamente [https://inventario-ti-v3.onrender.com](https://inventario-ti-v3.onrender.com).
 
@@ -218,7 +217,7 @@ O sistema iniciará em `http://localhost:5000` e abrirá o navegador automaticam
 
 ---
 
-## 🔐 Variáveis de Ambiente
+## Variáveis de Ambiente
 
 Renomeie `.env.example` para `.env` e preencha:
 
@@ -228,17 +227,17 @@ Renomeie `.env.example` para `.env` e preencha:
 SUPABASE_DATABASE_URL=postgresql://postgres:SUA_SENHA@db.XXXXXXXXXXXX.supabase.co:5432/postgres
 ```
 
-> ⚠️ **Nunca commite o arquivo `.env`** com credenciais reais. Ele já está listado no `.gitignore`.
+> **Aviso:** Nunca realize commit do arquivo `.env` com credenciais reais. Ele já está listado no `.gitignore`.
 
 ---
 
-## 🗄️ Banco de Dados
+## Banco de Dados
 
 O arquivo `supabase_migration.sql` contém o schema completo. As tabelas criadas são: `celulares`, `celulares_ponto`, `computadores`, `impressoras`, `estabilizadores`, `starlink`, `estoque`, `estoque_movimentacoes`, `toners`, `toner_trocas`, `manutencoes`, `descartes`, `transferencias` e `historico`.
 
 ---
 
-## 🔤 Padronização de Nomenclatura de TI
+## Padronização de Nomenclatura de TI
 
 O sistema utiliza e gera automaticamente (via `id_generator.py`) IDs semânticos que seguem o **Guia de Padronização de Nomenclatura de TI**. O nome de cada equipamento deve seguir rigorosamente a seguinte ordem, separados por hífens:
 
@@ -304,17 +303,17 @@ TIPO-LOCAL-SETOR-ID
 
 ---
 
-## 🧩 Módulos do Sistema
+## Módulos do Sistema
 
 ### `app.py` — Backend Principal
-O coração da aplicação. Contém rotas da API REST organizadas por módulo, contexto de conexão `get_db()` com PostgreSQL, lógica de negócio e inicialização automática do navegador via `threading`.
+Ponto de entrada da aplicação. Inicializa a aplicação Flask, pool de conexões com PostgreSQL, registro de blueprints modulares e inicialização do servidor.
 
 ### `id_generator.py` — Gerador de IDs
 Módulo responsável por aplicar a padronização oficial. Ele consulta o banco de dados para encontrar o próximo sequencial disponível para uma determinada combinação de prefixo e retorna o ID final pronto para uso.
 
 ---
 
-## 🌐 API REST — Referência Completa
+## API REST — Referência Completa
 
 Base URL (produção): `https://inventario-ti-v3.onrender.com`
 
@@ -338,7 +337,7 @@ Todos os módulos de equipamento (`/api/computadores`, `/api/celulares`, `/api/i
 
 ---
 
-## 🤖 Coleta Automática via BAT
+## Coleta Automática via BAT
 
 O `COLETAR_PC.bat` automatiza a coleta de dados de hardware no Windows via WMI, gerando um arquivo `.txt` estruturado (Processador, RAM, Armazenamento, SO, MAC, etc.).
 
@@ -350,7 +349,7 @@ O `COLETAR_PC.bat` automatiza a coleta de dados de hardware no Windows via WMI, 
 
 ---
 
-## 📦 Build para Executável (.exe)
+## Build para Executável (.exe)
 
 Para distribuir o sistema em máquinas sem Python:
 
@@ -359,11 +358,11 @@ python build_exe.py
 ```
 
 O executável gerado estará em `dist/InventarioTI.exe`.
-> ⚠️ O arquivo `.env` **não é embutido** no executável por segurança. Ele deve ser distribuído separadamente e colocado na mesma pasta do `.exe`.
+> **Aviso:** O arquivo `.env` **não é embutido** no executável por segurança. Ele deve ser distribuído separadamente e colocado na mesma pasta do `.exe`.
 
 ---
 
-## 🧪 Testes
+## Testes
 
 Executar suite completa de integração (valida banco, rotas, regras de negócio):
 ```bash
@@ -372,7 +371,7 @@ python -m pytest test_inventario.py -v
 
 ---
 
-## 🔄 Fluxos de Uso Principais
+## Fluxos de Uso Principais
 
 - **Cadastrar Equipamento**: Sugira o ID oficial automaticamente, preencha os dados e salve. O log será gravado.
 - **Registrar Manutenção**: Crie uma OS vinculada ao ID do equipamento, altere status entre "Aberta", "Em Andamento" e "Concluída".
@@ -380,7 +379,7 @@ python -m pytest test_inventario.py -v
 
 ---
 
-## 🔒 Segurança e Boas Práticas
+## Segurança e Boas Práticas
 
 - Uso de **Prepared statements** psycopg2 (`%s`) para evitar SQL Injection.
 - **Variáveis de ambiente** isoladas em `.env` (local) e no painel do Render (produção).
@@ -388,7 +387,7 @@ python -m pytest test_inventario.py -v
 
 ---
 
-## 👨‍💻 Contribuindo
+## Contribuindo
 
 1. Crie uma branch: `git checkout -b feature/minha-feature`
 2. Faça suas alterações seguindo o padrão do código existente

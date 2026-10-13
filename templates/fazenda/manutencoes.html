@@ -13,9 +13,9 @@
       <option value="{{ s }}" {% if filtro_status == s %}selected{% endif %}>{{ s }}</option>
       {% endfor %}
     </select>
-    <button type="submit" class="btn btn-primary btn-sm">🔍 Filtrar</button>
+    <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
     {% if busca or filtro_status %}
-    <a href="{{ url_for('fazenda.listar_manutencoes') }}" class="btn btn-ghost btn-sm">✖ Limpar</a>
+    <a href="{{ url_for('fazenda.listar_manutencoes') }}" class="btn btn-ghost btn-sm">Limpar</a>
     {% endif %}
   </div>
 </form>

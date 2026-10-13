@@ -38,14 +38,11 @@ def _tentar_baixa_estoque(
     """
     Tenta realizar a baixa automática de itens de estoque para um pedido aprovado/concluído.
     Prioriza dados estruturados (item_direto, quantidade_direta) com fallback para regex na descrição.
-    Complexidade: O(1) tempo | O(1) espaço.
     """
-    # 1. Obtenção dos dados do item
     item_nome = (item_direto or "").strip()
     quantidade = quantidade_direta if (quantidade_direta is not None and quantidade_direta > 0) else None
 
     if not item_nome or quantidade is None:
-        # Regex para extração (limpeza aprimorada do dado recebido na descrição legada)
         match_item = re.search(r'(?i)(?:item do estoque|produto do estoque|item|produto|estoque)\s*:\s*([^\n\r|]+)', descricao or "")
         match_qtd = re.search(r'(?i)(?:quantidade|qtd|quant)\s*:\s*(\d+)', descricao or "")
         
@@ -59,7 +56,7 @@ def _tentar_baixa_estoque(
         
     quantidade = quantidade if (quantidade and quantidade > 0) else 1
 
-    # 2. Busca e Lock da tabela (Boas Práticas de Transação)
+    # Busca com lock pessimista para evitar concorrência
     params_est: list[Any] = [f"%{item_nome}%"]
     query_est = "SELECT id, item, quantidade FROM estoque WHERE item ILIKE %s"
     if localidade_id is not None:
@@ -73,7 +70,7 @@ def _tentar_baixa_estoque(
     if not itens:
         return f"Baixa não realizada: Item '{item_nome}' sem saldo ou inexistente no estoque."
     
-    # 3. Resolução Estratégica de Ambiguidade
+    # Resolução de correspondência do item
     estoque_item = None
     exatos = [i for i in itens if (i.get("item") or "").strip().lower() == item_nome.lower()]
     
@@ -87,13 +84,11 @@ def _tentar_baixa_estoque(
         nomes_sugestoes = ", ".join([(i.get("item") or "") for i in itens[:3]])
         return f"Baixa não realizada: Ambiguidade para '{item_nome}'. Qual deles? (Encontrados: {nomes_sugestoes}...)"
         
-    # 4. Checagem de Saldo (Princípio de Early Return)
     qtd_atual = estoque_item.get("quantidade") or 0
     nova_qtd = qtd_atual - quantidade
     if nova_qtd < 0:
         return f"Baixa não realizada: Saldo insuficiente do produto '{estoque_item.get('item', item_nome)}' (Requerido: {quantidade}, Disponível: {qtd_atual})."
         
-    # 5. Persistência Atômica
     cur.execute(
         "UPDATE estoque SET quantidade = %s, updated_at = NOW() WHERE id = %s",
         (nova_qtd, estoque_item["id"])
@@ -369,7 +364,6 @@ def atualizar_status_pedido(pedido_id: int):
             else:
                 observacao_final = observacao_final.strip() or observacao
 
-            # 3. Insere histórico
             cur.execute(
                 """
                 INSERT INTO pedido_viewer_historico
@@ -379,17 +373,16 @@ def atualizar_status_pedido(pedido_id: int):
                 (pedido_id, status_anterior, novo_status, observacao_final, admin_id),
             )
 
-            # 4. Atualiza o pedido (trigger atualiza atualizado_em automaticamente)
             cur.execute(
                 "UPDATE pedidos_viewer SET status = %s WHERE id = %s",
                 (novo_status, pedido_id),
             )
 
-    # 5. Notificar o solicitante do pedido de forma desacoplada (se não for o próprio admin)
+    # Notifica o solicitante do pedido (se não for o próprio admin)
     autor_pedido_id = pedido.get("usuario_id")
     if autor_pedido_id and autor_pedido_id != admin_id:
         status_fmt = novo_status.replace("_", " ").title()
-        msg_notif = f"📦 Pedido #{pedido_id}: Status atualizado para '{status_fmt}'"
+        msg_notif = f"Pedido #{pedido_id}: Status atualizado para '{status_fmt}'"
         try:
             with acquire_conn() as conn_notif:
                 with conn_notif.cursor() as cur_notif:

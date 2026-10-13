@@ -7,7 +7,7 @@
 <a href="{{ url_for('fazenda.listar_pedidos') }}" class="btn btn-ghost btn-sm">← Voltar</a>
 {% if role == 'admin' %}
 <a href="{{ url_for('admin_pedidos.detalhe_pedido_admin', pedido_id=pedido.id) }}"
-   class="btn btn-primary btn-sm">⚙ Gerenciar como Admin</a>
+   class="btn btn-primary btn-sm">Gerenciar como Admin</a>
 {% endif %}
 {% endblock %}
 
@@ -28,13 +28,13 @@
         {% set urg = (pedido.urgencia or 'media') | lower %}
         <div>
           {% if urg in ('urgente', 'critica') %}
-            <span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4)">🚨 Urgente</span>
+            <span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4)">Urgente</span>
           {% elif urg == 'alta' %}
-            <span class="badge" style="background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.4)">🟠 Alta</span>
+            <span class="badge" style="background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.4)">Alta</span>
           {% elif urg == 'baixa' %}
-            <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3)">🟢 Baixa</span>
+            <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3)">Baixa</span>
           {% else %}
-            <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)">🟡 Média</span>
+            <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)">Média</span>
           {% endif %}
         </div>
       </div>
@@ -59,7 +59,7 @@
           </div>
           <div>
             <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Fazenda / Localidade</div>
-            <div style="font-size:13px;color:var(--text);font-weight:600">🌾 {{ pedido.localidade_nome }}</div>
+            <div style="font-size:13px;color:var(--text);font-weight:600">{{ pedido.localidade_nome }}</div>
           </div>
           <div>
             <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Criado em</div>
@@ -89,7 +89,7 @@
   <div>
     <div class="form-card">
       <div class="form-card-header">
-        <h3>🕒 Histórico de Status</h3>
+        <h3>Histórico de Status</h3>
       </div>
       <div class="form-card-body">
         {% if historico %}

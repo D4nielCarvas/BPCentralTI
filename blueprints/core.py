@@ -1,5 +1,4 @@
 from flask import Blueprint, redirect, url_for, session, render_template, Response, jsonify
-from utils.auth_utils import has_permission
 from utils.db_layer import acquire_conn, fetch_all, fetch_one
 
 core_bp = Blueprint('core', __name__)
@@ -92,7 +91,7 @@ def poll_notificacoes() -> Response:
 
                 for n in ultimas:
                     msg = n.get("mensagem") or ""
-                    n["is_urgente"] = "[URGENTE]" in msg or "🚨" in msg
+                    n["is_urgente"] = "[URGENTE]" in msg
 
         return jsonify({"ok": True, "notificacoes": ultimas})
     except Exception as e:

@@ -12,20 +12,17 @@ Complexidade: O(n) para listagem; O(1) para criação e envio de mensagem.
 from __future__ import annotations
 
 from typing import Any
-import uuid
-from werkzeug.utils import secure_filename
+from datetime import datetime, timedelta
 
 from flask import (
     Blueprint, abort, flash, redirect,
     render_template, request, session, url_for, jsonify
 )
-from datetime import datetime, timedelta
 
 from utils.auth_utils import get_localidade_filter, get_usuario_id, viewer_required
 from utils.db_layer import acquire_conn, fetch_all, fetch_one
-from utils.anexos_utils import ALLOWED_EXTENSIONS, allowed_file, save_anexo
-from utils.extensions import limiter  # [FIX-5] necessário para reativar rate limit no poll
-import psycopg2
+from utils.anexos_utils import save_anexo
+from utils.extensions import limiter
 
 chamados_bp = Blueprint("chamados", __name__, url_prefix="/fazenda/chamados")
 
@@ -161,7 +158,7 @@ def novo_chamado():
                 loc_row = fetch_one(cur, "SELECT nome FROM localidades WHERE id = %s", (loc_id,))
                 nome_fazenda = loc_row["nome"] if loc_row else "Fazenda"
 
-                msg_urgencia = "🚨 [URGENTE] " if prioridade in ("alta", "urgente") else "📋 "
+                msg_urgencia = "[URGENTE] " if prioridade in ("alta", "urgente") else ""
                 msg_notificacao = f"{msg_urgencia}Novo Chamado #{novo_id} - {nome_solicitante} ({nome_fazenda}): {titulo}"
 
                 # Notificar administradores
@@ -275,7 +272,7 @@ def detalhe_chamado(chamado_id: int):
             if not chamado:
                 abort(404)
 
-            # Anti-IDOR: viewer só vê chamados da sua localidade
+            # Restringe acesso à localidade do usuário
             if role == "viewer" and chamado["localidade_id"] != localidade_id:
                 abort(403)
 
@@ -339,7 +336,7 @@ def detalhe_chamado(chamado_id: int):
 
                 # Notificar o técnico atribuído ou administradores da TI
                 nome_solicitante = session.get("nome", "Usuário")
-                msg_resp = f"💬 Chamado #{chamado_id} ({nome_solicitante}): {mensagem}"
+                msg_resp = f"Chamado #{chamado_id} ({nome_solicitante}): {mensagem}"
                 if chamado.get("atribuido_a"):
                     cur.execute(
                         "INSERT INTO notificacoes (usuario_id, chamado_id, mensagem) VALUES (%s, %s, %s)",
@@ -421,7 +418,7 @@ def movimentacao_equipamento(chamado_id: int):
                 flash("Chamado não encontrado ou sem equipamento vinculado.", "danger")
                 return redirect(url_for("chamados.detalhe_chamado", chamado_id=chamado_id))
 
-            # Anti-IDOR: viewer só pode registrar movimentação na sua própria localidade
+            # Restringe ação à localidade do usuário
             if role == "viewer" and chamado["localidade_id"] != localidade_id:
                 abort(403)
 
@@ -440,7 +437,7 @@ def movimentacao_equipamento(chamado_id: int):
 
 
 @chamados_bp.route("/<int:chamado_id>/poll")
-@limiter.limit("60/minute")  # [FIX-5] rate limit reativado — previne DoS ao banco via polling em loop
+@limiter.limit("60/minute")
 def poll_chamado(chamado_id: int):
     """Retorna as mensagens do chamado como JSON para o cliente fazer polling."""
     if not session.get("usuario_id"):

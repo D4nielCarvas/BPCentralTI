@@ -179,7 +179,7 @@
     <div id="topbar">
       <button class="btn btn-ghost mobile-only" id="mobile-menu-btn" style="margin-right: 12px; padding: 4px 10px;"
         onclick="document.getElementById('sidebar').style.display = document.getElementById('sidebar').style.display === 'flex' ? 'none' : 'flex'">
-        ☰
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
       </button>
       <h2>{% block page_title %}{% endblock %}</h2>
       <div style="flex:1"></div>
@@ -195,7 +195,9 @@
         onclick="window.ThemeManager && window.ThemeManager.toggleTheme()"
         style="margin-left: 10px; margin-right: 6px;"
       >
-        <span id="theme-icon" class="theme-toggle-icon">🌙</span>
+        <span id="theme-icon" class="theme-toggle-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </span>
       </button>
 
       {% if session.usuario_id %}
@@ -365,7 +367,7 @@
               localStorage.setItem('lastNotifId', maxId);
 
               // Dispara alarme sonoro se o usuário for administrador e houver chamado/pedido urgente
-              const hasUrgent = newNotifs.some(n => n.is_urgente || (n.mensagem && (n.mensagem.includes('[URGENTE]') || n.mensagem.includes('🚨'))));
+              const hasUrgent = newNotifs.some(n => n.is_urgente || (n.mensagem && (n.mensagem.includes('[URGENTE]') || n.mensagem.includes('[URGENTE]'))));
               if (isAdmin && hasUrgent) {
                 playUrgentAlertSound();
               }
@@ -374,7 +376,7 @@
               if ("Notification" in window && Notification.permission === "granted") {
                 newNotifs.forEach(n => {
                   const isUrg = n.is_urgente || (n.mensagem && n.mensagem.includes('[URGENTE]'));
-                  const title = isUrg ? "🚨 BP Central TI - ALERTA URGENTE" : "BP Central TI - Atualização";
+                  const title = isUrg ? "BP Central TI - ALERTA URGENTE" : "BP Central TI - Atualização";
                   const notif = new Notification(title, {
                     body: n.mensagem,
                     icon: '/static/img/logo.png',

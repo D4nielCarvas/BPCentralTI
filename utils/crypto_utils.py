@@ -35,7 +35,7 @@ from typing import Optional
 from cryptography.fernet import Fernet, InvalidToken
 
 
-@functools.lru_cache(maxsize=1)  # [FIX-6] Fernet é stateless/imutável — cacheado no nível de módulo.
+@functools.lru_cache(maxsize=1)
 def _get_fernet() -> Fernet:
     """
     Inicializa e retorna a instância Fernet a partir da variável FERNET_KEY.

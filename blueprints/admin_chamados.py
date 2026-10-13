@@ -12,8 +12,6 @@ Segurança: admin_required em todas as rotas. Nunca confia em IDs do body.
 from __future__ import annotations
 
 from typing import Any
-import uuid
-from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 
 from flask import (
@@ -23,8 +21,7 @@ from flask import (
 
 from utils.auth_utils import admin_required, get_usuario_id
 from utils.db_layer import acquire_conn, fetch_all, fetch_one
-from utils.anexos_utils import ALLOWED_EXTENSIONS, allowed_file, save_anexo
-import psycopg2
+from utils.anexos_utils import save_anexo
 
 admin_chamados_bp = Blueprint("admin_chamados", __name__, url_prefix="/admin/chamados")
 
@@ -272,12 +269,12 @@ def detalhe_chamado_admin(chamado_id: int):
                     msg_notif = None
                     if mensagem and novo_status and novo_status != chamado.get("status"):
                         status_fmt = novo_status.replace("_", " ").title()
-                        msg_notif = f"🔄💬 Chamado #{chamado_id}: Status '{status_fmt}' e nova mensagem: {mensagem}"
+                        msg_notif = f"Chamado #{chamado_id}: Status '{status_fmt}' e nova mensagem: {mensagem}"
                     elif novo_status and novo_status != chamado.get("status"):
                         status_fmt = novo_status.replace("_", " ").title()
-                        msg_notif = f"🔄 Chamado #{chamado_id}: Status atualizado para '{status_fmt}'"
+                        msg_notif = f"Chamado #{chamado_id}: Status atualizado para '{status_fmt}'"
                     elif mensagem:
-                        msg_notif = f"💬 Chamado #{chamado_id}: Nova resposta da TI: {mensagem}"
+                        msg_notif = f"Chamado #{chamado_id}: Nova resposta da TI: {mensagem}"
 
                     if msg_notif:
                         cur.execute(
@@ -394,7 +391,7 @@ def movimentacao_equipamento(chamado_id: int):
             if chamado_dados and chamado_dados.get("criado_por") and chamado_dados["criado_por"] != usuario_id:
                 cur.execute(
                     "INSERT INTO notificacoes (usuario_id, chamado_id, mensagem) VALUES (%s, %s, %s)",
-                    (chamado_dados["criado_por"], chamado_id, f"🚚 Chamado #{chamado_id}: Equipamento {chamado['id_ativo']} - {nome_etapa}"[:255]),
+                    (chamado_dados["criado_por"], chamado_id, f"Chamado #{chamado_id}: Equipamento {chamado['id_ativo']} - {nome_etapa}"[:255]),
                 )
 
     flash(f"Movimentação '{nome_etapa}' registrada com sucesso.", "success")
@@ -533,7 +530,7 @@ def gerar_manutencao(chamado_id: int):
             if chamado.get("criado_por") and chamado["criado_por"] != usuario_id:
                 cur.execute(
                     "INSERT INTO notificacoes (usuario_id, chamado_id, mensagem) VALUES (%s, %s, %s)",
-                    (chamado["criado_por"], chamado_id, f"🛠️ Chamado #{chamado_id}: Manutenção iniciada para o equipamento {chamado['id_ativo']} (OS: {os_manutencao})"[:255]),
+                    (chamado["criado_por"], chamado_id, f"Chamado #{chamado_id}: Manutenção iniciada para o equipamento {chamado['id_ativo']} (OS: {os_manutencao})"[:255]),
                 )
 
     flash(f"Manutenção criada com sucesso ({os_manutencao})!", "success")

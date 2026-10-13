@@ -42,16 +42,16 @@ _TABELAS_EQUIPAMENTOS: list[tuple[str, str]] = [
     ("starlink",           "Starlink"),
 ]
 
-# Ícones por tipo de equipamento
+# Ícones por tipo de equipamento (vazio para manter interface profissional sem emojis de SO)
 _TIPO_ICONES: dict[str, str] = {
-    "Celular":          "📱",
-    "Celular Ponto":    "🕐",
-    "Celular Inspeção": "🔍",
-    "Celular Turma":    "🎓",
-    "Computador":       "💻",
-    "Impressora":       "🖨️",
-    "Estabilizador":    "🔌",
-    "Starlink":         "🛰️",
+    "Celular":          "",
+    "Celular Ponto":    "",
+    "Celular Inspeção": "",
+    "Celular Turma":    "",
+    "Computador":       "",
+    "Impressora":       "",
+    "Estabilizador":    "",
+    "Starlink":         "",
 }
 
 # Permissão necessária por tabela (apenas as que têm restrição específica)
@@ -587,15 +587,15 @@ def novo_pedido():
 
                     if sem_estoque_suficiente:
                         if urgencia in ("alta", "urgente", "critica"):
-                            prefix_notif = "🚨 [URGENTE / REPOSIÇÃO NECESSÁRIA] "
+                            prefix_notif = "[URGENTE / REPOSIÇÃO NECESSÁRIA] "
                         else:
-                            prefix_notif = "⚠️ [REPOSIÇÃO NECESSÁRIA] "
+                            prefix_notif = "[REPOSIÇÃO NECESSÁRIA] "
                         msg_notificacao = (
                             f"{prefix_notif}Novo Pedido #{novo_id} - {nome_solicitante} ({nome_fazenda_notif}): "
                             f"{item} (Qtd: {quantidade}) | Sem saldo suficiente em estoque (Disponível: {qtd_disp}) — Necessário solicitar compra/reposição"
                         )
                     else:
-                        msg_urgencia = "🚨 [URGENTE] " if urgencia in ("alta", "urgente", "critica") else "📋 "
+                        msg_urgencia = "[URGENTE] " if urgencia in ("alta", "urgente", "critica") else ""
                         msg_notificacao = f"{msg_urgencia}Novo Pedido #{novo_id} - {nome_solicitante} ({nome_fazenda_notif}): {item} (Qtd: {quantidade})"
 
                     try:
@@ -695,7 +695,7 @@ def detalhe_pedido(pedido_id: int):
                 flash(f"Pedido #{pedido_id} não encontrado ou indisponível.", "warning")
                 return redirect(url_for("fazenda.listar_pedidos"))
 
-            # Anti-IDOR: viewer e apoio só acessam seus próprios pedidos
+            # Restringe acesso aos pedidos criados pelo próprio usuário
             if role in ("viewer", "apoio") and pedido.get("usuario_id") and pedido["usuario_id"] != usuario_id:
                 abort(403)
 

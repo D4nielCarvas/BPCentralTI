@@ -5,7 +5,7 @@
 
 {% block topbar_actions %}
 <a href="{{ url_for('admin.novo_usuario') }}" class="btn btn-primary btn-sm">＋ Novo Usuário</a>
-<a href="{{ url_for('admin.listar_perfis') }}" class="btn btn-ghost btn-sm">🔐 Gerenciar Cargos</a>
+<a href="{{ url_for('admin.listar_perfis') }}" class="btn btn-ghost btn-sm">Gerenciar Cargos</a>
 {% endblock %}
 
 {% block content %}
@@ -109,25 +109,25 @@
         <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cyan)">{{ u.login }}</td>
         <td>
           {% if u.is_admin_master %}
-          <span class="modern-badge role-admin">👑 {{ u.perfil_nome or 'Admin Master' }}</span>
+          <span class="modern-badge role-admin">{{ u.perfil_nome or 'Admin Master' }}</span>
           {% elif u.perfil_nome %}
-          <span class="modern-badge role-viewer" style="background:rgba(99,102,241,.1);color:#818cf8;border-color:rgba(99,102,241,.2)">🔖 {{ u.perfil_nome }}</span>
+          <span class="modern-badge role-viewer" style="background:rgba(99,102,241,.1);color:#818cf8;border-color:rgba(99,102,241,.2)">{{ u.perfil_nome }}</span>
           {% else %}
-          <span class="modern-badge role-viewer">👁 {{ u.role }}</span>
+          <span class="modern-badge role-viewer">{{ u.role }}</span>
           {% endif %}
         </td>
         <td>
           {% if u.is_admin_master %}
           <span class="modern-badge" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)" title="Visualiza todas as {{ localidades | length }} fazendas e unidades">
-            👑 Todas as Fazendas (Total)
+            Todas as Fazendas (Total)
           </span>
           {% elif u.perfil_nome == 'Apoio Inspeção' or u.role == 'apoio' or (not u.localidade_id and not u.localidade_nome) %}
           <span class="modern-badge" style="background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.3)" title="Visualiza dados de todas as {{ localidades | length }} fazendas">
-            🌐 Todas as Fazendas
+            Todas as Fazendas
           </span>
           {% else %}
           <span class="modern-badge" style="background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)" title="Acesso restrito a esta unidade">
-            🌾 {{ u.localidade_nome }}
+            {{ u.localidade_nome }}
           </span>
           {% endif %}
         </td>
@@ -163,13 +163,13 @@
             {# Reset de senha — abre modal inline #}
             <button class="btn btn-xs btn-warn"
                     onclick="abrirReset({{ u.id }}, '{{ u.login }}')">
-              🔑 Senha
+              Senha
             </button>
 
             {# Editar Cargo #}
             {% if u.id != session.usuario_id %}
             <button class="btn btn-ghost btn-xs" style="color:var(--accent)" onclick="abrirEditar({{ u.id }}, '{{ u.login }}', '{{ u.perfil_id or '' }}', '{{ u.localidade_id or '' }}')" title="Editar Cargo e Visualização de Fazendas">
-              ✏️ Cargo
+              Cargo
             </button>
             {% endif %}
           </div>
@@ -193,7 +193,7 @@
      z-index:1000;align-items:center;justify-content:center">
   <div style="background:#13161e;border:1px solid #2e364d;border-radius:14px;
               padding:28px;width:100%;max-width:360px;box-shadow:0 32px 64px rgba(0,0,0,.5)">
-    <h3 style="font-size:14px;margin-bottom:4px">🔑 Redefinir Senha</h3>
+    <h3 style="font-size:14px;margin-bottom:4px">Redefinir Senha</h3>
     <p id="modal-user-label" style="font-size:12px;color:#475569;margin-bottom:18px"></p>
 
     <form id="form-reset-senha" method="POST" style="margin:0">
@@ -218,8 +218,8 @@
      z-index:1000;align-items:center;justify-content:center;padding:20px;">
   <div class="glass-modal" style="max-width:580px;width:100%;max-height:92vh;overflow-y:auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-      <h3 style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px;">✏️ Editar Cargo e Visualização</h3>
-      <button type="button" onclick="fecharEditar()" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;">✕</button>
+      <h3 style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px;">Editar Cargo e Visualização</h3>
+      <button type="button" onclick="fecharEditar()" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;">&times;</button>
     </div>
     <p id="modal-editar-label" style="font-size:12px;color:var(--text3);margin-bottom:16px"></p>
 
@@ -232,7 +232,7 @@
           <option value="">Selecione o cargo…</option>
           {% for p in perfis %}
           <option value="{{ p.id }}" data-master="{{ '1' if p.is_admin_master else '0' }}" data-nome="{{ p.nome }}">
-            {% if p.is_admin_master %}👑{% else %}🔖{% endif %} {{ p.nome }}{% if p.is_admin_master %} (Admin Master){% endif %}
+            {{ p.nome }}{% if p.is_admin_master %} (Admin Master){% endif %}
           </option>
           {% endfor %}
         </select>
@@ -244,13 +244,13 @@
             Localidade Vinculada <span style="color:var(--text3);font-weight:400" id="edit-lbl-loc-opt">(opcional)</span>
           </label>
           <button type="button" onclick="selecionarTodasFazendas()" class="btn btn-ghost btn-xs" style="font-size:11px;color:var(--accent);padding:2px 8px;">
-            🌐 Selecionar Todas
+            Selecionar Todas
           </button>
         </div>
         <select id="edit-localidade_id" name="localidade_id" onchange="aoMudarPerfilOuLocalidade()"
                 style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);
                        border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none">
-          <option value="">🌐 Sem localidade vinculada (Todas as Fazendas)</option>
+          <option value="">Sem localidade vinculada (Todas as Fazendas)</option>
           {% for loc in localidades %}
           <option value="{{ loc.id }}" data-nome="{{ loc.nome }}" data-tipo="{{ loc.tipo }}">
             {{ loc.nome }} ({{ loc.tipo }})
@@ -263,11 +263,10 @@
       <div class="fazendas-visual-area" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--text)">
-            <span>🌾</span>
             <span>Fazendas com Visualização Ativa</span>
           </div>
           <span id="edit-scope-badge" class="badge" style="background:rgba(16,185,129,.15);color:var(--green);font-size:11px;font-weight:600">
-            🌐 Todas as Fazendas
+            Todas as Fazendas
           </span>
         </div>
 
@@ -280,10 +279,9 @@
           {% for loc in localidades %}
           <div class="fazenda-chip-item chip-active" id="chip-loc-{{ loc.id }}" data-id="{{ loc.id }}" data-nome="{{ loc.nome }}" onclick="clicarChipFazenda({{ loc.id }})">
             <span style="display:flex;align-items:center;gap:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-              {% if loc.tipo == 'cd' %}🏢{% elif loc.tipo == 'central' %}🏛️{% else %}🌾{% endif %}
               <span style="overflow:hidden;text-overflow:ellipsis;">{{ loc.nome }}</span>
             </span>
-            <span class="chip-status-tag" style="font-size:10px;font-weight:700;color:var(--green);margin-left:4px;">✓</span>
+            <span class="chip-status-tag" style="font-size:10px;font-weight:700;color:var(--green);margin-left:4px;">OK</span>
           </div>
           {% endfor %}
         </div>
@@ -291,7 +289,7 @@
 
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
         <button type="button" onclick="fecharEditar()" class="btn btn-ghost btn-sm">Cancelar</button>
-        <button type="submit" class="btn btn-primary btn-sm">💾 Salvar Alterações</button>
+        <button type="submit" class="btn btn-primary btn-sm">Salvar Alterações</button>
       </div>
     </form>
   </div>
@@ -378,12 +376,12 @@
     const chips = document.querySelectorAll('#edit-fazendas-chips-grid .fazenda-chip-item');
 
     if (isMaster) {
-      // 👑 Admin Master
+      // Admin Master
       badge.className = 'badge';
       badge.style.background = 'rgba(59,130,246,0.18)';
       badge.style.color = '#60a5fa';
       badge.style.border = '1px solid rgba(59,130,246,0.4)';
-      badge.textContent = `👑 Acesso Total (${TOTAL_LOCALIDADES} Fazendas)`;
+      badge.textContent = `Acesso Total (${TOTAL_LOCALIDADES} Fazendas)`;
 
       desc.textContent = 'Admin Master possui acesso irrestrito e visualização completa de todas as fazendas e unidades da empresa.';
       lblLocOpt.textContent = '(ignorado para Admin Master)';
@@ -391,7 +389,7 @@
 
       chips.forEach(chip => {
         chip.className = 'fazenda-chip-item chip-admin-master';
-        chip.querySelector('.chip-status-tag').textContent = '✓ Total';
+        chip.querySelector('.chip-status-tag').textContent = 'Total';
         chip.querySelector('.chip-status-tag').style.color = '#60a5fa';
       });
 
@@ -400,33 +398,33 @@
       lblLocOpt.textContent = '(opcional)';
 
       if (!locId) {
-        // 🌐 Sem localidade vinculada = Acesso a todas as fazendas
+        // Sem localidade vinculada = Acesso a todas as fazendas
         badge.className = 'badge';
         badge.style.background = 'rgba(16,185,129,0.18)';
         badge.style.color = '#34d399';
         badge.style.border = '1px solid rgba(16,185,129,0.4)';
         
         if (perfilNome === 'Apoio Inspeção') {
-          badge.textContent = `🌐 Apoio Global (${TOTAL_LOCALIDADES} Fazendas)`;
+          badge.textContent = `Apoio Global (${TOTAL_LOCALIDADES} Fazendas)`;
           desc.textContent = 'O usuário tem visualização global de celulares de inspeção e ativos de todas as fazendas.';
         } else {
-          badge.textContent = `🌐 Todas as Fazendas (${TOTAL_LOCALIDADES})`;
+          badge.textContent = `Todas as Fazendas (${TOTAL_LOCALIDADES})`;
           desc.textContent = 'Sem restrição de localidade vinculada: o usuário pode visualizar todas as fazendas cadastradas.';
         }
 
         chips.forEach(chip => {
           chip.className = 'fazenda-chip-item chip-active';
-          chip.querySelector('.chip-status-tag').textContent = '✓ Visível';
+          chip.querySelector('.chip-status-tag').textContent = 'Visível';
           chip.querySelector('.chip-status-tag').style.color = 'var(--green)';
         });
 
       } else {
-        // 📍 Restrito a uma localidade específica
+        // Restrito a uma localidade específica
         badge.className = 'badge';
         badge.style.background = 'rgba(245,158,11,0.18)';
         badge.style.color = '#fbbf24';
         badge.style.border = '1px solid rgba(245,158,11,0.4)';
-        badge.textContent = `🌾 Restrito: ${locNome || '1 Fazenda'}`;
+        badge.textContent = `Restrito: ${locNome || '1 Fazenda'}`;
 
         desc.innerHTML = `Visualização restrita <strong>exclusivamente</strong> à fazenda <strong>${locNome}</strong>. As demais fazendas ficam bloqueadas.`;
 
@@ -435,11 +433,11 @@
           if (chipId == locId) {
             chip.className = 'fazenda-chip-item chip-active';
             chip.style.borderColor = 'rgba(245,158,11,0.5)';
-            chip.querySelector('.chip-status-tag').textContent = '✓ Ativa';
+            chip.querySelector('.chip-status-tag').textContent = 'Ativa';
             chip.querySelector('.chip-status-tag').style.color = '#fbbf24';
           } else {
             chip.className = 'fazenda-chip-item chip-inactive';
-            chip.querySelector('.chip-status-tag').textContent = '🔒 Bloqueada';
+            chip.querySelector('.chip-status-tag').textContent = 'Bloqueada';
             chip.querySelector('.chip-status-tag').style.color = 'var(--text3)';
           }
         });

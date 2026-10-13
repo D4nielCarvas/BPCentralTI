@@ -1,9 +1,11 @@
 {% extends "fazenda/base_fazenda.html" %}
 {% block title %}Editar Celular de Inspeção — Apoio — BP Central TI{% endblock %}
-{% block page_title %}📱 Editar Celular: {{ celular.id_ativo }}{% endblock %}
+{% block page_title %}Editar Celular: {{ celular.id_ativo }}{% endblock %}
 
 {% block topbar_actions %}
-<a href="{{ url_for('apoio.celulares_inspecao') }}" class="btn btn-ghost btn-sm">← Voltar à lista</a>
+<a href="{{ url_for('apoio.celulares_inspecao') }}" class="btn btn-ghost btn-sm" style="display:inline-flex;align-items:center;gap:5px">
+  {{ icon_arrow_left(14) }} Voltar à lista
+</a>
 {% endblock %}
 
 {% block content %}
@@ -73,8 +75,9 @@
 
       {# ── Credenciais Google ─────────────────────────────────── #}
       <div style="margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border)">
-        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
-          🔑 Credenciais Google
+        <div style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
+          {{ icon_key(13) }}
+          Credenciais Google
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
           <div class="form-group">
@@ -92,8 +95,9 @@
 
       {# ── Credenciais MIP ────────────────────────────────────── #}
       <div style="margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border)">
-        <div style="font-size:11px;font-weight:700;color:var(--cyan);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
-          🖥️ Credenciais MIP
+        <div style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--cyan);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
+          {{ icon_device(13) }}
+          Credenciais MIP
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
           <div class="form-group">
@@ -111,8 +115,9 @@
 
       {# ── Datas ──────────────────────────────────────────────── #}
       <div style="margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border)">
-        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
-          📅 Datas
+        <div style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
+          {{ icon_calendar(13) }}
+          Datas
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
           <div class="form-group">
@@ -139,7 +144,9 @@
 
       <div class="form-actions">
         <a href="{{ url_for('apoio.celulares_inspecao') }}" class="btn btn-ghost">Cancelar</a>
-        <button type="submit" class="btn btn-primary">💾 Salvar Alterações</button>
+        <button type="submit" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px">
+          {{ icon_save(14) }} Salvar Alterações
+        </button>
       </div>
 
     </form>

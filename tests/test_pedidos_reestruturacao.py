@@ -319,5 +319,5 @@ class TestPedidosReestruturacao:
             assert resp.status_code == 200
             html = resp.data.decode("utf-8")
             assert "Atenção da Administração de TI" in html
-            assert "🚨 Urgente" in html
+            assert "Urgente" in html
             assert "Switch Core" in html

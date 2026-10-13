@@ -10,7 +10,7 @@
 {% block content %}
 <div class="form-card" style="max-width:680px">
   <div class="form-card-header">
-    <h3>🎫 Relatar Problema</h3>
+    <h3>Relatar Problema</h3>
     <p style="font-size:12px;color:var(--text3);margin-top:4px">
       Descreva o problema com o máximo de detalhes. A equipe de TI será notificada imediatamente.
     </p>
@@ -20,7 +20,7 @@
 
       {% if modelos_prontos %}
       <div class="form-group" style="margin-bottom:15px;background:var(--bg3);padding:12px;border-radius:8px;border:1px solid var(--accent)50">
-        <label for="modelo_select" style="color:var(--accent)">🚀 Usar Modelo Pre-Pronto</label>
+        <label for="modelo_select" style="color:var(--accent)">Usar Modelo Pré-Pronto</label>
         <select id="modelo_select" style="margin-top:5px;font-size:13px;padding:8px 12px">
           <option value="">-- Selecione um modelo para auto-preencher --</option>
           {% for m in modelos_prontos %}
@@ -104,14 +104,14 @@
       </div>
 
       <div class="form-group">
-        <label for="anexo">📎 Anexar Arquivo (Imagem, PDF, ZIP - Opcional)</label>
+        <label for="anexo">Anexar Arquivo (Imagem, PDF, ZIP - Opcional)</label>
         <input type="file" name="anexo" id="anexo" accept=".png,.jpg,.jpeg,.gif,.pdf,.zip,.rar,.txt,.csv" style="font-size:13px;color:var(--text2);padding:10px 0;">
       </div>
 
       <div class="form-actions">
         <a href="{% if session.role == 'admin' %}{{ url_for('admin_chamados.dashboard_chamados') }}{% else %}{{ url_for('chamados.listar_chamados') }}{% endif %}" class="btn btn-ghost">Cancelar</a>
         <button type="submit" id="btn-enviar" class="btn btn-primary">
-          📤 Abrir Chamado
+          Abrir Chamado
         </button>
       </div>
     </form>
@@ -164,7 +164,7 @@
 
   document.getElementById('form-novo-chamado').addEventListener('submit', function() {
     btnEnviar.disabled = true;
-    btnEnviar.textContent = '⏳ Enviando…';
+    btnEnviar.textContent = 'Enviando…';
   });
 
   // Suporte para colar imagens diretamente
@@ -182,7 +182,7 @@
             feedback.style = 'font-size:11px; color:var(--green); margin-top:6px; font-weight:600; padding:4px 8px; background:rgba(16,185,129,0.1); border-radius:4px; border:1px solid rgba(16,185,129,0.3); display:inline-block;';
             fileInput.parentNode.appendChild(feedback);
           }
-          feedback.textContent = `✅ Imagem colada: ${file.name || 'imagem_colada.png'}`;
+          feedback.textContent = `Imagem colada: ${file.name || 'imagem_colada.png'}`;
         }
       }
     }

@@ -78,13 +78,13 @@
         </td>
         <td>
           {% if urg in ('urgente', 'critica') %}
-            <span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4)">🚨 Urgente</span>
+            <span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4)">Urgente</span>
           {% elif urg == 'alta' %}
-            <span class="badge" style="background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.4)">🟠 Alta</span>
+            <span class="badge" style="background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.4)">Alta</span>
           {% elif urg == 'baixa' %}
-            <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3)">🟢 Baixa</span>
+            <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3)">Baixa</span>
           {% else %}
-            <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)">🟡 Média</span>
+            <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)">Média</span>
           {% endif %}
         </td>
         <td style="max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text3)" title="{{ p.motivo or p.descricao }}">

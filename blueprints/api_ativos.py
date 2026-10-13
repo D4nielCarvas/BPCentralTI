@@ -1,9 +1,7 @@
 from flask import Blueprint, request, jsonify, Response
-from typing import Any
-from datetime import date
 import psycopg2
 
-from utils.db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetch_one as _fetch_one, row_to_dict
+from utils.db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetch_one as _fetch_one
 from utils.auth_utils import login_required, admin_required, permission_required, get_fazenda_nome_filter, has_permission
 from utils.crypto_utils import encrypt_field, decrypt_field
 from utils.api_utils import _list_table, log_historico, validate_file_mime

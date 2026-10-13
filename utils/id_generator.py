@@ -32,7 +32,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-# Sprint 4.1 — importa da fonte única de verdade de tipos de equipamento
 from utils.equipment_types import TABELA_POR_SIGLA as _TABELA_POR_SIGLA
 from utils.equipment_types import SETOR_TABELA_OVERRIDE as _SETOR_TABELA_OVERRIDE
 
@@ -96,8 +95,6 @@ SIGLAS_SETOR: dict[str, str] = {
     "COA": "COA",
     "RH":  "RH",
 }
-
-# (removido na Sprint 4.1 — ver utils/equipment_types.py)
 
 # Prefixo exclusivo para Celulares Turma (formato CL-TRM-NN)
 _TURMA_PREFIX = "CL-TRM-"

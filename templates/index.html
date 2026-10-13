@@ -169,13 +169,15 @@
         onclick="window.ThemeManager && window.ThemeManager.toggleTheme()"
         style="margin-left: 10px;"
       >
-        <span id="theme-icon" class="theme-toggle-icon">🌙</span>
+        <span id="theme-icon" class="theme-toggle-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </span>
       </button>
 
       {% if session.role == 'admin' %}
       <div style="position:relative; margin-left:14px;">
-        <div class="notif-bell" onclick="document.getElementById('notif-dropdown').classList.toggle('show')">
-          🔔
+        <div class="notif-bell" onclick="document.getElementById('notif-dropdown').classList.toggle('show')" title="Notificações" aria-label="Notificações">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
           {% if qtd_notificacoes > 0 %}
           <div class="notif-badge">{{ qtd_notificacoes }}</div>
           {% endif %}
@@ -789,7 +791,7 @@
   <div class="modal-backdrop" id="modal-backdrop">
     <div class="modal">
       <div class="modal-head">
-        <h3 id="modal-title">Modal</h3><button class="modal-close" onclick="closeModal()">✕</button>
+        <h3 id="modal-title">Modal</h3><button class="modal-close" onclick="closeModal()">&times;</button>
       </div>
       <div class="modal-body" id="modal-body"></div>
       <div class="modal-foot" id="modal-foot">
@@ -993,7 +995,7 @@
     /**
      * Carrega dados paginados de uma entidade com skeleton loader e botao 'Carregar mais'.
      */
-    async function loadWithPagination({ tbodyId, apiPath, queryParams = '', rowTemplate, emptyMsg, emptyIcon = '📋', emptyCols = 6, page = null, append = false, entityKey = null }) {
+    async function loadWithPagination({ tbodyId, apiPath, queryParams = '', rowTemplate, emptyMsg, emptyIcon = '', emptyCols = 6, page = null, append = false, entityKey = null }) {
       const key = entityKey || tbodyId;
       const currentPage = page !== null ? page : (pageState[key] || 1);
       pageState[key] = currentPage;
@@ -1123,7 +1125,7 @@
           if (d.ip_rede) extras.push('IP Rede: ' + d.ip_rede);
           if (d.mac_address) extras.push('MAC: ' + d.mac_address);
           if (extras.length > 0) d.observacoes = extras.join(' | ');
-          toast('✅ Dados importados! Preencha os campos restantes e salve.', 'success');
+          toast('Dados importados com sucesso! Preencha os campos restantes e salve.', 'success');
           openComputadorModal(d);
         } else {
           toast(result.msg || 'Erro ao importar arquivo', 'error');
@@ -1137,23 +1139,23 @@
     async function loadDashboard() {
       const d = await api('/api/dashboard'); const eq = d.equipamentos;
       document.getElementById('dash-stats').innerHTML = `
-    <div class="stat-card blue"><div class="stat-label">📱 Celulares</div><div class="stat-val">${eq.celulares.total}</div><div class="stat-sub">${eq.celulares.ativos} ativos</div></div>
-    <div class="stat-card cyan"><div class="stat-label">🕐 Cel. Ponto</div><div class="stat-val">${eq.celulares_ponto.total}</div><div class="stat-sub">${eq.celulares_ponto.ativos} ativos</div></div>
-    <div class="stat-card purple"><div class="stat-label">🔍 Cel. Inspeção</div><div class="stat-val">${eq.celulares_inspecao?.total || 0}</div><div class="stat-sub">${eq.celulares_inspecao?.ativos || 0} ativos</div></div>
-    <div class="stat-card green"><div class="stat-label">💻 Notebooks/PCs</div><div class="stat-val">${eq.computadores.total}</div><div class="stat-sub">${eq.computadores.ativos} ativos</div></div>
-    <div class="stat-card yellow"><div class="stat-label">🖨️ Impressoras</div><div class="stat-val">${eq.impressoras.total}</div><div class="stat-sub">${eq.impressoras.ativos} ativas</div></div>
-    <div class="stat-card orange"><div class="stat-label">🔧 Manutenções</div><div class="stat-val">${d.manutencoes_abertas}</div><div class="stat-sub">em aberto</div></div>
-    <div class="stat-card ${d.toner_alerta > 0 ? 'red' : 'green'}"><div class="stat-label">🖨️ Toners</div><div class="stat-val">${d.toner_alerta}</div><div class="stat-sub">${d.toner_alerta > 0 ? '⚠️ Estoque baixo' : 'Estoque OK'}</div></div>
-    <div class="stat-card blue"><div class="stat-label">📦 Itens Estoque</div><div class="stat-val">${d.estoque_itens}</div><div class="stat-sub">itens cadastrados</div></div>`;
+    <div class="stat-card blue"><div class="stat-label">Celulares</div><div class="stat-val">${eq.celulares.total}</div><div class="stat-sub">${eq.celulares.ativos} ativos</div></div>
+    <div class="stat-card cyan"><div class="stat-label">Celulares Ponto</div><div class="stat-val">${eq.celulares_ponto.total}</div><div class="stat-sub">${eq.celulares_ponto.ativos} ativos</div></div>
+    <div class="stat-card purple"><div class="stat-label">Celulares Inspeção</div><div class="stat-val">${eq.celulares_inspecao?.total || 0}</div><div class="stat-sub">${eq.celulares_inspecao?.ativos || 0} ativos</div></div>
+    <div class="stat-card green"><div class="stat-label">Notebooks e PCs</div><div class="stat-val">${eq.computadores.total}</div><div class="stat-sub">${eq.computadores.ativos} ativos</div></div>
+    <div class="stat-card yellow"><div class="stat-label">Impressoras</div><div class="stat-val">${eq.impressoras.total}</div><div class="stat-sub">${eq.impressoras.ativos} ativas</div></div>
+    <div class="stat-card orange"><div class="stat-label">Manutenções</div><div class="stat-val">${d.manutencoes_abertas}</div><div class="stat-sub">em aberto</div></div>
+    <div class="stat-card ${d.toner_alerta > 0 ? 'red' : 'green'}"><div class="stat-label">Toners</div><div class="stat-val">${d.toner_alerta}</div><div class="stat-sub">${d.toner_alerta > 0 ? 'Estoque baixo' : 'Estoque regular'}</div></div>
+    <div class="stat-card blue"><div class="stat-label">Itens em Estoque</div><div class="stat-val">${d.estoque_itens}</div><div class="stat-sub">itens cadastrados</div></div>`;
       const b = document.getElementById('badge-man');
       if (d.manutencoes_abertas > 0) { b.style.display = ''; b.textContent = d.manutencoes_abertas; } else b.style.display = 'none';
       document.getElementById('dash-activity').innerHTML = d.atividade_recente.length
         ? d.atividade_recente.map(a => `<div class="activity-item"><div class="activity-dot"></div><div class="activity-text"><strong>${a.id_ativo || '—'}</strong> · ${a.acao} · ${a.tipo_equipamento || ''}</div><div class="activity-time">${formatarDataHora(a.data_hora)}</div></div>`).join('')
-        : '<div class="empty"><div class="empty-icon">📋</div><p>Sem atividade</p></div>';
+        : '<div class="empty"><div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div><p>Sem atividade recente</p></div>';
       const mn = await api('/api/manutencoes?status=Aberta');
       document.getElementById('dash-manut').innerHTML = mn.length
         ? mn.slice(0, 5).map(m => `<div class="activity-item"><div class="activity-dot" style="background:var(--yellow)"></div><div class="activity-text"><strong>${m.id_ativo}</strong> · ${m.modelo || '—'}</div><div class="activity-time">${statusBadge(m.status)}</div></div>`).join('')
-        : '<div class="empty"><div class="empty-icon">✅</div><p>Nenhuma aberta</p></div>';
+        : '<div class="empty"><div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><p>Nenhuma manutenção em aberto</p></div>';
     }
 
     // ─── STATUS / HELPERS ────────────────────────────────────────────────────────
@@ -1249,7 +1251,7 @@
       const _res_tb_celulares = await api(`/api/celulares?status=${filterState.celulares || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_celulares) ? _res_tb_celulares : (_res_tb_celulares.data || []);
       const tb = document.getElementById('tb-celulares');
-      if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular cadastrado', '📱'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular cadastrado'); return; }
       tb.innerHTML = rows.map(r => `<tr>
     <td class="td-id">${r.id_ativo}</td><td>${r.fazenda || '—'}</td><td>${r.setor || '—'}</td>
     <td class="td-bold">${r.responsavel || '—'}<br><span style="font-size:10px;font-weight:normal;color:var(--text3)">${r.cargo || ''}</span></td>
@@ -1270,7 +1272,7 @@
       const _res_tb_celulares_ponto = await api(`/api/celulares_ponto?status=${filterState.celulares_ponto || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_celulares_ponto) ? _res_tb_celulares_ponto : (_res_tb_celulares_ponto.data || []);
       const tb = document.getElementById('tb-celulares_ponto');
-      if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular de ponto cadastrado', '🕐'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular de ponto cadastrado'); return; }
       tb.innerHTML = rows.map(r => `<tr>
     <td class="td-id">${r.id_ativo}</td><td>${r.fazenda || '—'}</td><td>${r.funcao || '—'}</td>
     <td class="td-bold">${r.responsavel || '—'}</td>
@@ -1291,7 +1293,7 @@
       const _res_tb_celulares_inspecao = await api(`/api/celulares_inspecao?status=${filterState.celulares_inspecao || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_celulares_inspecao) ? _res_tb_celulares_inspecao : (_res_tb_celulares_inspecao.data || []);
       const tb = document.getElementById('tb-celulares_inspecao');
-      if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular de inspeção cadastrado', '🔍'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular de inspeção cadastrado'); return; }
       tb.innerHTML = rows.map(r => `<tr>
     <td class="td-id">${r.id_ativo}</td>
     <td><span class="td-mono-purple">${r.id_sistema || '—'}</span></td>
@@ -1321,7 +1323,7 @@
       }
       
       const tb = document.getElementById('tb-chips');
-      if (!rows.length) { tb.innerHTML = emptyRow(7, 'Nenhum chip cadastrado', '📶'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(7, 'Nenhum chip cadastrado'); return; }
       
       const formatDataStr = (dt) => {
           if(!dt) return '—';
@@ -1336,7 +1338,7 @@
     <td>${r.responsavel || '—'}</td>
     <td style="font-size:11px;color:var(--text3)">${formatDataStr(r.data_inicio)}</td>
     <td><div class="tbl-actions">
-      <button class="btn btn-ghost btn-xs" onclick="viewChipHistory('${r.id}')" title="Histórico">📜 Histórico</button>
+      <button class="btn btn-ghost btn-xs" onclick="viewChipHistory('${r.id}')" title="Histórico" style="display:inline-flex; align-items:center; gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span>Histórico</span></button>
     </div></td></tr>`).join('');
     }
 
@@ -1400,7 +1402,7 @@
       const _res_tb_computadores = await api(`/api/computadores?status=${filterState.computadores || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_computadores) ? _res_tb_computadores : (_res_tb_computadores.data || []);
       const tb = document.getElementById('tb-computadores');
-      if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum computador cadastrado', '💻'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum computador cadastrado'); return; }
       tb.innerHTML = rows.map(r => {
         // Item 3: Badge TI para colaboradores com cargo TI
         const tiBadge = (r.cargo || '').toUpperCase() === 'TI'
@@ -1429,7 +1431,7 @@
       const _res_tb_impressoras = await api(`/api/impressoras?status=${filterState.impressoras || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_impressoras) ? _res_tb_impressoras : (_res_tb_impressoras.data || []);
       const tb = document.getElementById('tb-impressoras');
-      if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhuma impressora cadastrada', '🖨️'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhuma impressora cadastrada'); return; }
       tb.innerHTML = rows.map(r => `<tr>
     <td class="td-id">${r.id_ativo}</td><td>${r.fazenda || '—'}</td><td>${r.setor || '—'}</td>
     <td>${r.marca || '—'}</td><td>${r.modelo || '—'}</td><td>${r.ip_rede || '—'}</td>
@@ -1449,7 +1451,7 @@
       const _res_tb_estabilizadores = await api(`/api/estabilizadores?status=${filterState.estabilizadores || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_estabilizadores) ? _res_tb_estabilizadores : (_res_tb_estabilizadores.data || []);
       const tb = document.getElementById('tb-estabilizadores');
-      if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhum estabilizador cadastrado', '🔌'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhum estabilizador cadastrado'); return; }
       tb.innerHTML = rows.map(r => `<tr>
     <td class="td-id">${r.id_ativo}</td><td>${r.fazenda || '—'}</td><td>${r.setor || '—'}</td>
     <td>${r.modelo || '—'}</td><td>${r.uso || '—'}</td><td>${r.num_serie || '—'}</td>
@@ -1468,7 +1470,7 @@
       const _res_tb_starlink = await api(`/api/starlink?status=${filterState.starlink || ''}&q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_starlink) ? _res_tb_starlink : (_res_tb_starlink.data || []);
       const tb = document.getElementById('tb-starlink');
-      if (!rows.length) { tb.innerHTML = emptyRow(11, 'Nenhuma antena cadastrada', '🛰️'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(11, 'Nenhuma antena cadastrada'); return; }
       tb.innerHTML = rows.map(r => `<tr>
     <td class="td-id">${r.id_ativo}</td><td>${r.fazenda || '—'}</td><td>${r.setor || '—'}</td>
     <td class="td-bold">${r.responsavel || '—'}</td><td>${r.modelo || '—'}</td><td>${r.num_serie || '—'}</td>
@@ -1486,7 +1488,7 @@
       showTableSkeleton('tb-estoque', 6);
       const rows = await api('/api/estoque');
       const tb = document.getElementById('tb-estoque');
-      if (!rows.length) { tb.innerHTML = emptyRow(6, 'Nenhum item no estoque', '📦'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(6, 'Nenhum item no estoque'); return; }
       tb.innerHTML = rows.map(r => {
         const cls = r.quantidade === 0 ? 'qtd-zero' : r.quantidade <= 2 ? 'qtd-baixo' : 'qtd-ok';
         return `<tr>
@@ -1507,7 +1509,7 @@
       showTableSkeleton('tb-estoque_equipamentos', 6);
       const rows = await api('/api/estoque_equipamentos');
       const tb = document.getElementById('tb-estoque_equipamentos');
-      if (!rows.length) { tb.innerHTML = emptyRow(6, 'Nenhum equipamento em estoque', '\uD83C\uDFE2'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(6, 'Nenhum equipamento em estoque'); return; }
       tb.innerHTML = rows.map(function (r) {
         return '<tr>' +
           '<td class="td-id">' + (r.id_ativo || '') + '</td>' +
@@ -1516,7 +1518,7 @@
           '<td>' + (r.fazenda || '\u2014') + '</td>' +
           '<td>' + statusBadge(r.status) + '</td>' +
           '<td><div class="tbl-actions">' +
-          '<button class="btn btn-ghost btn-xs" onclick="goToAtivo(\'' + (r.tipo_equipamento || '') + '\',\'' + (r.id_ativo || '') + '\')">\uD83D\uDC41\uFE0F</button>' +
+          '<button class="btn btn-ghost btn-xs" onclick="goToAtivo(\'' + (r.tipo_equipamento || '') + '\',\'' + (r.id_ativo || '') + '\')" title="Visualizar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>' +
           '</div></td></tr>';
       }).join('');
     }
@@ -1527,7 +1529,7 @@
       const _res_tb_toners = await api(`/api/toners?q=${encodeURIComponent(q)}`);
       const rows = Array.isArray(_res_tb_toners) ? _res_tb_toners : (_res_tb_toners.data || []);
       const tb = document.getElementById('tb-toners');
-      if (!rows.length) { tb.innerHTML = emptyRow(7, 'Nenhum toner cadastrado', '🖨️'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(7, 'Nenhum toner cadastrado'); return; }
       tb.innerHTML = rows.map(r => {
         const baixo = r.quantidade_estoque <= r.quantidade_minima;
         const cls = r.quantidade_estoque === 0 ? 'qtd-zero' : (baixo ? 'qtd-baixo' : 'qtd-ok');
@@ -1535,7 +1537,7 @@
       <td class="td-bold">${r.modelo_impressora}</td>
       <td>${r.modelo_toner}</td>
       <td><span class="toner-cor-${(r.cor || 'Preto').toLowerCase()}" style="background:transparent">${r.cor}</span></td>
-      <td><span class="estoque-qtd ${cls}">${r.quantidade_estoque}</span> ${baixo ? '<span class="badge badge-baixo">⚠️ Baixo</span>' : ''}</td>
+      <td><span class="estoque-qtd ${cls}">${r.quantidade_estoque}</span> ${baixo ? '<span class="badge badge-baixo">Baixo</span>' : ''}</td>
       <td>${r.quantidade_minima}</td>
       <td>${formatarData(r.data_ultima_troca)}</td>
       <td><div class="tbl-actions">
@@ -1551,7 +1553,7 @@
       const _res_tb_manutencoes = await api(`/api/manutencoes?status=${filterState.manutencoes || ''}`);
       const rows = Array.isArray(_res_tb_manutencoes) ? _res_tb_manutencoes : (_res_tb_manutencoes.data || []);
       const tb = document.getElementById('tb-manutencoes');
-      if (!rows.length) { tb.innerHTML = emptyRow(11, 'Nenhuma manutenção', '🔧'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(11, 'Nenhuma manutenção'); return; }
       tb.innerHTML = rows.map(r => `<tr>
     <td class="td-id">#${r.id}</td><td class="td-bold">${r.id_ativo}</td>
     <td><span class="badge badge-analise">${r.tipo_equipamento}</span></td>
@@ -1568,7 +1570,7 @@
       showTableSkeleton('tb-descartes', 7);
       const rows = await api('/api/descartes');
       const tb = document.getElementById('tb-descartes');
-      if (!rows.length) { tb.innerHTML = emptyRow(7, 'Nenhum descarte registrado', '🗑️'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(7, 'Nenhum descarte registrado'); return; }
       tb.innerHTML = rows.map(r => `<tr>
     <td class="td-id">${r.id_ativo}</td><td>${r.tipo_equipamento}</td><td>${r.modelo || '—'}</td>
     <td>${r.motivo || '—'}</td><td>${formatarData(r.data_descarte)}</td>
@@ -1580,7 +1582,7 @@
       const res = await api('/api/transferencias');
       const rows = Array.isArray(res) ? res : (res.items || res.data || []);
       const tb = document.getElementById('tb-transferencias');
-      if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhuma transferência registrada', '🔄'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhuma transferência registrada'); return; }
       tb.innerHTML = rows.map(r => `<tr>
     <td class="td-id">${r.id_ativo}</td><td>${r.tipo_equipamento}</td>
     <td><span class="badge badge-analise" style="font-size:10px">${r.tipo_transferencia || '—'}</span></td>
@@ -1595,7 +1597,7 @@
       showTableSkeleton('tb-historico', 8);
       const rows = await api('/api/historico');
       const tb = document.getElementById('tb-historico');
-      if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhum evento registrado', '📜'); return; }
+      if (!rows.length) { tb.innerHTML = emptyRow(8, 'Nenhum evento registrado'); return; }
       tb.innerHTML = rows.map(r => `<tr>
     <td class="td-id">#${r.id}</td><td class="td-bold">${r.id_ativo || '—'}</td>
     <td>${r.tipo_equipamento || '—'}</td>
@@ -1614,7 +1616,7 @@
       const q = globalSearchFilter || localQ;
       const rows = await api(`/api/celulares_turma?status=${filterState.celulares_turma || ''}&q=${encodeURIComponent(q)}`);
       const tb = document.getElementById('tb-celulares_turma');
-      if (!rows || !rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular de turma cadastrado', '🎓'); return; }
+      if (!rows || !rows.length) { tb.innerHTML = emptyRow(9, 'Nenhum celular de turma cadastrado'); return; }
       tb.innerHTML = rows.map(r => `<tr>
     <td class="td-id">${r.id_ativo}</td>
     <td>${r.num_turma || '—'}</td>
@@ -1782,10 +1784,10 @@
         <div style="display:flex; flex-direction:column; gap:6px;">
           <div style="display:flex; gap:6px; align-items:center;">
             <input name="numero" id="input-cel-numero" value="${d?.numero || ''}" list="chips-disponiveis" placeholder="(16) 99999-1234" oninput="formatPhone(this)" style="flex:1;">
-            <button type="button" class="btn btn-ghost btn-xs" onclick="limparNumeroChip()" title="Limpar / Sem Chip" style="padding:6px 8px; font-size:12px;">❌ Limpar</button>
+            <button type="button" class="btn btn-ghost btn-xs" onclick="limparNumeroChip()" title="Limpar / Sem Chip" style="padding:6px 8px; font-size:12px;">Limpar</button>
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
-            <span style="font-size:11px; color:var(--text2); white-space:nowrap;">📶 Selecionar Chip:</span>
+            <span style="font-size:11px; color:var(--text2); white-space:nowrap;">Selecionar Chip:</span>
             <select id="select-chips-disp" onchange="onSelectChipDisponivel(this)" style="font-size:11px; padding:5px 8px; flex:1; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text);">
               <option value="">Carregando chips disponíveis...</option>
             </select>
@@ -1861,7 +1863,7 @@
 
     function openCelularModal(d) {
       const html = `<form id="modal-form">
-    <div class="form-section"><h4>📋 Celular</h4><div class="form-grid">
+    <div class="form-section"><h4>Celular</h4><div class="form-grid">
       ${commonCelFields(d)}
       ${fld('Gmail', `<input name="gmail" value="${d?.gmail || ''}" placeholder="usuario@gmail.com">`)}
       ${pwdField('senha', d, 'Senha Gmail', 'cel-senha')}
@@ -1872,7 +1874,7 @@
 
     function openCelularPontoModal(d) {
       const html = `<form id="modal-form">
-    <div class="form-section"><h4>🕐 Celular Ponto / Turma</h4><div class="form-grid">
+    <div class="form-section"><h4>Celular Ponto / Turma</h4><div class="form-grid">
       ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo || ''}" ${d ? 'readonly' : 'required'} placeholder="CL-XXX-PTO-01">`)}
       ${fld('Status', st('status', d, ['Ativo', 'Inativo', 'Manutenção', 'Descartado', { v: 'Estoque', l: 'Em Estoque' }]))}
       ${fazendaFld(d)}
@@ -1901,7 +1903,7 @@
 
     function openCelularInspecaoModal(d) {
       const html = `<form id="modal-form">
-    <div class="form-section"><h4>🔍 Celular Inspeção</h4><div class="form-grid">
+    <div class="form-section"><h4>Celular Inspeção</h4><div class="form-grid">
       ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo || ''}" ${d ? 'readonly' : 'required'} placeholder="CL-XXX-INP-01">`)}
       ${fld('ID Sistema', `<input name="id_sistema" value="${d?.id_sistema || ''}" placeholder="Ex: INS-0001">`)}
       ${fld('Status', st('status', d, ['Ativo', 'Inativo', 'Manutenção', 'Descartado', { v: 'Estoque', l: 'Em Estoque' }]))}
@@ -1931,7 +1933,7 @@
     function openComputadorModal(d) {
       const isEdit = !!(d && d.id_ativo);
       const html = `<form id="modal-form">
-    <div class="form-section"><h4>💻 Computador</h4><div class="form-grid">
+    <div class="form-section"><h4>Computador</h4><div class="form-grid">
       ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo || ''}" ${isEdit ? 'readonly' : 'required'} placeholder="NT-XXX-XXX-01">`)}
       ${fld('Status', st('status', d, ['Ativo', 'Inativo', 'Manutenção', 'Descartado', { v: 'Estoque', l: 'Em Estoque' }]))}
       ${fld('Tipo *', st('tipo', d, ['Notebook', 'Desktop', 'All-in-One', 'Servidor', 'Workstation'], 'triggerIdSuggestion()'))}
@@ -1960,7 +1962,7 @@
     }
 
     function openImpressoraModal(d) {
-      const html = `<form id="modal-form"><div class="form-section"><h4>🖨️ Impressora</h4><div class="form-grid">
+      const html = `<form id="modal-form"><div class="form-section"><h4>Impressora</h4><div class="form-grid">
     ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo || ''}" ${d ? 'readonly' : 'required'} placeholder="IMP-XXX-XXX-01">`)}
     ${fld('Status', st('status', d, ['Ativo', 'Inativo', 'Manutenção', 'Descartado', { v: 'Estoque', l: 'Em Estoque' }]))}
     ${fazendaFld(d)}
@@ -1982,7 +1984,7 @@
     }
 
     function openEstabilizadorModal(d) {
-      const html = `<form id="modal-form"><div class="form-section"><h4>🔌 Estabilizador</h4><div class="form-grid">
+      const html = `<form id="modal-form"><div class="form-section"><h4>Estabilizador</h4><div class="form-grid">
     ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo || ''}" ${d ? 'readonly' : 'required'} placeholder="EST-XXX-XXX-01">`)}
     ${fld('Status', st('status', d, ['Ativo', 'Inativo', 'Manutenção', 'Descartado', { v: 'Estoque', l: 'Em Estoque' }]))}
     ${fazendaFld(d)}
@@ -1995,7 +1997,7 @@
     }
 
     function openStarlinkModal(d) {
-      const html = `<form id="modal-form"><div class="form-section"><h4>🛰️ Starlink</h4><div class="form-grid">
+      const html = `<form id="modal-form"><div class="form-section"><h4>Starlink</h4><div class="form-grid">
     ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo || ''}" ${d ? 'readonly' : 'required'} placeholder="STL-XXX-XXX-01">`)}
     ${fld('Status', st('status', d, ['Ativo', 'Inativo', 'Manutenção', 'Descartado', { v: 'Estoque', l: 'Em Estoque' }]))}
     ${fazendaFld(d)}
@@ -2008,7 +2010,7 @@
     ${fld('Data Aquisição', `<input type="date" name="data_aquisicao" value="${d?.data_aquisicao || ''}">`)}
     ${fld('Data Instalação', `<input type="date" name="data_instalacao" value="${d?.data_instalacao || ''}">`)}
     ${fld('Plano', `<input name="plano" value="${d?.plano || ''}">`)}
-    <div class="form-group full"><h4 style="margin:0 0 8px;font-size:13px;color:var(--text2)">🔐 Credenciais de Acesso</h4></div>
+    <div class="form-group full"><h4 style="margin:0 0 8px;font-size:13px;color:var(--text2)">Credenciais de Acesso</h4></div>
     ${fld('ID Starlink', `<input name="id_starlink" value="${d?.id_starlink || ''}" placeholder="STR-000000">`)}
     ${fld('Nº Kit', `<input name="numero_kit" value="${d?.numero_kit || ''}" placeholder="KIT-0000">`)}
     ${fld('E-mail Login', `<input type="email" name="email_login" value="${d?.email_login || ''}" placeholder="conta@starlink.com">`)}
@@ -2021,7 +2023,7 @@
     // Item 4 — Modal Celular Turma (ID no formato CL-TRM-NN)
     function openCelularTurmaModal(d) {
       const html = `<form id="modal-form">
-    <div class="form-section"><h4>🎓 Celular Turma</h4><div class="form-grid">
+    <div class="form-section"><h4>Celular Turma</h4><div class="form-grid">
       ${fld('ID Ativo *', `<input name="id_ativo" value="${d?.id_ativo || ''}" ${d ? 'readonly' : 'required'}
         placeholder="CL-TRM-01"
         ${!d ? 'id="input-id-turma"' : ''}>`)}
@@ -2122,14 +2124,14 @@
       window._pecasManut = d?.pecas_json || [];
 
       const html = `<form id="modal-form">
-    <div class="form-section"><h4>📋 Ativo</h4><div class="form-grid">
+    <div class="form-section"><h4>Identificação do Ativo</h4><div class="form-grid">
       ${fld('ID Ativo *', `<input name="id_ativo" value="${v('id_ativo')}" required placeholder="CL-CEN-ADM-01" onblur="autoFillAtivoManut(this.value)">`)}
       ${fld('Tipo *', `<select name="tipo_equipamento" required>${tipos.map(t => `<option value="${t}" ${v('tipo_equipamento') === t ? 'selected' : ''}>${t}</option>`).join('')}</select>`)}
       ${fld('Modelo', `<input name="modelo" value="${v('modelo')}">`)}
       ${fld('Local Atual', `<input name="local_atual" value="${v('local_atual')}" placeholder="Almoxarifado TI">`)}
     </div></div>
     
-    <div class="form-section"><h4>🔧 Detalhes da Manutenção</h4><div class="form-grid">
+    <div class="form-section"><h4>Detalhes da Manutenção</h4><div class="form-grid">
       <div class="form-group full">${fld('Tipo de Manutenção *', `<select name="tipo_manutencao" onchange="onTipoManutChange(this.value)" required>
         <option value="">Selecione...</option>
         <option value="Manutenção de 3°" ${tipoManut === 'Manutenção de 3°' ? 'selected' : ''}>Manutenção de 3° (Terceiros)</option>
@@ -2165,7 +2167,7 @@
     </div></div>
     
     <div id="cond-pecas" class="form-section cond-field" style="${tipoManut === 'Manutenção Local' ? '' : 'display:none'}">
-        <h4>📦 Peças Utilizadas (Estoque)</h4>
+        <h4>Peças Utilizadas (Estoque)</h4>
         <div class="form-grid">
             <div id="cond-subtipo" class="form-group full">
                 ${fld('Subtipo', `<select name="subtipo"><option value="">Selecione...</option>
@@ -2377,7 +2379,7 @@
 
     // ─── ESTOQUE: MOVIMENTAR ─────────────────────────────────────────────────────
     function movimentarEstoque(eid, tipo, item) {
-      const label = tipo === 'entrada' ? '📥 Registrar Entrada' : '📤 Registrar Saída';
+      const label = tipo === 'entrada' ? 'Registrar Entrada' : 'Registrar Saída';
       const html = `<form id="modal-form">
     <div class="form-group"><label>Quantidade</label><input type="number" name="quantidade" min="1" value="1" required></div>
     <div class="form-group"><label>Responsável</label><input name="responsavel" placeholder="Quem realizou?"></div>
@@ -2415,8 +2417,8 @@
       <td class="hist-td">${r.motivo || '—'}</td>
       <td class="hist-td-time">${formatarDataHora(r.data_hora)}</td>
     </tr>`).join('')}</tbody></table>`
-        : '<div class="empty"><div class="empty-icon">📋</div><p>Sem movimentações</p></div>';
-      openModal(`📋 Histórico — ${item}`, html, {}, false);
+        : '<div class="empty"><div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div><p>Sem movimentações</p></div>';
+      openModal(`Histórico — ${item}`, html, {}, false);
     }
 
     async function verHistoricoToner(tid, modelo) {
@@ -2436,8 +2438,8 @@
       <td class="hist-td-time">${r.data_troca || '—'}</td>
       <td class="hist-td">${r.observacoes || '—'}</td>
     </tr>`).join('')}</tbody></table>`
-        : '<div class="empty"><div class="empty-icon">📋</div><p>Sem trocas registradas</p></div>';
-      openModal(`📋 Histórico Trocas — ${modelo}`, html, {}, false);
+        : '<div class="empty"><div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div><p>Sem trocas registradas</p></div>';
+      openModal(`Histórico Trocas — ${modelo}`, html, {}, false);
     }
 
     async function registrarTroca(tid, impressora, toner, estoque) {
@@ -2460,7 +2462,7 @@
       <div class="form-group full"><label>Observações</label><textarea name="observacoes"></textarea></div>
     </div>
   </form>`;
-      openModal(`🔄 Registrar Troca — ${toner}`, html, {});
+      openModal(`Registrar Troca — ${toner}`, html, {});
       document.getElementById('modal-save').onclick = async () => {
         const saveBtn = document.getElementById('modal-save');
         toggleLoading(saveBtn, true);
@@ -2602,10 +2604,14 @@
 
     // ─── TOAST ───────────────────────────────────────────────────────────────────
     function toast(msg, type = 'info') {
-      const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+      const icons = {
+        success: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+        error: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        info: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+      };
       const el = document.createElement('div');
       el.className = `toast ${type}`;
-      el.innerHTML = `<span>${icons[type]}</span> ${msg}`;
+      el.innerHTML = `<span style="display:inline-flex; align-items:center;">${icons[type] || icons.info}</span> <span>${msg}</span>`;
       document.getElementById('toast-container').appendChild(el);
       setTimeout(() => el.remove(), 3500);
     }
@@ -2712,7 +2718,7 @@
               localStorage.setItem('lastNotifId', maxId);
 
               // Toca alerta sonoro caso haja notificação urgente
-              const hasUrgent = newNotifs.some(n => n.is_urgente || (n.mensagem && (n.mensagem.includes('[URGENTE]') || n.mensagem.includes('🚨'))));
+              const hasUrgent = newNotifs.some(n => n.is_urgente || (n.mensagem && (n.mensagem.includes('[URGENTE]') || n.mensagem.includes('[URGENTE]'))));
               if (hasUrgent) {
                 playUrgentAlertSound();
               }
@@ -2721,7 +2727,7 @@
               if ("Notification" in window && Notification.permission === "granted") {
                 newNotifs.forEach(n => {
                   const isUrg = n.is_urgente || (n.mensagem && n.mensagem.includes('[URGENTE]'));
-                  const title = isUrg ? "🚨 BP Central TI - ALERTA URGENTE" : "BP Central TI - Notificação";
+                  const title = isUrg ? "[URGENTE] BP Central TI" : "BP Central TI - Notificação";
                   const options = {
                     body: n.mensagem,
                     icon: '/static/img/logo.png',
@@ -2869,7 +2875,7 @@ document.querySelectorAll('button[onclick^="exportar("]').forEach(btn => {
         <div id="qr-modal-titulo" class="modal-qr-title"></div>
         <div id="qr-modal-id" class="modal-qr-id"></div>
       </div>
-      <button onclick="fecharModalQR()" class="modal-qr-close">✕</button>
+      <button onclick="fecharModalQR()" class="modal-qr-close">&times;</button>
     </div>
 
     <!-- QR Code renderizado -->
@@ -2885,13 +2891,15 @@ document.querySelectorAll('button[onclick^="exportar("]').forEach(btn => {
     <!-- Botões de ação -->
     <div style="display:flex;flex-direction:column;gap:8px;">
       <!-- Abrir página de ação -->
-      <a id="qr-action-link" href="#" target="_blank" class="modal-qr-action-link">
-        🔗 Abrir Página de Ação
+      <a id="qr-action-link" href="#" target="_blank" class="modal-qr-action-link" style="display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+        <span>Abrir Página de Ação</span>
       </a>
 
       <!-- Imprimir etiqueta SLP-650 via Popup isolado -->
-      <button onclick="imprimirEtiquetaQR()" class="modal-qr-print-btn">
-        🖨️ Imprimir Etiqueta (Smart Label)
+      <button onclick="imprimirEtiquetaQR()" class="modal-qr-print-btn" style="display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+        <span>Imprimir Etiqueta (Smart Label)</span>
       </button>
     </div>
 

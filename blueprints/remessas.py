@@ -54,7 +54,7 @@ def registrar_remessa():
         tipo_equipamento = request.form.get("tipo_equipamento", "").strip()
         modelo = request.form.get("modelo", "").strip()
         
-        # Anti-IDOR e Validação de Fluxo
+        # Validação de permissões por perfil para eventos de remessa
         if role == "viewer" and evento not in ["saida_fazenda", "chegada_fazenda"]:
             flash("Permissão negada para este evento.", "danger")
             return redirect(url_for("remessas.listar_remessas"))

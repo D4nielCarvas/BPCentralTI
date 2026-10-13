@@ -12,8 +12,11 @@
              onchange="this.form.submit()" style="width:auto;border:none;background:none">
       Mostrar zerados
     </label>
-    <button type="submit" class="btn btn-primary btn-sm">🔍 Buscar</button>
-    {% if busca %}<a href="{{ url_for('fazenda.listar_estoque') }}" class="btn btn-ghost btn-sm">✖</a>{% endif %}
+    <button type="submit" class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:5px">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Buscar
+    </button>
+    {% if busca %}<a href="{{ url_for('fazenda.listar_estoque') }}" class="btn btn-ghost btn-sm">&times;</a>{% endif %}
   </div>
 </form>
 {% endblock %}
@@ -60,7 +63,7 @@
         <td style="color:var(--text3);font-size:12px">{{ it.observacoes or '—' }}</td>
         <td style="text-align:right">
           <a href="{{ url_for('fazenda.novo_pedido', item=it.item) }}" class="btn btn-ghost btn-sm" style="font-size:11px;padding:4px 8px;border:1px solid var(--border)">
-            ➕ Criar Pedido
+            + Criar Pedido
           </a>
         </td>
       </tr>

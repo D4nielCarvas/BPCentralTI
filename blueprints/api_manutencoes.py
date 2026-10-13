@@ -1,11 +1,8 @@
 from flask import Blueprint, request, jsonify, Response
 from typing import Any
 from datetime import date
-import psycopg2
-
-from utils.db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetch_one as _fetch_one, row_to_dict
-from utils.auth_utils import login_required, admin_required, get_fazenda_nome_filter
-from utils.crypto_utils import encrypt_field, decrypt_field
+from utils.db_layer import acquire_conn as get_db, fetch_all as _fetch_all, fetch_one as _fetch_one
+from utils.auth_utils import login_required, admin_required
 from utils.api_utils import _list_table, log_historico
 
 bp = Blueprint('api_manutencoes', __name__, url_prefix='')
@@ -185,7 +182,7 @@ def atualizar_manutencao(mid: int) -> Response:
             )
             
             if "pecas_json" in d:
-                # 1. Devolver peças antigas ao estoque
+                # Estorna peças vinculadas anteriormente
                 pecas_antigas = _fetch_all(cur, "SELECT * FROM manutencoes_pecas WHERE manutencao_id=%s", (mid,))
                 for pa in pecas_antigas:
                     if pa["estoque_id"]:
@@ -196,10 +193,9 @@ def atualizar_manutencao(mid: int) -> Response:
                             (pa["estoque_id"], pa["quantidade"], f"Restituição da Manutenção #{mid} (edição)", "Sistema")
                         )
                 
-                # 2. Deletar vínculos
                 cur.execute("DELETE FROM manutencoes_pecas WHERE manutencao_id=%s", (mid,))
                 
-                # 3. Debitar novas peças
+                # Debita novas peças selecionadas
                 for p in d["pecas_json"]:
                     qtd = int(p.get("quantidade", 1))
                     if qtd <= 0: continue

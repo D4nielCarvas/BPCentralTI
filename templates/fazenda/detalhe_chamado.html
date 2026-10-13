@@ -138,7 +138,7 @@
     opacity: 0.75;
   }
   .chat-bubble.sending::after {
-    content: ' ⏳';
+    content: ' (enviando...)';
     font-size: 11px;
   }
   
@@ -415,15 +415,15 @@
     <!-- CHAT -->
     <div class="panel chat-panel-container" id="chat-panel">
       <div class="panel-header" style="border:none; margin-bottom:8px; padding-bottom:0; display:flex; justify-content:space-between; align-items:center;">
-        <h3 class="panel-title" style="font-size: 16px;">💬 Histórico de Atendimento</h3>
+        <h3 class="panel-title" style="font-size: 16px;">Histórico de Atendimento</h3>
         <span style="font-size:11px; color:var(--text3);" title="Prints podem ser colados com Ctrl+V ou arrastados para esta janela">
-          💡 Dica: cole prints com <kbd style="background:var(--bg3);border:1px solid var(--border);padding:2px 4px;border-radius:4px;font-size:10px;">Ctrl+V</kbd>
+          Dica: cole prints com <kbd style="background:var(--bg3);border:1px solid var(--border);padding:2px 4px;border-radius:4px;font-size:10px;">Ctrl+V</kbd>
         </span>
       </div>
       
       {% if anexos_chamado %}
       <div style="margin-bottom:16px;background:var(--bg3);padding:12px;border-radius:8px;border:1px solid var(--border)">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-weight:600;text-transform:uppercase">📎 Anexos Originais da Abertura</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-weight:600;text-transform:uppercase">Anexos Originais da Abertura</div>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           {% for ax in anexos_chamado %}
             {% set ext = (ax.nome_arquivo or ax.caminho_arquivo).split('.')[-1] | lower if (ax.nome_arquivo or ax.caminho_arquivo) and '.' in (ax.nome_arquivo or ax.caminho_arquivo) else '' %}
@@ -433,7 +433,7 @@
             </div>
             {% else %}
             <a href="{{ ax.caminho_arquivo }}" target="_blank" style="font-size:12px;color:var(--accent);text-decoration:underline;background:var(--bg2);padding:6px 10px;border-radius:6px;border:1px solid var(--border)">
-              📎 {{ ax.nome_arquivo }}
+              {{ ax.nome_arquivo }}
             </a>
             {% endif %}
           {% endfor %}
@@ -449,7 +449,6 @@
             
             <div class="chat-row {{ row_class }}" data-msg-id="{{ msg.id }}">
               <div class="chat-bubble">
-                {% if msg.is_sistema %}⚙ {% endif %}
                 {{ msg.mensagem }}
                 
                 {% if msg.caminho_arquivo %}
@@ -459,7 +458,7 @@
                   <img src="{{ msg.caminho_arquivo }}" alt="{{ msg.nome_arquivo }}" onclick="abrirLightbox('{{ msg.caminho_arquivo }}', '{{ msg.nome_arquivo }}')">
                   {% else %}
                   <a href="{{ msg.caminho_arquivo }}" target="_blank" style="font-size:12px;text-decoration:underline;color:inherit;">
-                    📎 {{ msg.nome_arquivo }}
+                    {{ msg.nome_arquivo }}
                   </a>
                   {% endif %}
                 </div>
@@ -468,7 +467,7 @@
               
               {% if not msg.is_sistema %}
               <div class="chat-info">
-                {% if not e_meu %}🔧 {% endif %}{{ msg.autor_nome }} · {{ msg.criado_em | fdt }}
+                {{ msg.autor_nome }} · {{ msg.criado_em | fdt }}
               </div>
               {% endif %}
             </div>
@@ -487,7 +486,7 @@
           <div id="anexo-preview-nome" class="anexo-preview-name">imagem.jpg</div>
           <div id="anexo-preview-tamanho" class="anexo-preview-size">0 KB</div>
         </div>
-        <button type="button" id="anexo-preview-btn-remove" class="anexo-preview-remove" title="Remover este anexo">✕</button>
+        <button type="button" id="anexo-preview-btn-remove" class="anexo-preview-remove" title="Remover este anexo">&times;</button>
       </div>
 
       <!-- FORMULÁRIO -->
@@ -496,10 +495,11 @@
         <textarea name="mensagem" id="reply-textarea" class="reply-textarea" maxlength="2000" placeholder="Escreva para a equipe de TI… (Pressione Ctrl+Enter para enviar)" required></textarea>
         <div class="reply-actions">
           <label class="custom-file-label">
-            📎 Anexar Arquivo ou Print
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            Anexar Arquivo
             <input type="file" name="anexo" id="input-anexo" accept=".png,.jpg,.jpeg,.gif,.webp,.bmp,.pdf,.zip,.rar,.txt,.csv" style="display:none;">
           </label>
-          <button type="submit" id="btn-send" class="btn btn-primary">📨 Enviar Mensagem</button>
+          <button type="submit" id="btn-send" class="btn btn-primary">Enviar Mensagem</button>
         </div>
       </form>
       {% else %}
@@ -530,7 +530,7 @@
 
     {% if chamado.id_ativo %}
     <div class="panel">
-      <h4 class="meta-label" style="margin-bottom:16px;">📦 Movimentação Física</h4>
+      <h4 class="meta-label" style="margin-bottom:16px;">Movimentação Física</h4>
       <div style="display:flex;flex-direction:column;">
         {% for etapa_id, etapa_nome, data_val in [
           ('saida_fazenda', 'Saída da Fazenda', chamado.data_saida_fazenda),
@@ -541,7 +541,7 @@
         <div class="timeline-item">
           <span class="meta-value" style="font-size:13px;">{{ loop.index }}. {{ etapa_nome }}</span>
           {% if data_val %}
-          <span style="color:var(--green);font-size:12px;font-weight:600;">✓ {{ data_val | fdt if data_val is not string else data_val[:16] | replace('T', ' ') }}</span>
+          <span style="color:var(--green);font-size:12px;font-weight:600;">&check; {{ data_val | fdt if data_val is not string else data_val[:16] | replace('T', ' ') }}</span>
           {% else %}
           <form method="POST" action="{{ url_for('chamados.movimentacao_equipamento', chamado_id=chamado.id) }}" style="margin:0;">
             <input type="hidden" name="etapa" value="{{ etapa_id }}">
@@ -555,7 +555,7 @@
     {% endif %}
 
     <div id="box-pendente-aviso" style="display:{% if chamado.status == 'pendente_usuario' %}block{% else %}none{% endif %}; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); border-radius:12px; padding:16px; font-size:14px; color:var(--yellow); font-weight:500;">
-      ⚠️ A TI aguarda sua resposta para retomar o atendimento.
+      A TI aguarda sua resposta para retomar o atendimento.
     </div>
     
   </div>
@@ -566,8 +566,8 @@
   <div class="lightbox-content" onclick="event.stopPropagation()">
     <img id="lightbox-img" class="lightbox-img" src="" alt="Visualização ampliada" onclick="toggleZoom(this)">
     <div class="lightbox-toolbar">
-      <a id="lightbox-download-link" href="#" target="_blank" download class="lightbox-btn">⬇ Baixar Imagem</a>
-      <button type="button" class="lightbox-btn" onclick="fecharLightboxDirect()">✕ Fechar (ESC)</button>
+      <a id="lightbox-download-link" href="#" target="_blank" download class="lightbox-btn">Baixar Imagem</a>
+      <button type="button" class="lightbox-btn" onclick="fecharLightboxDirect()">&times; Fechar (ESC)</button>
     </div>
   </div>
 </div>
@@ -776,18 +776,18 @@
         </div>`;
       } else {
         anexoHtml = `<div class="chat-attachment" ${borderStyle}>
-          <a href="${m.caminho_arquivo}" target="_blank" style="font-size:12px;text-decoration:underline;color:inherit;">📎 ${m.nome_arquivo}</a>
+          <a href="${m.caminho_arquivo}" target="_blank" style="font-size:12px;text-decoration:underline;color:inherit;">${m.nome_arquivo}</a>
         </div>`;
       }
     }
     
     if (m.is_sistema) {
-      return `<div class="chat-row system" data-msg-id="${m.id || 0}"><div class="chat-bubble">⚙ ${m.mensagem}</div></div>`;
+      return `<div class="chat-row system" data-msg-id="${m.id || 0}"><div class="chat-bubble">${m.mensagem}</div></div>`;
     }
     
     const isMe = (m.autor_id == MEU_ID);
     const rowClass = isMe ? 'me' : 'other';
-    const authorPrefix = isMe ? '' : '🔧 ';
+    const authorPrefix = '';
     const sendingClass = isSending ? ' sending' : '';
     
     return `<div class="chat-row ${rowClass}" data-msg-id="${m.id || 0}">
@@ -825,7 +825,7 @@
 
       // Desabilita botão durante envio
       btnSend.disabled = true;
-      btnSend.textContent = '⏳ Enviando…';
+      btnSend.textContent = 'Enviando…';
 
       // Mensagem otimista temporária
       const tempId = 'temp_' + Date.now();
@@ -893,12 +893,12 @@
           if (bubble) {
             bubble.classList.remove('sending');
             bubble.style.background = 'var(--red, #ef4444)';
-            bubble.innerHTML += '<div style="font-size:11px;margin-top:4px;">⚠️ Erro ao enviar mensagem. Recarregue a página.</div>';
+            bubble.innerHTML += '<div style="font-size:11px;margin-top:4px;">Erro ao enviar mensagem. Recarregue a página.</div>';
           }
         }
       } finally {
         btnSend.disabled = false;
-        btnSend.textContent = '📨 Enviar Mensagem';
+        btnSend.textContent = 'Enviar Mensagem';
         scrollToBottom();
       }
     });

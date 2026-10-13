@@ -221,8 +221,8 @@ class TestNotificacoesUpgrade:
             sess["role"] = "admin"
 
         mock_notifs = [
-            {"id": 1, "chamado_id": 10, "pedido_id": None, "mensagem": "🚨 [URGENTE] Novo Chamado #10 - Daniel (Fazenda 1): Cabo rompido", "criado_em": "2026-08-25T10:00:00"},
-            {"id": 2, "chamado_id": None, "pedido_id": 5, "mensagem": "📦 Pedido #5: Status atualizado para 'Aprovado'", "criado_em": "2026-08-25T10:05:00"},
+            {"id": 1, "chamado_id": 10, "pedido_id": None, "mensagem": "[URGENTE] Novo Chamado #10 - Daniel (Fazenda 1): Cabo rompido", "criado_em": "2026-08-25T10:00:00"},
+            {"id": 2, "chamado_id": None, "pedido_id": 5, "mensagem": "Pedido #5: Status atualizado para 'Aprovado'", "criado_em": "2026-08-25T10:05:00"},
         ]
 
         with patch("blueprints.core.acquire_conn") as mock_conn, \
