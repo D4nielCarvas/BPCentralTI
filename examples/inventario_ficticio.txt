@@ -1,0 +1,13 @@
+[hardware]
+tipo=Notebook
+marca=Marca ficticia
+modelo=Modelo demonstracao
+num_serie=EXEMPLO-SEM-EQUIPAMENTO-REAL
+processador=Processador demonstracao
+memoria_ram=16GB
+armazenamento=512GB
+sistema_operacional=Sistema demonstracao
+versao_so=Exemplo
+ip_rede=192.0.2.10
+mac_address=02:00:00:00:00:01
+usuario=Usuario ficticio

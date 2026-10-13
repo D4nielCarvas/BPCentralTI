@@ -27,10 +27,8 @@ ENV/
 
 # Configuration and Secrets
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
 # IDEs
 .vscode/
@@ -53,8 +51,9 @@ htmlcov/
 .coverage
 coverage.xml
 
-# Uploads (termos de responsabilidade — dados sensíveis)
+# Dados locais e uploads
 database/termos/*.pdf
-
-# Uploads de chamados e anexos estáticos (dados dinâmicos de usuários)
 static/uploads/
+
+# Coletas reais: exemplos ficticios ficam em examples/
+inventario_*.txt
