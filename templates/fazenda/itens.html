@@ -368,6 +368,8 @@
     });
     document.querySelectorAll('.tab-search').forEach(inp => inp.value = '');
     document.querySelectorAll('tbody tr').forEach(tr => tr.style.display = '');
+    // Atualiza botões de termo ao trocar de aba (mantém seleções de outras abas visíveis)
+    _syncAllTermoBtns();
   }
 
   function filtrarTabela(input, tblId) {
@@ -618,57 +620,66 @@
   function toggleAll(source, tblId, tid) {
     const checkboxes = document.querySelectorAll(`#${tblId} tbody tr:not([style*="display: none"]) .chk-termo`);
     checkboxes.forEach(chk => chk.checked = source.checked);
-    updateTermoBtn(tid);
-    updateTermoBtnGlobal();
+    _syncAllTermoBtns();
   }
 
   function updateTermoBtn(tid) {
-    const checkboxes = document.querySelectorAll(`#tbl-${tid} tbody .chk-termo:checked`);
-    const btn = document.getElementById(`btn-termo-${tid}`);
-    const countSpan = document.getElementById(`count-termo-${tid}`);
-    if (btn && countSpan) {
-      if (checkboxes.length > 0) {
-        countSpan.textContent = checkboxes.length;
+    // mantido por compatibilidade — agora sincroniza tudo
+    _syncAllTermoBtns();
+  }
+
+  /* Sincroniza TODOS os botões de termo (por-aba + global) com o total real de checkboxes */
+  function _syncAllTermoBtns() {
+    const allChecked = document.querySelectorAll('.chk-termo:checked');
+    const total = allChecked.length;
+
+    // ── Botões por aba: exibe em QUALQUER aba que tenha ao menos 1 item marcado,
+    //    mas o contador e a ação refletem o TOTAL global
+    document.querySelectorAll('[id^="btn-termo-"]').forEach(btn => {
+      if (btn.id === 'btn-termo-global') return; // tratado abaixo
+      const m = btn.id.match(/btn-termo-(\d+)/);
+      if (!m) return;
+      const tid = m[1];
+      const countSpan = document.getElementById(`count-termo-${tid}`);
+      const thisTabChecked = document.querySelectorAll(`#tbl-${tid} tbody .chk-termo:checked`).length;
+      if (thisTabChecked > 0) {
+        // mostra botão na aba atual com contagem total para sinalizar que há seleção em outras abas
+        if (countSpan) countSpan.textContent = total;
         btn.style.display = 'inline-flex';
+        btn.title = total > thisTabChecked
+          ? `${total} equipamento(s) selecionado(s) em várias abas`
+          : `${total} equipamento(s) selecionado(s)`;
       } else {
         btn.style.display = 'none';
       }
-    }
-    updateTermoBtnGlobal();
-  }
+    });
 
-  /* ── Botão Global: coleta seleções de TODAS as abas ── */
-  function updateTermoBtnGlobal() {
-    const total = document.querySelectorAll('.chk-termo:checked').length;
-    const btn = document.getElementById('btn-termo-global');
-    const countSpan = document.getElementById('count-termo-global');
-    if (!btn) return;
-    if (total > 0) {
-      countSpan.textContent = total;
-      btn.style.removeProperty('display');      // remove inline style
-      btn.classList.add('termo-global-visible'); // ativa via classe
-    } else {
-      btn.style.removeProperty('display');
-      btn.classList.remove('termo-global-visible');
+    // ── Botão global flutuante
+    const globalBtn = document.getElementById('btn-termo-global');
+    const globalCount = document.getElementById('count-termo-global');
+    if (globalBtn) {
+      if (total > 0) {
+        if (globalCount) globalCount.textContent = total;
+        globalBtn.classList.add('termo-global-visible');
+      } else {
+        globalBtn.classList.remove('termo-global-visible');
+      }
     }
   }
 
-  /* Event delegation: garante captura de QUALQUER checkbox .chk-termo em QUALQUER aba */
+  /* Event delegation: captura mudança em QUALQUER checkbox .chk-termo */
   document.addEventListener('change', function(e) {
     if (e.target && e.target.classList.contains('chk-termo')) {
-      updateTermoBtnGlobal();
+      _syncAllTermoBtns();
     }
   });
 
-  async function gerarTermoPDFGlobal() {
+  /* ── Função de geração: sempre coleta de TODAS as abas ── */
+  async function _doGerarTermo(btn, originalHTML) {
     const checkboxes = document.querySelectorAll('.chk-termo:checked');
     if (checkboxes.length === 0) return;
 
     const ids = Array.from(checkboxes).map(c => c.value);
-    const btn = document.getElementById('btn-termo-global');
-    const originalHTML = btn.innerHTML;
-    btn.innerHTML = 'Gerando...';
-    btn.disabled = true;
 
     try {
       const response = await fetch('/api/gerar_termo_responsabilidade', {
@@ -688,14 +699,9 @@
         a.click();
         window.URL.revokeObjectURL(url);
 
-        // Desmarcar todos os checkboxes de todas as abas
+        // Desmarcar TODOS os checkboxes de TODAS as abas
         document.querySelectorAll('.chk-termo, thead input[type="checkbox"]').forEach(chk => chk.checked = false);
-        updateTermoBtnGlobal();
-        // Atualizar contadores por aba
-        document.querySelectorAll('[id^="btn-termo-"]:not(#btn-termo-global)').forEach(b => {
-          const m = b.id.match(/btn-termo-(\d+)/);
-          if (m) updateTermoBtn(m[1]);
-        });
+        _syncAllTermoBtns();
       } else {
         const data = await response.json();
         alert('Erro: ' + (data.msg || 'Falha ao gerar termo'));
@@ -703,55 +709,24 @@
     } catch (err) {
       alert('Erro na requisição: ' + err.message);
     } finally {
-      btn.innerHTML = originalHTML;
-      btn.disabled = false;
+      if (btn) { btn.innerHTML = originalHTML; btn.disabled = false; }
     }
   }
 
-  async function gerarTermoPDF(tid) {
-    const checkboxes = document.querySelectorAll(`#tbl-${tid} tbody .chk-termo:checked`);
-    if (checkboxes.length === 0) return;
-    
-    const ids = Array.from(checkboxes).map(c => c.value);
-    const btn = document.getElementById(`btn-termo-${tid}`);
-    const originalText = btn.innerHTML;
+  async function gerarTermoPDFGlobal() {
+    const btn = document.getElementById('btn-termo-global');
+    const originalHTML = btn.innerHTML;
     btn.innerHTML = 'Gerando...';
     btn.disabled = true;
-    
-    try {
-      const response = await fetch('/api/gerar_termo_responsabilidade', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ ids: ids })
-      });
-      
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = 'Termo_Responsabilidade.pdf';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        
-        // Desmarcar tudo após sucesso
-        const allCheckboxes = document.querySelectorAll(`#tbl-${tid} .chk-termo, #tbl-${tid} thead input[type="checkbox"]`);
-        allCheckboxes.forEach(chk => chk.checked = false);
-        updateTermoBtn(tid);
-      } else {
-        const data = await response.json();
-        alert('Erro: ' + (data.msg || 'Falha ao gerar termo'));
-      }
-    } catch (err) {
-      alert('Erro na requisição: ' + err.message);
-    } finally {
-      btn.innerHTML = originalText;
-      btn.disabled = false;
-    }
+    await _doGerarTermo(btn, originalHTML);
+  }
+
+  async function gerarTermoPDF(tid) {
+    const btn = document.getElementById(`btn-termo-${tid}`);
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = 'Gerando...';
+    btn.disabled = true;
+    await _doGerarTermo(btn, originalHTML);
   }
 </script>
 
