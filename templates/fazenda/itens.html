@@ -84,13 +84,13 @@
     pointer-events: none;
   }
 
-  /* Botão global de termo misto */
+  /* Botão flutuante para gerar termo misto */
   #btn-termo-global {
-    display: none;
+    display: none;        /* escondido por padrão */
     position: fixed;
     bottom: 28px;
     right: 28px;
-    z-index: 999;
+    z-index: 9999;
     padding: 10px 18px;
     border-radius: 10px;
     background: var(--accent);
@@ -104,6 +104,9 @@
     transition: opacity .15s, transform .15s;
     align-items: center;
     gap: 8px;
+  }
+  #btn-termo-global.termo-global-visible {
+    display: inline-flex !important; /* força exibição quando classe ativa */
   }
   #btn-termo-global:hover { opacity: .88; transform: translateY(-2px); }
   #btn-termo-global:disabled { opacity: .6; cursor: not-allowed; transform: none; }
@@ -642,11 +645,20 @@
     if (!btn) return;
     if (total > 0) {
       countSpan.textContent = total;
-      btn.style.display = 'inline-flex';
+      btn.style.removeProperty('display');      // remove inline style
+      btn.classList.add('termo-global-visible'); // ativa via classe
     } else {
-      btn.style.display = 'none';
+      btn.style.removeProperty('display');
+      btn.classList.remove('termo-global-visible');
     }
   }
+
+  /* Event delegation: garante captura de QUALQUER checkbox .chk-termo em QUALQUER aba */
+  document.addEventListener('change', function(e) {
+    if (e.target && e.target.classList.contains('chk-termo')) {
+      updateTermoBtnGlobal();
+    }
+  });
 
   async function gerarTermoPDFGlobal() {
     const checkboxes = document.querySelectorAll('.chk-termo:checked');
