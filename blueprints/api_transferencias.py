@@ -11,6 +11,7 @@ Rotas:
     GET   /api/transferencias/estoque               → ativos_em_estoque
 """
 
+import logging
 from flask import Blueprint, Response, jsonify, request, session
 
 from services.transferencia_service import (
@@ -22,6 +23,7 @@ from services.transferencia_service import (
 from utils.auth_utils import admin_required, login_required
 from utils.db_layer import acquire_conn, fetch_all
 
+logger = logging.getLogger(__name__)
 api_transferencias_bp = Blueprint("api_transferencias", __name__)
 
 _service = TransferenciaService()
@@ -74,6 +76,10 @@ def criar_transferencia() -> Response:
 
     except StatusBloqueadoError as exc:
         return jsonify({"ok": False, "msg": str(exc)}), 409
+
+    except Exception as exc:
+        logger.exception("Erro inesperado ao criar transferência: %s", exc)
+        return jsonify({"ok": False, "msg": f"Erro interno ao processar transferência: {exc}"}), 500
 
 
 @api_transferencias_bp.route("/api/transferencias", methods=["GET"])

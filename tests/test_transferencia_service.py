@@ -376,6 +376,25 @@ class TestIdRenameService(unittest.TestCase):
         self.assertIn("Celular Inspeção", _SIGLA_TIPO_MAP)
         self.assertNotIn("Celular Inspecão", _SIGLA_TIPO_MAP)  # typo antigo
 
+    def test_nao_renomeia_quando_mesma_fazenda_e_setor(self):
+        """Quando fazenda e setor destino são iguais aos atuais, não renomeia."""
+        cur = MagicMock()
+        resultado = self.svc.renomear_se_necessario(
+            cur, "TB-CEN-APO-03", "Celular", "celulares",
+            {"tipo_transferencia": "Usuario para Usuario",
+             "fazenda_destino": "Central", "setor_destino": "Apoio"},
+            transf_id=1,
+            ativo_atual={"fazenda": "Central", "setor": "Apoio", "tipo": "Tablet"},
+        )
+        self.assertEqual(resultado, "TB-CEN-APO-03")
+        cur.execute.assert_not_called()
+
+    def test_resolver_sigla_tipo_tablet(self):
+        """Ativos tablet com prefixo TB- ou tipo 'Tablet' devem resolver para TB."""
+        cur = MagicMock()
+        sigla = self.svc._resolver_sigla_tipo(cur, "TB-CEN-APO-03", "Celular", {"tipo": "Tablet"})
+        self.assertEqual(sigla, "TB")
+
     def test_guards_de_colisao_passam(self):
         """Os asserts de colisão em SIGLAS_LOCAL/SETOR não devem falhar."""
         # Se chegou aqui sem AssertionError, os guards passaram no import

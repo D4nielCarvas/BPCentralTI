@@ -140,7 +140,7 @@ class TransferenciaService:
                 tipo_eq_final = "Celular Turma" if id_ativo_final != id_ativo else tipo_eq
                 try:
                     id_ativo_final = IdRenameService().renomear_se_necessario(
-                        cur, id_ativo_final, tipo_eq_final, tabela, payload, transf_id,
+                        cur, id_ativo_final, tipo_eq_final, tabela, payload, transf_id, ativo_atual=ativo_atual,
                     )
                 except ValueError as exc:
                     # Renomeação falhou, mas transferência foi registrada
@@ -229,7 +229,7 @@ class TransferenciaService:
         """Busca o ativo e garante que está em estado transferível."""
         ativo = fetch_one(
             cur,
-            f"SELECT id_ativo, status, responsavel FROM {tabela} WHERE id_ativo=%s",
+            f"SELECT * FROM {tabela} WHERE id_ativo=%s",
             (id_ativo,),
         )
         if not ativo:

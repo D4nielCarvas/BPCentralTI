@@ -35,6 +35,8 @@ class UsuarioParaUsuarioHandler(TransferenciaHandler):
         ativo_atual: dict,
         payload: dict,
     ) -> str:
+        from datetime import date
+        data_entrega = payload.get("data_transferencia") or date.today().isoformat()
         cur.execute(
             f"""UPDATE {tabela} SET
                     responsavel      = %s,
@@ -48,7 +50,7 @@ class UsuarioParaUsuarioHandler(TransferenciaHandler):
                 payload.get("responsavel_destino"),
                 payload.get("fazenda_destino"),
                 payload.get("setor_destino"),
-                payload.get("data_transferencia"),
+                data_entrega,
                 ativo_atual.get("responsavel"),
                 id_ativo,
             ),
