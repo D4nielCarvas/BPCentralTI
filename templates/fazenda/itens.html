@@ -83,6 +83,40 @@
     font-size: 11px;
     pointer-events: none;
   }
+
+  /* ── Botão Flutuante de Termo de Responsabilidade ── */
+  #btn-termo-global {
+    display: none;
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 9999;
+    padding: 12px 20px;
+    border-radius: 12px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(37,99,235,.45);
+    transition: transform .15s, opacity .15s;
+    align-items: center;
+    gap: 8px;
+  }
+  #btn-termo-global.termo-global-visible {
+    display: inline-flex !important;
+  }
+  #btn-termo-global:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(37,99,235,.55);
+  }
+  #btn-termo-global:disabled {
+    opacity: .65;
+    cursor: not-allowed;
+    transform: none;
+  }
 </style>
 {% endblock %}
 
@@ -115,6 +149,13 @@
 </div>
 
 {% set can_gerar_termo = has_permission('gerar_termos') %}
+
+{% if can_gerar_termo %}
+{# Botão flutuante para gerar termo unificado com múltiplos tipos de equipamentos #}
+<button id="btn-termo-global" onclick="gerarTermoPDF()" title="Gerar Termo de Responsabilidade para todos os equipamentos selecionados">
+  📄 Gerar Termo (<span id="count-termo-global">0</span> selecionado(s))
+</button>
+{% endif %}
 
 
 {# ── Tab Bar ──────────────────────────────────────────────── #}
@@ -327,6 +368,7 @@
     });
     document.querySelectorAll('.tab-search').forEach(inp => inp.value = '');
     document.querySelectorAll('tbody tr').forEach(tr => tr.style.display = '');
+    _syncAllTermoBtns();
   }
 
   function filtrarTabela(input, tblId) {
@@ -577,32 +619,76 @@
   function toggleAll(source, tblId, tid) {
     const checkboxes = document.querySelectorAll(`#${tblId} tbody tr:not([style*="display: none"]) .chk-termo`);
     checkboxes.forEach(chk => chk.checked = source.checked);
-    updateTermoBtn(tid);
+    _syncAllTermoBtns();
   }
 
   function updateTermoBtn(tid) {
-    const checkboxes = document.querySelectorAll(`#tbl-${tid} tbody .chk-termo:checked`);
-    const btn = document.getElementById(`btn-termo-${tid}`);
-    const countSpan = document.getElementById(`count-termo-${tid}`);
-    if (btn && countSpan) {
-      if (checkboxes.length > 0) {
-        countSpan.textContent = checkboxes.length;
+    _syncAllTermoBtns();
+  }
+
+  /* Sincroniza todos os botões de termo (abas + botão flutuante global) */
+  function _syncAllTermoBtns() {
+    const allChecked = document.querySelectorAll('.chk-termo:checked');
+    const total = allChecked.length;
+
+    // Atualiza botão flutuante global
+    const globalBtn = document.getElementById('btn-termo-global');
+    const countGlobal = document.getElementById('count-termo-global');
+    if (globalBtn) {
+      if (total > 0) {
+        if (countGlobal) countGlobal.textContent = total;
+        globalBtn.classList.add('termo-global-visible');
+      } else {
+        globalBtn.classList.remove('termo-global-visible');
+      }
+    }
+
+    // Atualiza botões presentes no topo de cada tabela
+    document.querySelectorAll('[id^="btn-termo-"]:not(#btn-termo-global)').forEach(btn => {
+      const m = btn.id.match(/btn-termo-(\d+)/);
+      if (!m) return;
+      const tid = m[1];
+      const countSpan = document.getElementById(`count-termo-${tid}`);
+      const thisTabChecked = document.querySelectorAll(`#tbl-${tid} tbody .chk-termo:checked`).length;
+
+      // Exibe o botão se houver itens selecionados (nesta aba ou globalmente se for a aba ativa)
+      const tabIsActive = document.getElementById(`tab-${tid}`)?.classList.contains('active');
+      if (total > 0 && (thisTabChecked > 0 || tabIsActive)) {
+        if (countSpan) countSpan.textContent = total;
         btn.style.display = 'inline-flex';
+        btn.title = total > thisTabChecked 
+          ? `${total} equipamento(s) selecionado(s) no total (incluindo abas diferentes)` 
+          : `${total} equipamento(s) selecionado(s)`;
       } else {
         btn.style.display = 'none';
       }
-    }
+    });
   }
 
+  /* Listener global para capturar qualquer clique/alteração em checkboxes de termo */
+  document.addEventListener('change', function(e) {
+    if (e.target && e.target.classList.contains('chk-termo')) {
+      _syncAllTermoBtns();
+    }
+  });
+
   async function gerarTermoPDF(tid) {
-    const checkboxes = document.querySelectorAll(`#tbl-${tid} tbody .chk-termo:checked`);
-    if (checkboxes.length === 0) return;
+    // Coleta TODOS os checkboxes marcados em todas as tabelas/abas
+    const checkboxes = document.querySelectorAll('.chk-termo:checked');
+    if (checkboxes.length === 0) {
+      alert('Nenhum equipamento selecionado.');
+      return;
+    }
     
     const ids = Array.from(checkboxes).map(c => c.value);
-    const btn = document.getElementById(`btn-termo-${tid}`);
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Gerando...';
-    btn.disabled = true;
+    
+    // Altera texto e desabilita todos os botões de termo durante geração
+    const btns = document.querySelectorAll('[id^="btn-termo-"]');
+    btns.forEach(b => {
+      b.dataset.prevHtml = b.innerHTML;
+      b.innerHTML = '⏳ Gerando...';
+      b.disabled = true;
+    });
     
     try {
       const response = await fetch('/api/gerar_termo_responsabilidade', {
@@ -625,9 +711,8 @@
         window.URL.revokeObjectURL(url);
         
         // Desmarcar tudo após sucesso
-        const allCheckboxes = document.querySelectorAll(`#tbl-${tid} .chk-termo, #tbl-${tid} thead input[type="checkbox"]`);
-        allCheckboxes.forEach(chk => chk.checked = false);
-        updateTermoBtn(tid);
+        document.querySelectorAll('.chk-termo, thead input[type="checkbox"]').forEach(chk => chk.checked = false);
+        _syncAllTermoBtns();
       } else {
         const data = await response.json();
         alert('❌ Erro: ' + (data.msg || 'Falha ao gerar termo'));
@@ -635,8 +720,11 @@
     } catch (err) {
       alert('❌ Erro na requisição: ' + err.message);
     } finally {
-      btn.innerHTML = originalText;
-      btn.disabled = false;
+      btns.forEach(b => {
+        if (b.dataset.prevHtml) b.innerHTML = b.dataset.prevHtml;
+        b.disabled = false;
+      });
+      _syncAllTermoBtns();
     }
   }
 </script>
