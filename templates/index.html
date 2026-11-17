@@ -2866,9 +2866,17 @@ function fecharModalQR() {
 function imprimirEtiquetaQR() {
   if (!_currentQrTipo || !_currentQrId) return;
   const printUrl = `/qr/imprimir/${_currentQrTipo}/${encodeURIComponent(_currentQrId)}?autoprint=1`;
-  const w = window.open(printUrl, 'etiqueta_print_popup', 'width=520,height=380,top=100,left=100,resizable=yes,scrollbars=yes');
+  const w = window.open(printUrl, 'etiqueta_print_popup', 'width=560,height=440,top=80,left=80,resizable=yes,scrollbars=yes');
   if (w) {
     w.focus();
+    // Fallback para navegadores que exigem contexto do clique para acionar window.print()
+    try {
+      w.addEventListener('load', () => {
+        setTimeout(() => {
+          try { w.focus(); w.print(); } catch(e) {}
+        }, 450);
+      });
+    } catch(e) {}
   }
 }
 

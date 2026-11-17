@@ -213,8 +213,41 @@
         margin: 0;
       }
 
-      body {
-        background: transparent !important;
+      *, *:before, *:after {
+        box-shadow: none !important;
+        text-shadow: none !important;
+      }
+
+      html, body {
+        width: 38mm !important;
+        height: 11mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        overflow: hidden !important;
+      }
+
+      /* Oculta tudo que não faz parte estrita da etiqueta */
+      body > *:not(.preview-container) {
+        display: none !important;
+      }
+
+      .no-print-toolbar,
+      .preview-title,
+      .preview-hint,
+      .action-buttons-screen {
+        display: none !important;
+      }
+
+      .preview-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 38mm !important;
+        height: 11mm !important;
+        display: block !important;
+      }
+
+      .label-box-wrapper {
         margin: 0 !important;
         padding: 0 !important;
         display: block !important;
@@ -222,24 +255,10 @@
         height: 11mm !important;
       }
 
-      .no-print-toolbar,
-      .preview-title,
-      .preview-hint,
-      .preview-container > *:not(.label-box-wrapper) {
-        display: none !important;
-      }
-
-      .preview-container,
-      .label-box-wrapper {
-        margin: 0 !important;
-        padding: 0 !important;
-        display: block !important;
-      }
-
       .label-box {
-        position: absolute;
-        top: 0;
-        left: 0;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
         width: 38mm !important;
         height: 11mm !important;
         border: none !important;
@@ -247,8 +266,9 @@
         margin: 0 !important;
         padding: 0.7mm 1.2mm !important;
         transform: none !important;
-        page-break-after: avoid;
-        page-break-inside: avoid;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+        background: #ffffff !important;
       }
     }
   </style>
@@ -257,7 +277,7 @@
 
   <!-- Barra de controle na tela -->
   <div class="no-print-toolbar">
-    <button class="btn-print" onclick="window.print()">🖨️ Imprimir Etiqueta</button>
+    <button class="btn-print" onclick="dispararImpressao()">🖨️ Imprimir Etiqueta</button>
     <button class="btn-close" onclick="window.close()">✕ Fechar</button>
     <div class="tip-box">
       ⚙️ Na janela de impressão: selecione <b>SLP-35L (11mm × 38mm)</b>, margens <b>Nenhuma</b> e desmarque <b>Cabeçalhos e rodapés</b>.
@@ -288,14 +308,31 @@
         </div>
       </div>
     </div>
+
+    <!-- Botão de ação destacado na tela para disparo manual rápido -->
+    <div class="action-buttons-screen" style="margin-top: 15px; display: flex; gap: 10px;">
+      <button onclick="dispararImpressao()" class="btn-print" style="padding: 10px 24px; font-size: 15px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">
+        🖨️ Imprimir Agora (SLP-35L)
+      </button>
+    </div>
   </div>
 
   <script>
     const QR_URL = {{ qr_url | tojson }};
 
-    window.addEventListener('DOMContentLoaded', () => {
+    function dispararImpressao() {
+      try {
+        window.focus();
+        window.print();
+      } catch (err) {
+        console.error('Erro ao chamar window.print():', err);
+      }
+    }
+
+    function inicializar() {
       const qrEl = document.getElementById('qr-container');
       if (qrEl) {
+        qrEl.innerHTML = '';
         new QRCode(qrEl, {
           text: QR_URL,
           width: 90,
@@ -306,24 +343,18 @@
         });
       }
 
-      // Se passado o parâmetro ?autoprint=1, dispara a impressão após 400ms
+      // Se passado ?autoprint=1, aciona a impressão automaticamente com pequeno delay para renderizar o QR
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('autoprint') === '1') {
-        setTimeout(() => {
-          window.print();
-        }, 500);
+        setTimeout(dispararImpressao, 400);
       }
-    });
-  </script>
+    }
 
-      // Se passado o parâmetro ?autoprint=1, dispara a impressão após 400ms
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('autoprint') === '1') {
-        setTimeout(() => {
-          window.print();
-        }, 500);
-      }
-    });
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      inicializar();
+    } else {
+      window.addEventListener('DOMContentLoaded', inicializar);
+    }
   </script>
 </body>
 </html>
