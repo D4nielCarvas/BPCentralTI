@@ -6,9 +6,9 @@
   <title>Etiqueta — {{ item_id }}</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    /* ─── Configurações de Impressão Térmica (SLP-650 e Similares) ─── */
+    /* ─── Configurações de Impressão Térmica (Padrão SLP-35L: 11mm × 38mm) ─── */
     @page {
-      size: 89mm 28.6mm;
+      size: 38mm 11mm;
       margin: 0;
     }
 
@@ -91,7 +91,7 @@
     }
 
     .preview-container {
-      margin-top: 30px;
+      margin-top: 35px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -101,29 +101,41 @@
     .preview-title {
       font-size: 12px;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #64748b;
-      font-weight: 600;
+      letter-spacing: 0.8px;
+      color: #475569;
+      font-weight: 700;
     }
 
-    /* ─── Etiqueta Física (Dimensões Smart Label Printer 650: 88.9mm × 28.6mm) ─── */
+    .preview-hint {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .label-box-wrapper {
+      padding: 15px;
+      margin-bottom: 30px;
+    }
+
+    /* ─── Etiqueta Física (Dimensões Padrão SLP-35L: 38mm largura × 11mm altura) ─── */
     .label-box {
-      width: 88.9mm;
-      height: 28.6mm;
+      width: 38mm;
+      height: 11mm;
       background: #ffffff;
       border: 1px dashed #cbd5e1;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
       display: flex;
       flex-direction: row;
       align-items: center;
-      padding: 1.8mm 2.5mm;
-      gap: 2.5mm;
+      padding: 0.7mm 1.2mm;
+      gap: 1.2mm;
       overflow: hidden;
+      transform: scale(2.2);
+      transform-origin: top center;
     }
 
     .qr-side {
-      width: 24.5mm;
-      height: 24.5mm;
+      width: 9.6mm;
+      height: 9.6mm;
       flex-shrink: 0;
       display: flex;
       align-items: center;
@@ -133,101 +145,92 @@
 
     .qr-side canvas,
     .qr-side img {
-      width: 24.5mm !important;
-      height: 24.5mm !important;
+      width: 9.6mm !important;
+      height: 9.6mm !important;
       image-rendering: pixelated;
     }
 
     .info-side {
       flex: 1;
-      height: 24.5mm;
+      height: 9.6mm;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       overflow: hidden;
-      line-height: 1.15;
-    }
-
-    .brand-row {
-      font-size: 5.5pt;
-      font-weight: 800;
-      color: #333333;
-      text-transform: uppercase;
-      letter-spacing: 0.4pt;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      border-bottom: 0.5pt solid #e2e8f0;
-      padding-bottom: 0.5mm;
-    }
-
-    .title-row {
-      font-size: 7.5pt;
-      font-weight: 800;
-      color: #000000;
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      word-break: break-word;
-      max-height: 8.5mm;
-      margin-top: 0.5mm;
+      line-height: 1.05;
     }
 
     .id-row {
-      font-size: 7pt;
-      font-family: 'Courier New', Courier, monospace;
-      font-weight: bold;
+      font-size: 6.2pt;
+      font-family: 'IBM Plex Mono', 'Courier New', Courier, monospace;
+      font-weight: 800;
+      color: #000000;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: -0.2pt;
+    }
+
+    .title-row {
+      font-size: 5pt;
+      font-weight: 700;
       color: #1e293b;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      margin-top: 0.5mm;
+      line-height: 1.1;
     }
 
     .meta-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 2mm;
-      font-size: 5.2pt;
+      gap: 1mm;
+      font-size: 4.2pt;
       color: #475569;
       white-space: nowrap;
       overflow: hidden;
-      margin-top: auto;
     }
 
-    .type-pill {
-      background: #f1f5f9;
-      border: 0.5pt solid #cbd5e1;
-      padding: 0.4mm 1.2mm;
-      border-radius: 1.5pt;
-      font-weight: 700;
-      text-transform: uppercase;
+    .brand-text {
+      font-weight: 800;
       color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.2pt;
     }
 
     .local-text {
       overflow: hidden;
       text-overflow: ellipsis;
-      font-weight: 500;
+      font-weight: 600;
+      color: #334155;
     }
 
     /* ─── ESTILOS ESPECÍFICOS DE IMPRESSÃO ─── */
     @media print {
+      @page {
+        size: 38mm 11mm;
+        margin: 0;
+      }
+
       body {
         background: transparent !important;
         margin: 0 !important;
         padding: 0 !important;
         display: block !important;
+        width: 38mm !important;
+        height: 11mm !important;
       }
 
       .no-print-toolbar,
-      .preview-title {
+      .preview-title,
+      .preview-hint,
+      .preview-container > *:not(.label-box-wrapper) {
         display: none !important;
       }
 
-      .preview-container {
+      .preview-container,
+      .label-box-wrapper {
         margin: 0 !important;
         padding: 0 !important;
         display: block !important;
@@ -237,12 +240,13 @@
         position: absolute;
         top: 0;
         left: 0;
-        width: 88.9mm !important;
-        height: 28.6mm !important;
+        width: 38mm !important;
+        height: 11mm !important;
         border: none !important;
         box-shadow: none !important;
         margin: 0 !important;
-        padding: 1.8mm 2.5mm !important;
+        padding: 0.7mm 1.2mm !important;
+        transform: none !important;
         page-break-after: avoid;
         page-break-inside: avoid;
       }
@@ -256,29 +260,31 @@
     <button class="btn-print" onclick="window.print()">🖨️ Imprimir Etiqueta</button>
     <button class="btn-close" onclick="window.close()">✕ Fechar</button>
     <div class="tip-box">
-      ⚙️ Na janela de impressão: selecione <b>Smart Label Printer 650</b>, margens <b>Nenhuma</b> e desmarque <b>Cabeçalhos e rodapés</b>.
+      ⚙️ Na janela de impressão: selecione <b>SLP-35L (11mm × 38mm)</b>, margens <b>Nenhuma</b> e desmarque <b>Cabeçalhos e rodapés</b>.
     </div>
   </div>
 
   <div class="preview-container">
-    <div class="preview-title">Pré-visualização da Etiqueta (88.9mm × 28.6mm)</div>
+    <div class="preview-title">Pré-visualização da Etiqueta — SLP-35L (11mm × 38mm)</div>
+    <div class="preview-hint">(Visualização ampliada 2.2x na tela para leitura; impressão em tamanho real 38×11mm)</div>
 
     <!-- Bloco da etiqueta que será impresso -->
-    <div class="label-box">
-      <div class="qr-side" id="qr-container"></div>
-      <div class="info-side">
-        <div class="brand-row">BP Central TI · Gestão de Ativos</div>
-        <div class="title-row">{{ nome_display }}</div>
-        <div class="id-row">{{ item_id }}</div>
-        <div class="meta-row">
-          <span class="type-pill">{{ cfg.label if cfg else tipo }}</span>
-          <span class="local-text">
-            {% if tipo == 'estoque' %}
-              Qtd: {{ item.quantidade }} {{ item.unidade or 'un' }}
-            {% else %}
-              {{ item.fazenda or item.localizacao or 'Central TI' }}
-            {% endif %}
-          </span>
+    <div class="label-box-wrapper">
+      <div class="label-box">
+        <div class="qr-side" id="qr-container"></div>
+        <div class="info-side">
+          <div class="id-row">{{ item_id }}</div>
+          <div class="title-row">{{ nome_display }}</div>
+          <div class="meta-row">
+            <span class="brand-text">BP TI · {{ cfg.label if cfg else tipo }}</span>
+            <span class="local-text">
+              {% if tipo == 'estoque' %}
+                {{ item.quantidade }} {{ item.unidade or 'un' }}
+              {% else %}
+                {{ item.fazenda or item.localizacao or 'Central' }}
+              {% endif %}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -292,13 +298,23 @@
       if (qrEl) {
         new QRCode(qrEl, {
           text: QR_URL,
-          width: 140,
-          height: 140,
+          width: 90,
+          height: 90,
           colorDark: '#000000',
           colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.M,
         });
       }
+
+      // Se passado o parâmetro ?autoprint=1, dispara a impressão após 400ms
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('autoprint') === '1') {
+        setTimeout(() => {
+          window.print();
+        }, 500);
+      }
+    });
+  </script>
 
       // Se passado o parâmetro ?autoprint=1, dispara a impressão após 400ms
       const urlParams = new URLSearchParams(window.location.search);

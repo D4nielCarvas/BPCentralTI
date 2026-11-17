@@ -169,14 +169,14 @@ def qr_action_page(tipo: str, item_id: str) -> Response:
     )
 
 
-# ── ROTA DE IMPRESSÃO: Página isolada para Smart Label Printer 650 ────────────
+# ── ROTA DE IMPRESSÃO: Página isolada para padrão SLP-35L (11mm × 38mm) ───────
 
 @bp.route("/qr/imprimir/<tipo>/<item_id>")
 @admin_required
 def qr_imprimir_etiqueta(tipo: str, item_id: str) -> Response:
     """
     Renderiza uma página HTML isolada contendo exclusivamente a etiqueta
-    formatada para impressoras térmicas (ex: Smart Label Printer 650).
+    formatada para impressoras térmicas no padrão SLP-35L (11mm × 38mm).
     Evita que o navegador imprima elementos da aplicação ou quebre margens.
     """
     cfg = _TIPO_CONFIG.get(tipo)
