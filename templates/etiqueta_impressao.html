@@ -83,19 +83,21 @@
 
     .tip-box {
       font-size: 12px;
-      color: #94a3b8;
-      background: rgba(255,255,255,0.05);
-      padding: 4px 10px;
+      color: #cbd5e1;
+      background: rgba(255,255,255,0.08);
+      padding: 6px 12px;
       border-radius: 4px;
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      line-height: 1.4;
     }
 
+    /* ─── Container de Pré-visualização na tela ─── */
     .preview-container {
-      margin-top: 35px;
+      margin-top: 25px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .preview-title {
@@ -109,28 +111,31 @@
     .preview-hint {
       font-size: 11px;
       color: #64748b;
+      text-align: center;
     }
 
-    .label-box-wrapper {
-      padding: 15px;
-      margin-bottom: 30px;
+    .screen-scale-wrapper {
+      padding: 20px;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      border: 1px solid #e2e8f0;
+      margin-bottom: 10px;
     }
 
-    /* ─── Etiqueta Física (Dimensões Padrão SLP-35L: 38mm largura × 11mm altura) ─── */
+    /* ─── Etiqueta Física Base (38mm largura × 11mm altura) ─── */
     .label-box {
       width: 38mm;
       height: 11mm;
       background: #ffffff;
-      border: 1px dashed #cbd5e1;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+      border: 1px dashed #94a3b8;
       display: flex;
       flex-direction: row;
       align-items: center;
-      padding: 0.7mm 1.2mm;
+      padding: 0.6mm 1.2mm;
       gap: 1.2mm;
       overflow: hidden;
-      transform: scale(2.2);
-      transform-origin: top center;
+      box-sizing: border-box;
     }
 
     .qr-side {
@@ -140,13 +145,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #fff;
+      background: #ffffff;
     }
 
-    .qr-side canvas,
-    .qr-side img {
+    .qr-side img,
+    .qr-side canvas {
       width: 9.6mm !important;
       height: 9.6mm !important;
+      display: block !important;
       image-rendering: pixelated;
     }
 
@@ -162,7 +168,7 @@
 
     .id-row {
       font-size: 6.2pt;
-      font-family: 'IBM Plex Mono', 'Courier New', Courier, monospace;
+      font-family: 'Courier New', Courier, monospace;
       font-weight: 800;
       color: #000000;
       white-space: nowrap;
@@ -174,7 +180,7 @@
     .title-row {
       font-size: 5pt;
       font-weight: 700;
-      color: #1e293b;
+      color: #000000;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -187,14 +193,15 @@
       justify-content: space-between;
       gap: 1mm;
       font-size: 4.2pt;
-      color: #475569;
+      color: #000000;
+      font-weight: 800;
       white-space: nowrap;
       overflow: hidden;
     }
 
     .brand-text {
       font-weight: 800;
-      color: #0f172a;
+      color: #000000;
       text-transform: uppercase;
       letter-spacing: 0.2pt;
     }
@@ -202,11 +209,12 @@
     .local-text {
       overflow: hidden;
       text-overflow: ellipsis;
-      font-weight: 600;
-      color: #334155;
+      font-weight: 700;
+      color: #000000;
     }
 
     /* ─── ESTILOS ESPECÍFICOS DE IMPRESSÃO ─── */
+    /* Remove tudo da tela e garante apenas 1 página 38mm x 11mm em fluxo estático */
     @media print {
       @page {
         size: 38mm 11mm;
@@ -216,6 +224,8 @@
       *, *:before, *:after {
         box-shadow: none !important;
         text-shadow: none !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
 
       html, body {
@@ -224,51 +234,82 @@
         margin: 0 !important;
         padding: 0 !important;
         background: #ffffff !important;
-        overflow: hidden !important;
+        color: #000000 !important;
+        display: block !important;
+        overflow: visible !important;
       }
 
-      /* Oculta tudo que não faz parte estrita da etiqueta */
-      body > *:not(.preview-container) {
-        display: none !important;
-      }
-
+      .no-print,
       .no-print-toolbar,
       .preview-title,
       .preview-hint,
-      .action-buttons-screen {
+      .screen-actions {
         display: none !important;
       }
 
-      .preview-container {
+      .preview-container,
+      .screen-scale-wrapper {
         margin: 0 !important;
         padding: 0 !important;
-        width: 38mm !important;
-        height: 11mm !important;
-        display: block !important;
-      }
-
-      .label-box-wrapper {
-        margin: 0 !important;
-        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
         display: block !important;
         width: 38mm !important;
         height: 11mm !important;
       }
 
       .label-box {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
         width: 38mm !important;
         height: 11mm !important;
+        max-width: 38mm !important;
+        max-height: 11mm !important;
+        margin: 0 !important;
+        padding: 0.6mm 1.2mm !important;
         border: none !important;
         box-shadow: none !important;
-        margin: 0 !important;
-        padding: 0.7mm 1.2mm !important;
-        transform: none !important;
-        page-break-after: avoid !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 1.2mm !important;
+        position: static !important;
+        box-sizing: border-box !important;
         page-break-inside: avoid !important;
+        page-break-after: avoid !important;
         background: #ffffff !important;
+      }
+
+      .qr-side {
+        width: 9.6mm !important;
+        height: 9.6mm !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+
+      .qr-side img {
+        width: 9.6mm !important;
+        height: 9.6mm !important;
+        display: block !important;
+        image-rendering: pixelated !important;
+      }
+
+      .qr-side canvas {
+        display: none !important;
+      }
+
+      .info-side {
+        flex: 1 !important;
+        height: 9.6mm !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        line-height: 1.05 !important;
+        overflow: hidden !important;
+      }
+
+      .id-row, .title-row, .meta-row, .brand-text, .local-text {
+        color: #000000 !important;
       }
     }
   </style>
@@ -280,16 +321,16 @@
     <button class="btn-print" onclick="dispararImpressao()">🖨️ Imprimir Etiqueta</button>
     <button class="btn-close" onclick="window.close()">✕ Fechar</button>
     <div class="tip-box">
-      ⚙️ Na janela de impressão: selecione <b>SLP-35L (11mm × 38mm)</b>, margens <b>Nenhuma</b> e desmarque <b>Cabeçalhos e rodapés</b>.
+      ⚙️ <b>Configuração no Chrome/Edge:</b> Selecione a impressora SLP-35L | Margens: <b>Nenhuma</b> | Cabeçalhos e rodapés: <b>Desmarcado</b>.
     </div>
   </div>
 
   <div class="preview-container">
     <div class="preview-title">Pré-visualização da Etiqueta — SLP-35L (11mm × 38mm)</div>
-    <div class="preview-hint">(Visualização ampliada 2.2x na tela para leitura; impressão em tamanho real 38×11mm)</div>
+    <div class="preview-hint">Impressão calibrada para rolo padrão SLP-35L (largura 38mm × altura 11mm)</div>
 
     <!-- Bloco da etiqueta que será impresso -->
-    <div class="label-box-wrapper">
+    <div class="screen-scale-wrapper">
       <div class="label-box">
         <div class="qr-side" id="qr-container"></div>
         <div class="info-side">
@@ -309,8 +350,8 @@
       </div>
     </div>
 
-    <!-- Botão de ação destacado na tela para disparo manual rápido -->
-    <div class="action-buttons-screen" style="margin-top: 15px; display: flex; gap: 10px;">
+    <!-- Botões auxiliares na tela -->
+    <div class="screen-actions" style="display:flex; gap:10px; margin-top:5px;">
       <button onclick="dispararImpressao()" class="btn-print" style="padding: 10px 24px; font-size: 15px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">
         🖨️ Imprimir Agora (SLP-35L)
       </button>
@@ -325,28 +366,55 @@
         window.focus();
         window.print();
       } catch (err) {
-        console.error('Erro ao chamar window.print():', err);
+        console.error('Erro ao acionar impressao:', err);
       }
     }
 
-    function inicializar() {
-      const qrEl = document.getElementById('qr-container');
-      if (qrEl) {
-        qrEl.innerHTML = '';
-        new QRCode(qrEl, {
+    /**
+     * Gera o QRCode e substitui o canvas por uma tag <img> nativa com base64 PNG.
+     * Isso resolve o problema de navegadores imprimirem canvas em branco.
+     */
+    function gerarQR() {
+      return new Promise((resolve) => {
+        const qrContainer = document.getElementById('qr-container');
+        if (!qrContainer) {
+          resolve();
+          return;
+        }
+
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
           text: QR_URL,
-          width: 90,
-          height: 90,
+          width: 120,
+          height: 120,
           colorDark: '#000000',
           colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.M,
         });
-      }
 
-      // Se passado ?autoprint=1, aciona a impressão automaticamente com pequeno delay para renderizar o QR
+        // Aguarda a renderização interna do QRCode.js e converte para <img> estático
+        setTimeout(() => {
+          const canvas = qrContainer.querySelector('canvas');
+          if (canvas) {
+            try {
+              const dataUrl = canvas.toDataURL('image/png');
+              qrContainer.innerHTML = `<img src="${dataUrl}" alt="QR" style="width:9.6mm;height:9.6mm;display:block;image-rendering:pixelated;" />`;
+            } catch (e) {
+              console.warn('Fallback canvas toDataURL falhou:', e);
+            }
+          }
+          resolve();
+        }, 120);
+      });
+    }
+
+    async function inicializar() {
+      await gerarQR();
+
+      // Disparo automático quando solicitado pela janela pai
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('autoprint') === '1') {
-        setTimeout(dispararImpressao, 400);
+        setTimeout(dispararImpressao, 350);
       }
     }
 
